@@ -20,6 +20,20 @@ services:
       - ./logs/command:/var/log/mysql
     networks:
       - net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-u",
+          "root",
+          "--password=${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   query_db:
     container_name: query_db
@@ -41,22 +55,36 @@ services:
       - ./logs/query:/var/log/mysql
     networks:
       - net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-u",
+          "root",
+          "--password=${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
   db_admin:
     container_name: db_admin
     image: phpmyadmin/phpmyadmin
+    platform: linux/amd64
     restart: always
     depends_on:
-      - command_db
-      - query_db
+      command_db:
+        condition: service_healthy
+      query_db:
+        condition: service_healthy
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOSTS=command_db,query_db
       - PMA_USER=root
       - PMA_PASSWORD=password
-    links:
-      - command_db:mysql
-      - query_db:mysql
     ports:
       - "3100:80"
     networks:
