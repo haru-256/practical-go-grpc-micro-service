@@ -1,3 +1,5 @@
+USE sample_db;
+
 /* 商品カテゴリ */
 INSERT INTO category (obj_id,name) VALUES('b1524011-b6af-417e-8bf2-f449dd58b5c0','文房具');
 INSERT INTO category (obj_id,name) VALUES('762bd1ea-9700-4bab-a28d-6cbebf20ddc2','雑貨');

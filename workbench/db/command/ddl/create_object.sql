@@ -1,7 +1,7 @@
 /*
     商品カテゴリ
 */
-CREATE TABLE sample_db.category(
+CREATE TABLE IF NOT EXISTS sample_db.category(
     id INT NOT NULL AUTO_INCREMENT,
     obj_id VARCHAR(36) NOT NULL,
     name VARCHAR(20) NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE sample_db.category(
 /*
     商品
 */
-CREATE TABLE sample_db.product(
+CREATE TABLE IF NOT EXISTS sample_db.product(
     id INT NOT NULL AUTO_INCREMENT,
     obj_id VARCHAR(36) NOT NULL,
     name VARCHAR(30) NOT NULL,

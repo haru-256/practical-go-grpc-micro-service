@@ -18,6 +18,7 @@ services:
       - ./command/sql:/docker-entrypoint-initdb.d
       - ./command/ddl:/etc/ddl
       - ./logs/command:/var/log/mysql
+      - ./command/scripts:/etc/scripts
     networks:
       - net
     healthcheck:
@@ -89,6 +90,7 @@ services:
       - "3100:80"
     networks:
       - net
+
 networks:
   net:
 
