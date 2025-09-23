@@ -1,0 +1,15 @@
+[submodule "official/sampledb"]
+	path = official/sampledb
+	url = https://github.com/fullness-MFurukawa/sampledb.git
+[submodule "official/commandservice"]
+	path = official/commandservice
+	url = https://github.com/fullness-MFurukawa/commandservice.git
+[submodule "official/queryservice"]
+	path = official/queryservice
+	url = https://github.com/fullness-MFurukawa/queryservice.git
+[submodule "official/cqrsclient"]
+	path = official/cqrsclient
+	url = https://github.com/fullness-MFurukawa/cqrsclient.git
+[submodule "official/samplepb"]
+	path = official/samplepb
+	url = https://github.com/fullness-MFurukawa/samplepb.git
