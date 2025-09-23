@@ -1,0 +1,98 @@
+//
+//  QueryService用のParam型とResult型を定義したprotoファイル
+//
+
+syntax = "proto3";
+
+package query.v1;
+
+import "buf/validate/validate.proto";
+import "common/v1/error.proto";
+import "common/v1/models.proto";
+import "google/protobuf/timestamp.proto";
+
+// CategoryService用のRequest/Response型
+message ListCategoriesRequest {
+  // 空のリクエスト（全カテゴリ取得のため）
+}
+
+message ListCategoriesResponse {
+  repeated common.v1.Category categories = 1; // 商品カテゴリ複数
+  common.v1.Error error = 2; // エラー
+  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // タイムスタンプ
+}
+
+message GetCategoryByIdRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1]; // カテゴリ番号
+}
+
+message GetCategoryByIdResponse {
+  // エラーか検索結果のいずれかを返す
+  oneof result {
+    common.v1.Category category = 1; // 商品カテゴリ
+    common.v1.Error error = 2; // エラー
+  }
+  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // タイムスタンプ
+}
+
+// ProductService用のRequest/Response型
+message StreamProductsRequest {
+  // 空のリクエスト（全商品ストリーミング取得のため）
+}
+
+message StreamProductsResponse {
+  common.v1.Product product = 1; // ストリーミングされる商品
+}
+
+message ListProductsRequest {
+  // 空のリクエスト（全商品取得のため）
+}
+
+message ListProductsResponse {
+  repeated common.v1.Product products = 1; // 商品複数
+  common.v1.Error error = 2; // エラー
+  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // タイムスタンプ
+}
+
+message GetProductByIdRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1]; // 商品番号
+}
+
+message GetProductByIdResponse {
+  // エラーか検索結果のいずれかを返す
+  oneof result {
+    common.v1.Product product = 1; // 検索結果
+    common.v1.Error error = 2; // 検索エラー
+  }
+  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // タイムスタンプ
+}
+
+message SearchProductsByKeywordRequest {
+  string keyword = 1 [(buf.validate.field).string.min_len = 1]; // キーワード
+}
+
+message SearchProductsByKeywordResponse {
+  repeated common.v1.Product products = 1; // 商品複数
+  common.v1.Error error = 2; // エラー
+  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // タイムスタンプ
+}
+
+//  商品カテゴリ問合せサービス型（読み取り専用）
+service CategoryService {
+  // すべてのカテゴリを問合せして返す
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  // 指定されたIDのカテゴリを問合せして返す
+  rpc GetCategoryById(GetCategoryByIdRequest) returns (GetCategoryByIdResponse);
+}
+
+//  商品問合せサービス型（読み取り専用）
+service ProductService {
+  // すべての商品を問合せして返す(Server streaming RPC)
+  rpc StreamProducts(StreamProductsRequest) returns (stream StreamProductsResponse);
+  // すべての商品を問合せして返す
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  // 指定されたIDの商品を問合せして返す
+  rpc GetProductById(GetProductByIdRequest) returns (GetProductByIdResponse);
+  // 指定されたキーワードで商品を検索して返す
+  rpc SearchProductsByKeyword(SearchProductsByKeywordRequest) returns (SearchProductsByKeywordResponse);
+}

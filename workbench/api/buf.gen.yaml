@@ -1,0 +1,35 @@
+version: v2
+
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/haru-256/practical-go-grpc-micro-service/api/gen/go
+  disable:
+    # これがないと、validateのimportパスに上記のprefixがついてしまう
+    # https://buf.build/docs/bsr/quickstart/?utm_source=chatgpt.com#generate-code
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
+
+plugins:
+  # Protoに定義されたmessageをGoのコードを生成するプラグイン
+  - remote: buf.build/protocolbuffers/go:v1.36.9
+    out: gen/go
+    opt: paths=source_relative
+  # GoのgRPCコードを生成するプラグイン
+  - remote: buf.build/grpc/go
+    out: gen/go
+    opt: paths=source_relative
+  # Markdown 1ファイル出力
+  - remote: buf.build/community/pseudomuto-doc:v1.5.1
+    out: gen/docs
+    opt:
+      - markdown,README.md
+  - remote: buf.build/bufbuild/validate-go:v1.2.1
+    out: gen/go
+    opt:
+      - paths=source_relative
+  - remote: buf.build/connectrpc/go:v1.18.1
+    out: gen/go
+    opt:
+      - paths=source_relative
