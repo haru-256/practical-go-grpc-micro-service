@@ -28,6 +28,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// TODO: ページネーション対応
 // CategoryService用のRequest/Response型
 type ListCategoriesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -342,6 +343,7 @@ func (x *StreamProductsResponse) GetProduct() *v1.Product {
 	return nil
 }
 
+// TODO: ページネーション対応
 type ListProductsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields

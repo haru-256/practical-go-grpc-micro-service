@@ -11,7 +11,6 @@
     - [Product](#common-v1-Product)
   
 - [command/v1/command.proto](#command_v1_command-proto)
-    - [CategoryUpResult](#command-v1-CategoryUpResult)
     - [CreateCategoryRequest](#command-v1-CreateCategoryRequest)
     - [CreateCategoryResponse](#command-v1-CreateCategoryResponse)
     - [CreateProductRequest](#command-v1-CreateProductRequest)
@@ -20,7 +19,6 @@
     - [DeleteCategoryResponse](#command-v1-DeleteCategoryResponse)
     - [DeleteProductRequest](#command-v1-DeleteProductRequest)
     - [DeleteProductResponse](#command-v1-DeleteProductResponse)
-    - [ProductUpResult](#command-v1-ProductUpResult)
     - [UpdateCategoryRequest](#command-v1-UpdateCategoryRequest)
     - [UpdateCategoryResponse](#command-v1-UpdateCategoryResponse)
     - [UpdateProductRequest](#command-v1-UpdateProductRequest)
@@ -141,24 +139,6 @@
 
 
 
-<a name="command-v1-CategoryUpResult"></a>
-
-### CategoryUpResult
-商品カテゴリ更新Result型
-カテゴリ操作の結果とメタデータを返す
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| category | [common.v1.Category](#common-v1-Category) |  | 更新されたカテゴリ情報 |
-| error | [common.v1.Error](#common-v1-Error) |  | 操作エラー情報（エラーがある場合のみ設定） |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | 操作実行時刻 |
-
-
-
-
-
-
 <a name="command-v1-CreateCategoryRequest"></a>
 
 ### CreateCategoryRequest
@@ -167,7 +147,9 @@ CategoryService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE） |
+| crud | [CRUD](#command-v1-CRUD) |  | FIXME: 消させをないかを確認する
+
+更新の種類 |
 | id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
 | name | [string](#string) |  | 商品カテゴリ名（1-100文字） |
 
@@ -237,9 +219,8 @@ ProductService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE） |
+| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
 | id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
-| name | [string](#string) |  | 商品カテゴリ名（1-100文字） |
 
 
 
@@ -271,11 +252,7 @@ ProductService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE） |
 | id | [string](#string) |  | 商品番号（英数字、アンダースコア、ハイフンのみ） |
-| name | [string](#string) |  | 商品名（1-200文字） |
-| price | [int32](#int32) |  | 単価（1円以上、999,999,999円以下） |
-| category_id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
 
 
 
@@ -299,24 +276,6 @@ ProductService用のRequest/Response型
 
 
 
-<a name="command-v1-ProductUpResult"></a>
-
-### ProductUpResult
-商品更新Result型
-商品操作の結果とメタデータを返す
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| product | [common.v1.Product](#common-v1-Product) |  | 更新された商品情報 |
-| error | [common.v1.Error](#common-v1-Error) |  | 操作エラー情報（エラーがある場合のみ設定） |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | 操作実行時刻 |
-
-
-
-
-
-
 <a name="command-v1-UpdateCategoryRequest"></a>
 
 ### UpdateCategoryRequest
@@ -325,7 +284,7 @@ ProductService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE） |
+| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
 | id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
 | name | [string](#string) |  | 商品カテゴリ名（1-100文字） |
 
@@ -359,7 +318,7 @@ ProductService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE） |
+| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
 | id | [string](#string) |  | 商品番号（英数字、アンダースコア、ハイフンのみ） |
 | name | [string](#string) |  | 商品名（1-200文字） |
 | price | [int32](#int32) |  | 単価（1円以上、999,999,999円以下） |
@@ -510,6 +469,7 @@ ProductService用のRequest/Response型
 <a name="query-v1-ListCategoriesRequest"></a>
 
 ### ListCategoriesRequest
+TODO: ページネーション対応
 CategoryService用のRequest/Response型
 
 空のリクエスト（全カテゴリ取得のため）
@@ -539,6 +499,8 @@ CategoryService用のRequest/Response型
 <a name="query-v1-ListProductsRequest"></a>
 
 ### ListProductsRequest
+TODO: ページネーション対応
+
 空のリクエスト（全商品取得のため）
 
 

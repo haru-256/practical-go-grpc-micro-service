@@ -19,31 +19,10 @@ enum CRUD {
   CRUD_DELETE = 3; // 削除
 }
 
-//  商品カテゴリ更新Result型
-// カテゴリ操作の結果とメタデータを返す
-message CategoryUpResult {
-  common.v1.Category category = 1; // 更新されたカテゴリ情報
-  common.v1.Error error = 2; // 操作エラー情報（エラーがある場合のみ設定）
-  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // 操作実行時刻
-}
-
-//  商品更新Result型
-// 商品操作の結果とメタデータを返す
-message ProductUpResult {
-  common.v1.Product product = 1; // 更新された商品情報
-  common.v1.Error error = 2; // 操作エラー情報（エラーがある場合のみ設定）
-  google.protobuf.Timestamp timestamp = 3 [(buf.validate.field).timestamp = {}]; // 操作実行時刻
-}
-
 // CategoryService用のRequest/Response型
 message CreateCategoryRequest {
-  CRUD crud = 1 [(buf.validate.field).enum = {
-    in: [
-      1,
-      2,
-      3
-    ]
-  }]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+  // FIXME: 消させをないかを確認する
+  CRUD crud = 1 [(buf.validate.field).enum.const = 1]; // 更新の種類
   string id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
@@ -62,13 +41,7 @@ message CreateCategoryResponse {
 }
 
 message UpdateCategoryRequest {
-  CRUD crud = 1 [(buf.validate.field).enum = {
-    in: [
-      1,
-      2,
-      3
-    ]
-  }]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+  CRUD crud = 1 [(buf.validate.field).enum.const = 2]; // 更新の種類
   string id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
@@ -87,22 +60,12 @@ message UpdateCategoryResponse {
 }
 
 message DeleteCategoryRequest {
-  CRUD crud = 1 [(buf.validate.field).enum = {
-    in: [
-      1,
-      2,
-      3
-    ]
-  }]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+  CRUD crud = 1 [(buf.validate.field).enum.const = 3]; // 更新の種類
   string id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
     pattern: "^[a-zA-Z0-9_-]+$"
   }]; // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
-  string name = 3 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 100
-  }]; // 商品カテゴリ名（1-100文字）
 }
 
 message DeleteCategoryResponse {
@@ -113,13 +76,7 @@ message DeleteCategoryResponse {
 
 // ProductService用のRequest/Response型
 message CreateProductRequest {
-  CRUD crud = 1 [(buf.validate.field).enum = {
-    in: [
-      1,
-      2,
-      3
-    ]
-  }]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+  CRUD crud = 1 [(buf.validate.field).enum.const = 1]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
   string id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
@@ -147,13 +104,7 @@ message CreateProductResponse {
 }
 
 message UpdateProductRequest {
-  CRUD crud = 1 [(buf.validate.field).enum = {
-    in: [
-      1,
-      2,
-      3
-    ]
-  }]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+  CRUD crud = 1 [(buf.validate.field).enum.const = 2]; // 更新の種類
   string id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
@@ -181,31 +132,11 @@ message UpdateProductResponse {
 }
 
 message DeleteProductRequest {
-  CRUD crud = 1 [(buf.validate.field).enum = {
-    in: [
-      1,
-      2,
-      3
-    ]
-  }]; // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
   string id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
     pattern: "^[a-zA-Z0-9_-]+$"
   }]; // 商品番号（英数字、アンダースコア、ハイフンのみ）
-  string name = 3 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 200
-  }]; // 商品名（1-200文字）
-  int32 price = 4 [(buf.validate.field).int32 = {
-    gt: 0
-    lte: 999999999
-  }]; // 単価（1円以上、999,999,999円以下）
-  string category_id = 5 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 50
-    pattern: "^[a-zA-Z0-9_-]+$"
-  }]; // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
 }
 
 message DeleteProductResponse {

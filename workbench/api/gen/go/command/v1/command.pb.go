@@ -81,145 +81,20 @@ func (CRUD) EnumDescriptor() ([]byte, []int) {
 	return file_command_v1_command_proto_rawDescGZIP(), []int{0}
 }
 
-//	商品カテゴリ更新Result型
-//
-// カテゴリ操作の結果とメタデータを返す
-type CategoryUpResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Category      *v1.Category           `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`   // 更新されたカテゴリ情報
-	Error         *v1.Error              `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`         // 操作エラー情報（エラーがある場合のみ設定）
-	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // 操作実行時刻
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CategoryUpResult) Reset() {
-	*x = CategoryUpResult{}
-	mi := &file_command_v1_command_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CategoryUpResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CategoryUpResult) ProtoMessage() {}
-
-func (x *CategoryUpResult) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CategoryUpResult.ProtoReflect.Descriptor instead.
-func (*CategoryUpResult) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *CategoryUpResult) GetCategory() *v1.Category {
-	if x != nil {
-		return x.Category
-	}
-	return nil
-}
-
-func (x *CategoryUpResult) GetError() *v1.Error {
-	if x != nil {
-		return x.Error
-	}
-	return nil
-}
-
-func (x *CategoryUpResult) GetTimestamp() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Timestamp
-	}
-	return nil
-}
-
-//	商品更新Result型
-//
-// 商品操作の結果とメタデータを返す
-type ProductUpResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Product       *v1.Product            `protobuf:"bytes,1,opt,name=product,proto3" json:"product,omitempty"`     // 更新された商品情報
-	Error         *v1.Error              `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`         // 操作エラー情報（エラーがある場合のみ設定）
-	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // 操作実行時刻
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ProductUpResult) Reset() {
-	*x = ProductUpResult{}
-	mi := &file_command_v1_command_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ProductUpResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ProductUpResult) ProtoMessage() {}
-
-func (x *ProductUpResult) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ProductUpResult.ProtoReflect.Descriptor instead.
-func (*ProductUpResult) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *ProductUpResult) GetProduct() *v1.Product {
-	if x != nil {
-		return x.Product
-	}
-	return nil
-}
-
-func (x *ProductUpResult) GetError() *v1.Error {
-	if x != nil {
-		return x.Error
-	}
-	return nil
-}
-
-func (x *ProductUpResult) GetTimestamp() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Timestamp
-	}
-	return nil
-}
-
 // CategoryService用のRequest/Response型
 type CreateCategoryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"` // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                           // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                       // 商品カテゴリ名（1-100文字）
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// FIXME: 消させをないかを確認する
+	Crud          CRUD   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"` // 更新の種類
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                           // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
+	Name          string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                       // 商品カテゴリ名（1-100文字）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCategoryRequest) Reset() {
 	*x = CreateCategoryRequest{}
-	mi := &file_command_v1_command_proto_msgTypes[2]
+	mi := &file_command_v1_command_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -231,7 +106,7 @@ func (x *CreateCategoryRequest) String() string {
 func (*CreateCategoryRequest) ProtoMessage() {}
 
 func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[2]
+	mi := &file_command_v1_command_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -244,7 +119,7 @@ func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{2}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateCategoryRequest) GetCrud() CRUD {
@@ -279,7 +154,7 @@ type CreateCategoryResponse struct {
 
 func (x *CreateCategoryResponse) Reset() {
 	*x = CreateCategoryResponse{}
-	mi := &file_command_v1_command_proto_msgTypes[3]
+	mi := &file_command_v1_command_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -291,7 +166,7 @@ func (x *CreateCategoryResponse) String() string {
 func (*CreateCategoryResponse) ProtoMessage() {}
 
 func (x *CreateCategoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[3]
+	mi := &file_command_v1_command_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -304,7 +179,7 @@ func (x *CreateCategoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryResponse.ProtoReflect.Descriptor instead.
 func (*CreateCategoryResponse) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{3}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateCategoryResponse) GetCategory() *v1.Category {
@@ -330,7 +205,7 @@ func (x *CreateCategoryResponse) GetTimestamp() *timestamppb.Timestamp {
 
 type UpdateCategoryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"` // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"` // 更新の種類
 	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                           // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                       // 商品カテゴリ名（1-100文字）
 	unknownFields protoimpl.UnknownFields
@@ -339,7 +214,7 @@ type UpdateCategoryRequest struct {
 
 func (x *UpdateCategoryRequest) Reset() {
 	*x = UpdateCategoryRequest{}
-	mi := &file_command_v1_command_proto_msgTypes[4]
+	mi := &file_command_v1_command_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -351,7 +226,7 @@ func (x *UpdateCategoryRequest) String() string {
 func (*UpdateCategoryRequest) ProtoMessage() {}
 
 func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[4]
+	mi := &file_command_v1_command_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -364,7 +239,7 @@ func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{4}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UpdateCategoryRequest) GetCrud() CRUD {
@@ -399,7 +274,7 @@ type UpdateCategoryResponse struct {
 
 func (x *UpdateCategoryResponse) Reset() {
 	*x = UpdateCategoryResponse{}
-	mi := &file_command_v1_command_proto_msgTypes[5]
+	mi := &file_command_v1_command_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +286,7 @@ func (x *UpdateCategoryResponse) String() string {
 func (*UpdateCategoryResponse) ProtoMessage() {}
 
 func (x *UpdateCategoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[5]
+	mi := &file_command_v1_command_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +299,7 @@ func (x *UpdateCategoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryResponse.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryResponse) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{5}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *UpdateCategoryResponse) GetCategory() *v1.Category {
@@ -450,16 +325,15 @@ func (x *UpdateCategoryResponse) GetTimestamp() *timestamppb.Timestamp {
 
 type DeleteCategoryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"` // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"` // 更新の種類
 	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                           // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                       // 商品カテゴリ名（1-100文字）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCategoryRequest) Reset() {
 	*x = DeleteCategoryRequest{}
-	mi := &file_command_v1_command_proto_msgTypes[6]
+	mi := &file_command_v1_command_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -471,7 +345,7 @@ func (x *DeleteCategoryRequest) String() string {
 func (*DeleteCategoryRequest) ProtoMessage() {}
 
 func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[6]
+	mi := &file_command_v1_command_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -484,7 +358,7 @@ func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{6}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeleteCategoryRequest) GetCrud() CRUD {
@@ -501,13 +375,6 @@ func (x *DeleteCategoryRequest) GetId() string {
 	return ""
 }
 
-func (x *DeleteCategoryRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
 type DeleteCategoryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Category      *v1.Category           `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`   // 更新されたカテゴリ情報
@@ -519,7 +386,7 @@ type DeleteCategoryResponse struct {
 
 func (x *DeleteCategoryResponse) Reset() {
 	*x = DeleteCategoryResponse{}
-	mi := &file_command_v1_command_proto_msgTypes[7]
+	mi := &file_command_v1_command_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -531,7 +398,7 @@ func (x *DeleteCategoryResponse) String() string {
 func (*DeleteCategoryResponse) ProtoMessage() {}
 
 func (x *DeleteCategoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[7]
+	mi := &file_command_v1_command_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -544,7 +411,7 @@ func (x *DeleteCategoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryResponse) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{7}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeleteCategoryResponse) GetCategory() *v1.Category {
@@ -582,7 +449,7 @@ type CreateProductRequest struct {
 
 func (x *CreateProductRequest) Reset() {
 	*x = CreateProductRequest{}
-	mi := &file_command_v1_command_proto_msgTypes[8]
+	mi := &file_command_v1_command_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -594,7 +461,7 @@ func (x *CreateProductRequest) String() string {
 func (*CreateProductRequest) ProtoMessage() {}
 
 func (x *CreateProductRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[8]
+	mi := &file_command_v1_command_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -607,7 +474,7 @@ func (x *CreateProductRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProductRequest.ProtoReflect.Descriptor instead.
 func (*CreateProductRequest) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{8}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateProductRequest) GetCrud() CRUD {
@@ -656,7 +523,7 @@ type CreateProductResponse struct {
 
 func (x *CreateProductResponse) Reset() {
 	*x = CreateProductResponse{}
-	mi := &file_command_v1_command_proto_msgTypes[9]
+	mi := &file_command_v1_command_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -668,7 +535,7 @@ func (x *CreateProductResponse) String() string {
 func (*CreateProductResponse) ProtoMessage() {}
 
 func (x *CreateProductResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[9]
+	mi := &file_command_v1_command_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -681,7 +548,7 @@ func (x *CreateProductResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProductResponse.ProtoReflect.Descriptor instead.
 func (*CreateProductResponse) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{9}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CreateProductResponse) GetProduct() *v1.Product {
@@ -707,7 +574,7 @@ func (x *CreateProductResponse) GetTimestamp() *timestamppb.Timestamp {
 
 type UpdateProductRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"`         // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
+	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"`         // 更新の種類
 	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                                   // 商品番号（英数字、アンダースコア、ハイフンのみ）
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                               // 商品名（1-200文字）
 	Price         int32                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`                            // 単価（1円以上、999,999,999円以下）
@@ -718,7 +585,7 @@ type UpdateProductRequest struct {
 
 func (x *UpdateProductRequest) Reset() {
 	*x = UpdateProductRequest{}
-	mi := &file_command_v1_command_proto_msgTypes[10]
+	mi := &file_command_v1_command_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -730,7 +597,7 @@ func (x *UpdateProductRequest) String() string {
 func (*UpdateProductRequest) ProtoMessage() {}
 
 func (x *UpdateProductRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[10]
+	mi := &file_command_v1_command_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -743,7 +610,7 @@ func (x *UpdateProductRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProductRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProductRequest) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{10}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UpdateProductRequest) GetCrud() CRUD {
@@ -792,7 +659,7 @@ type UpdateProductResponse struct {
 
 func (x *UpdateProductResponse) Reset() {
 	*x = UpdateProductResponse{}
-	mi := &file_command_v1_command_proto_msgTypes[11]
+	mi := &file_command_v1_command_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -804,7 +671,7 @@ func (x *UpdateProductResponse) String() string {
 func (*UpdateProductResponse) ProtoMessage() {}
 
 func (x *UpdateProductResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[11]
+	mi := &file_command_v1_command_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -817,7 +684,7 @@ func (x *UpdateProductResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProductResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProductResponse) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{11}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateProductResponse) GetProduct() *v1.Product {
@@ -843,18 +710,14 @@ func (x *UpdateProductResponse) GetTimestamp() *timestamppb.Timestamp {
 
 type DeleteProductRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Crud          CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD" json:"crud,omitempty"`         // 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE）
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                                   // 商品番号（英数字、アンダースコア、ハイフンのみ）
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                               // 商品名（1-200文字）
-	Price         int32                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`                            // 単価（1円以上、999,999,999円以下）
-	CategoryId    string                 `protobuf:"bytes,5,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"` // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ）
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"` // 商品番号（英数字、アンダースコア、ハイフンのみ）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteProductRequest) Reset() {
 	*x = DeleteProductRequest{}
-	mi := &file_command_v1_command_proto_msgTypes[12]
+	mi := &file_command_v1_command_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -866,7 +729,7 @@ func (x *DeleteProductRequest) String() string {
 func (*DeleteProductRequest) ProtoMessage() {}
 
 func (x *DeleteProductRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[12]
+	mi := &file_command_v1_command_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -879,40 +742,12 @@ func (x *DeleteProductRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProductRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProductRequest) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *DeleteProductRequest) GetCrud() CRUD {
-	if x != nil {
-		return x.Crud
-	}
-	return CRUD_CRUD_UNSPECIFIED
+	return file_command_v1_command_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteProductRequest) GetId() string {
 	if x != nil {
 		return x.Id
-	}
-	return ""
-}
-
-func (x *DeleteProductRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *DeleteProductRequest) GetPrice() int32 {
-	if x != nil {
-		return x.Price
-	}
-	return 0
-}
-
-func (x *DeleteProductRequest) GetCategoryId() string {
-	if x != nil {
-		return x.CategoryId
 	}
 	return ""
 }
@@ -928,7 +763,7 @@ type DeleteProductResponse struct {
 
 func (x *DeleteProductResponse) Reset() {
 	*x = DeleteProductResponse{}
-	mi := &file_command_v1_command_proto_msgTypes[13]
+	mi := &file_command_v1_command_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -940,7 +775,7 @@ func (x *DeleteProductResponse) String() string {
 func (*DeleteProductResponse) ProtoMessage() {}
 
 func (x *DeleteProductResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_command_v1_command_proto_msgTypes[13]
+	mi := &file_command_v1_command_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -953,7 +788,7 @@ func (x *DeleteProductResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProductResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProductResponse) Descriptor() ([]byte, []int) {
-	return file_command_v1_command_proto_rawDescGZIP(), []int{13}
+	return file_command_v1_command_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DeleteProductResponse) GetProduct() *v1.Product {
@@ -982,41 +817,32 @@ var File_command_v1_command_proto protoreflect.FileDescriptor
 const file_command_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18command/v1/command.proto\x12\n" +
-	"command.v1\x1a\x1bbuf/validate/validate.proto\x1a\x15common/v1/error.proto\x1a\x16common/v1/models.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xad\x01\n" +
-	"\x10CategoryUpResult\x12/\n" +
-	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
-	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xa9\x01\n" +
-	"\x0fProductUpResult\x12,\n" +
-	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
-	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\x97\x01\n" +
-	"\x15CreateCategoryRequest\x122\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\f\xbaH\t\x82\x01\x06\x18\x01\x18\x02\x18\x03R\x04crud\x12+\n" +
+	"command.v1\x1a\x1bbuf/validate/validate.proto\x1a\x15common/v1/error.proto\x1a\x16common/v1/models.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x93\x01\n" +
+	"\x15CreateCategoryRequest\x12.\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x01R\x04crud\x12+\n" +
 	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1d\n" +
 	"\x04name\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18dR\x04name\"\xb3\x01\n" +
 	"\x16CreateCategoryResponse\x12/\n" +
 	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\x97\x01\n" +
-	"\x15UpdateCategoryRequest\x122\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\f\xbaH\t\x82\x01\x06\x18\x01\x18\x02\x18\x03R\x04crud\x12+\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\x93\x01\n" +
+	"\x15UpdateCategoryRequest\x12.\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x02R\x04crud\x12+\n" +
 	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1d\n" +
 	"\x04name\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18dR\x04name\"\xb3\x01\n" +
 	"\x16UpdateCategoryResponse\x12/\n" +
 	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\x97\x01\n" +
-	"\x15DeleteCategoryRequest\x122\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\f\xbaH\t\x82\x01\x06\x18\x01\x18\x02\x18\x03R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1d\n" +
-	"\x04name\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18dR\x04name\"\xb3\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"t\n" +
+	"\x15DeleteCategoryRequest\x12.\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x03R\x04crud\x12+\n" +
+	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\"\xb3\x01\n" +
 	"\x16DeleteCategoryResponse\x12/\n" +
 	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xfa\x01\n" +
-	"\x14CreateProductRequest\x122\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\f\xbaH\t\x82\x01\x06\x18\x01\x18\x02\x18\x03R\x04crud\x12+\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xf6\x01\n" +
+	"\x14CreateProductRequest\x12.\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x01R\x04crud\x12+\n" +
 	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1e\n" +
 	"\x04name\x18\x03 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\xc8\x01R\x04name\x12#\n" +
@@ -1027,9 +853,9 @@ const file_command_v1_command_proto_rawDesc = "" +
 	"\x15CreateProductResponse\x12,\n" +
 	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xfa\x01\n" +
-	"\x14UpdateProductRequest\x122\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\f\xbaH\t\x82\x01\x06\x18\x01\x18\x02\x18\x03R\x04crud\x12+\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xf6\x01\n" +
+	"\x14UpdateProductRequest\x12.\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x02R\x04crud\x12+\n" +
 	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1e\n" +
 	"\x04name\x18\x03 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\xc8\x01R\x04name\x12#\n" +
@@ -1040,16 +866,9 @@ const file_command_v1_command_proto_rawDesc = "" +
 	"\x15UpdateProductResponse\x12,\n" +
 	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xfa\x01\n" +
-	"\x14DeleteProductRequest\x122\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\f\xbaH\t\x82\x01\x06\x18\x01\x18\x02\x18\x03R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1e\n" +
-	"\x04name\x18\x03 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xc8\x01R\x04name\x12#\n" +
-	"\x05price\x18\x04 \x01(\x05B\r\xbaH\n" +
-	"\x1a\b\x18\xff\x93\xeb\xdc\x03 \x00R\x05price\x12<\n" +
-	"\vcategory_id\x18\x05 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\n" +
-	"categoryId\"\xaf\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"C\n" +
+	"\x14DeleteProductRequest\x12+\n" +
+	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\"\xaf\x01\n" +
 	"\x15DeleteProductResponse\x12,\n" +
 	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
@@ -1084,76 +903,67 @@ func file_command_v1_command_proto_rawDescGZIP() []byte {
 }
 
 var file_command_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_command_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_command_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_command_v1_command_proto_goTypes = []any{
 	(CRUD)(0),                      // 0: command.v1.CRUD
-	(*CategoryUpResult)(nil),       // 1: command.v1.CategoryUpResult
-	(*ProductUpResult)(nil),        // 2: command.v1.ProductUpResult
-	(*CreateCategoryRequest)(nil),  // 3: command.v1.CreateCategoryRequest
-	(*CreateCategoryResponse)(nil), // 4: command.v1.CreateCategoryResponse
-	(*UpdateCategoryRequest)(nil),  // 5: command.v1.UpdateCategoryRequest
-	(*UpdateCategoryResponse)(nil), // 6: command.v1.UpdateCategoryResponse
-	(*DeleteCategoryRequest)(nil),  // 7: command.v1.DeleteCategoryRequest
-	(*DeleteCategoryResponse)(nil), // 8: command.v1.DeleteCategoryResponse
-	(*CreateProductRequest)(nil),   // 9: command.v1.CreateProductRequest
-	(*CreateProductResponse)(nil),  // 10: command.v1.CreateProductResponse
-	(*UpdateProductRequest)(nil),   // 11: command.v1.UpdateProductRequest
-	(*UpdateProductResponse)(nil),  // 12: command.v1.UpdateProductResponse
-	(*DeleteProductRequest)(nil),   // 13: command.v1.DeleteProductRequest
-	(*DeleteProductResponse)(nil),  // 14: command.v1.DeleteProductResponse
-	(*v1.Category)(nil),            // 15: common.v1.Category
-	(*v1.Error)(nil),               // 16: common.v1.Error
-	(*timestamppb.Timestamp)(nil),  // 17: google.protobuf.Timestamp
-	(*v1.Product)(nil),             // 18: common.v1.Product
+	(*CreateCategoryRequest)(nil),  // 1: command.v1.CreateCategoryRequest
+	(*CreateCategoryResponse)(nil), // 2: command.v1.CreateCategoryResponse
+	(*UpdateCategoryRequest)(nil),  // 3: command.v1.UpdateCategoryRequest
+	(*UpdateCategoryResponse)(nil), // 4: command.v1.UpdateCategoryResponse
+	(*DeleteCategoryRequest)(nil),  // 5: command.v1.DeleteCategoryRequest
+	(*DeleteCategoryResponse)(nil), // 6: command.v1.DeleteCategoryResponse
+	(*CreateProductRequest)(nil),   // 7: command.v1.CreateProductRequest
+	(*CreateProductResponse)(nil),  // 8: command.v1.CreateProductResponse
+	(*UpdateProductRequest)(nil),   // 9: command.v1.UpdateProductRequest
+	(*UpdateProductResponse)(nil),  // 10: command.v1.UpdateProductResponse
+	(*DeleteProductRequest)(nil),   // 11: command.v1.DeleteProductRequest
+	(*DeleteProductResponse)(nil),  // 12: command.v1.DeleteProductResponse
+	(*v1.Category)(nil),            // 13: common.v1.Category
+	(*v1.Error)(nil),               // 14: common.v1.Error
+	(*timestamppb.Timestamp)(nil),  // 15: google.protobuf.Timestamp
+	(*v1.Product)(nil),             // 16: common.v1.Product
 }
 var file_command_v1_command_proto_depIdxs = []int32{
-	15, // 0: command.v1.CategoryUpResult.category:type_name -> common.v1.Category
-	16, // 1: command.v1.CategoryUpResult.error:type_name -> common.v1.Error
-	17, // 2: command.v1.CategoryUpResult.timestamp:type_name -> google.protobuf.Timestamp
-	18, // 3: command.v1.ProductUpResult.product:type_name -> common.v1.Product
-	16, // 4: command.v1.ProductUpResult.error:type_name -> common.v1.Error
-	17, // 5: command.v1.ProductUpResult.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 6: command.v1.CreateCategoryRequest.crud:type_name -> command.v1.CRUD
-	15, // 7: command.v1.CreateCategoryResponse.category:type_name -> common.v1.Category
-	16, // 8: command.v1.CreateCategoryResponse.error:type_name -> common.v1.Error
-	17, // 9: command.v1.CreateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 10: command.v1.UpdateCategoryRequest.crud:type_name -> command.v1.CRUD
-	15, // 11: command.v1.UpdateCategoryResponse.category:type_name -> common.v1.Category
-	16, // 12: command.v1.UpdateCategoryResponse.error:type_name -> common.v1.Error
-	17, // 13: command.v1.UpdateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 14: command.v1.DeleteCategoryRequest.crud:type_name -> command.v1.CRUD
-	15, // 15: command.v1.DeleteCategoryResponse.category:type_name -> common.v1.Category
-	16, // 16: command.v1.DeleteCategoryResponse.error:type_name -> common.v1.Error
-	17, // 17: command.v1.DeleteCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 18: command.v1.CreateProductRequest.crud:type_name -> command.v1.CRUD
-	18, // 19: command.v1.CreateProductResponse.product:type_name -> common.v1.Product
-	16, // 20: command.v1.CreateProductResponse.error:type_name -> common.v1.Error
-	17, // 21: command.v1.CreateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 22: command.v1.UpdateProductRequest.crud:type_name -> command.v1.CRUD
-	18, // 23: command.v1.UpdateProductResponse.product:type_name -> common.v1.Product
-	16, // 24: command.v1.UpdateProductResponse.error:type_name -> common.v1.Error
-	17, // 25: command.v1.UpdateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 26: command.v1.DeleteProductRequest.crud:type_name -> command.v1.CRUD
-	18, // 27: command.v1.DeleteProductResponse.product:type_name -> common.v1.Product
-	16, // 28: command.v1.DeleteProductResponse.error:type_name -> common.v1.Error
-	17, // 29: command.v1.DeleteProductResponse.timestamp:type_name -> google.protobuf.Timestamp
-	3,  // 30: command.v1.CategoryService.CreateCategory:input_type -> command.v1.CreateCategoryRequest
-	5,  // 31: command.v1.CategoryService.UpdateCategory:input_type -> command.v1.UpdateCategoryRequest
-	7,  // 32: command.v1.CategoryService.DeleteCategory:input_type -> command.v1.DeleteCategoryRequest
-	9,  // 33: command.v1.ProductService.CreateProduct:input_type -> command.v1.CreateProductRequest
-	11, // 34: command.v1.ProductService.UpdateProduct:input_type -> command.v1.UpdateProductRequest
-	13, // 35: command.v1.ProductService.DeleteProduct:input_type -> command.v1.DeleteProductRequest
-	4,  // 36: command.v1.CategoryService.CreateCategory:output_type -> command.v1.CreateCategoryResponse
-	6,  // 37: command.v1.CategoryService.UpdateCategory:output_type -> command.v1.UpdateCategoryResponse
-	8,  // 38: command.v1.CategoryService.DeleteCategory:output_type -> command.v1.DeleteCategoryResponse
-	10, // 39: command.v1.ProductService.CreateProduct:output_type -> command.v1.CreateProductResponse
-	12, // 40: command.v1.ProductService.UpdateProduct:output_type -> command.v1.UpdateProductResponse
-	14, // 41: command.v1.ProductService.DeleteProduct:output_type -> command.v1.DeleteProductResponse
-	36, // [36:42] is the sub-list for method output_type
-	30, // [30:36] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	0,  // 0: command.v1.CreateCategoryRequest.crud:type_name -> command.v1.CRUD
+	13, // 1: command.v1.CreateCategoryResponse.category:type_name -> common.v1.Category
+	14, // 2: command.v1.CreateCategoryResponse.error:type_name -> common.v1.Error
+	15, // 3: command.v1.CreateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 4: command.v1.UpdateCategoryRequest.crud:type_name -> command.v1.CRUD
+	13, // 5: command.v1.UpdateCategoryResponse.category:type_name -> common.v1.Category
+	14, // 6: command.v1.UpdateCategoryResponse.error:type_name -> common.v1.Error
+	15, // 7: command.v1.UpdateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 8: command.v1.DeleteCategoryRequest.crud:type_name -> command.v1.CRUD
+	13, // 9: command.v1.DeleteCategoryResponse.category:type_name -> common.v1.Category
+	14, // 10: command.v1.DeleteCategoryResponse.error:type_name -> common.v1.Error
+	15, // 11: command.v1.DeleteCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 12: command.v1.CreateProductRequest.crud:type_name -> command.v1.CRUD
+	16, // 13: command.v1.CreateProductResponse.product:type_name -> common.v1.Product
+	14, // 14: command.v1.CreateProductResponse.error:type_name -> common.v1.Error
+	15, // 15: command.v1.CreateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 16: command.v1.UpdateProductRequest.crud:type_name -> command.v1.CRUD
+	16, // 17: command.v1.UpdateProductResponse.product:type_name -> common.v1.Product
+	14, // 18: command.v1.UpdateProductResponse.error:type_name -> common.v1.Error
+	15, // 19: command.v1.UpdateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
+	16, // 20: command.v1.DeleteProductResponse.product:type_name -> common.v1.Product
+	14, // 21: command.v1.DeleteProductResponse.error:type_name -> common.v1.Error
+	15, // 22: command.v1.DeleteProductResponse.timestamp:type_name -> google.protobuf.Timestamp
+	1,  // 23: command.v1.CategoryService.CreateCategory:input_type -> command.v1.CreateCategoryRequest
+	3,  // 24: command.v1.CategoryService.UpdateCategory:input_type -> command.v1.UpdateCategoryRequest
+	5,  // 25: command.v1.CategoryService.DeleteCategory:input_type -> command.v1.DeleteCategoryRequest
+	7,  // 26: command.v1.ProductService.CreateProduct:input_type -> command.v1.CreateProductRequest
+	9,  // 27: command.v1.ProductService.UpdateProduct:input_type -> command.v1.UpdateProductRequest
+	11, // 28: command.v1.ProductService.DeleteProduct:input_type -> command.v1.DeleteProductRequest
+	2,  // 29: command.v1.CategoryService.CreateCategory:output_type -> command.v1.CreateCategoryResponse
+	4,  // 30: command.v1.CategoryService.UpdateCategory:output_type -> command.v1.UpdateCategoryResponse
+	6,  // 31: command.v1.CategoryService.DeleteCategory:output_type -> command.v1.DeleteCategoryResponse
+	8,  // 32: command.v1.ProductService.CreateProduct:output_type -> command.v1.CreateProductResponse
+	10, // 33: command.v1.ProductService.UpdateProduct:output_type -> command.v1.UpdateProductResponse
+	12, // 34: command.v1.ProductService.DeleteProduct:output_type -> command.v1.DeleteProductResponse
+	29, // [29:35] is the sub-list for method output_type
+	23, // [23:29] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_command_v1_command_proto_init() }
@@ -1167,7 +977,7 @@ func file_command_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_command_v1_command_proto_rawDesc), len(file_command_v1_command_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

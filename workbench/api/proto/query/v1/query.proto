@@ -11,6 +11,7 @@ import "common/v1/error.proto";
 import "common/v1/models.proto";
 import "google/protobuf/timestamp.proto";
 
+// TODO: ページネーション対応
 // CategoryService用のRequest/Response型
 message ListCategoriesRequest {
   // 空のリクエスト（全カテゴリ取得のため）
@@ -44,6 +45,7 @@ message StreamProductsResponse {
   common.v1.Product product = 1; // ストリーミングされる商品
 }
 
+// TODO: ページネーション対応
 message ListProductsRequest {
   // 空のリクエスト（全商品取得のため）
 }
