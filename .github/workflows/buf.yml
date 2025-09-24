@@ -1,0 +1,31 @@
+name: Buf CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "workbench/api/**"
+  pull_request:
+    paths:
+      - "workbench/api/**"
+jobs:
+  breaking-change-and-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./workbench/api
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Buf CLI and check breaking changes and lint
+        uses: bufbuild/buf-action@v1
+        with:
+          version: 1.57.2
+          # 後方互換性の検証を行う
+          breaking_against: "https://github.com/${{ github.repository }}.git#branch=main"
+          input: proto # protoディレクトリを指定
+          lint: true
+          breaking: true
