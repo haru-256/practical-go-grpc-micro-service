@@ -26,6 +26,6 @@ jobs:
           version: 1.57.2
           # 後方互換性の検証を行う
           breaking_against: "https://github.com/${{ github.repository }}.git#branch=main"
-          input: proto # protoディレクトリを指定
+          input: . # buf.yamlがあるディレクトリを指定
           lint: true
           breaking: true
