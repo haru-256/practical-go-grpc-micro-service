@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./workbench/api
+        working-directory: workbench/api
     permissions:
       contents: read
       pull-requests: write
