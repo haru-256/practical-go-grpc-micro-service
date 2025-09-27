@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - "workbench/api/**"
+      - workbench/api/**
   pull_request:
     paths:
-      - "workbench/api/**"
+      - workbench/api/**
 jobs:
   breaking-change-and-lint:
     runs-on: ubuntu-latest
@@ -19,12 +19,14 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Install Buf CLI and check breaking changes and lint
         uses: bufbuild/buf-action@v1
         with:
           version: 1.57.2
           # 後方互換性の検証を行う
-          breaking_against: "https://github.com/${{ github.repository }}.git#branch=main"
+          breaking_against: "https://github.com/${{ github.repository }}.git#branch=main,subdir=workbench/api"
           lint: true
           breaking: true
+          input: workbench/api # working-directoryは動作しないため、inputを指定する
