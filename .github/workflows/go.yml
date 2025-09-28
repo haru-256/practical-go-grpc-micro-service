@@ -25,7 +25,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           golangci_lint_flags: "--config=./.golangci.yml ./..."
-          go_version_file: "./go.mod" # this should be relative to the root of the repository
+          go_version_file: "./workbench/go.mod" # this should be relative to the root of the repository
           fail_level: "error"
           reporter: "github-pr-review"
           workdir: "./workbench"
@@ -43,12 +43,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: ./go.mod
-          cache-dependency-path: ./go.sum
+          go-version-file: ./workbench/go.mod
+          cache-dependency-path: ./workbench/go.sum
       - name: test
         run: go test ./... -coverprofile=coverage.out
       - name: report coverage
         uses: k1LoW/octocov-action@v1
         with:
-          config: ./.octocov.yml
+          config: ./.octocov.yml # this should be relative from the work-dir
           work-dir: "./workbench"
