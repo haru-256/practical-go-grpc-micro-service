@@ -1,0 +1,44 @@
+# TODO: Add more linters
+# https://gist.githubusercontent.com/maratori/47a4d00457a92aa426dbd48a18776322/raw/43d6de07ca238a3994737171bd3fe2cd2b769bc0/.golangci.yml
+
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - unused
+    - errcheck
+    - gocognit
+    - gocyclo
+    - govet
+    - misspell
+    - staticcheck
+    - whitespace
+  exclusions:
+    paths:
+      - api/ # 生成コードを除外
+      - db/
+
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+      settings:
+        shadow:
+          strict: true
+    gocyclo:
+      min-complexity: 30
+    misspell:
+      locale: US
+
+  # exclusions:
+  #   rules:
+  #     - path: _test\.go
+  #       linters:
+  #         - govet
+
+formatters:
+  enable:
+    - goimports
+    - gofmt
