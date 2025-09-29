@@ -34,11 +34,8 @@ var getUUIDRegexp = sync.OnceValue(func() *regexp.Regexp {
 
 // コンストラクタ
 func NewProductId(value string) (*ProductId, error) {
-	// TODO: init 関数でsync.Onceを使って初期化する
 	// フィールドの長さ
 	const LENGTH int = 36
-	// UUIDの正規表現
-	const REGEXP string = "^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$"
 
 	// 引数の文字数チェック
 	if utf8.RuneCountInString(value) != LENGTH {
