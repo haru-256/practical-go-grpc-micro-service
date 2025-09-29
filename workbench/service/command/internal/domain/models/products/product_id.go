@@ -20,6 +20,9 @@ func (p *ProductId) Value() string {
 }
 
 func (p *ProductId) Equals(other *ProductId) bool {
+	if other == nil {
+		return false
+	}
 	if p == other { // アドレスが同じ?
 		return true
 	}
@@ -44,7 +47,7 @@ func NewProductId(value string) (*ProductId, error) {
 			"INVALID_ARGUMENT", fmt.Sprintf("商品IDの長さは%d文字である必要があります", LENGTH),
 		)
 	}
-	// 引数の文字数チェック
+	// UUIDの形式チェック
 	if !getUUIDRegexp().MatchString(value) {
 		return nil, errs.NewDomainError("INVALID_ARGUMENT", "商品IDはUUIDの形式である必要があります")
 	}

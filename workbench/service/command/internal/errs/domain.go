@@ -18,6 +18,10 @@ func (e *DomainError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
+func (e *DomainError) Unwrap() error {
+	return e.Cause
+}
+
 // NewDomainError はドメインエラーを生成します。
 // 例: errs.NewDomainError("INVALID_ARGUMENT", "商品IDはUUIDの形式である必要があります")
 func NewDomainError(code, message string) *DomainError {

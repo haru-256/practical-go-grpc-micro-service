@@ -402,6 +402,10 @@ func (e *DomainError) Error() string {
     return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
+func (e *DomainError) Unwrap() error {
+  return e.Cause
+}
+
 // エラータイプ別のハンドリング (プレゼンテーション層)
 func handleError(err error) *connect.Error {
     var domainErr *DomainError
