@@ -3,6 +3,7 @@ package products
 import (
 	"fmt"
 	"regexp"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
@@ -26,22 +27,29 @@ func (p *ProductId) Equals(other *ProductId) bool {
 	return p.value == other.Value()
 }
 
+var getUUIDRegexp = sync.OnceValue(func() *regexp.Regexp {
+	const REGEXP string = "^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$"
+	return regexp.MustCompile(REGEXP)
+})
+
 // コンストラクタ
 func NewProductId(value string) (*ProductId, error) {
 	// TODO: init 関数でsync.Onceを使って初期化する
 	// フィールドの長さ
 	const LENGTH int = 36
 	// UUIDの正規表現
-	const REGEXP string = "([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})"
+	const REGEXP string = "^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$"
 
 	// 引数の文字数チェック
 	if utf8.RuneCountInString(value) != LENGTH {
 		// TODO: 専用のエラーオブジェクトを作成する
-		return nil, errs.NewDomainError(fmt.Sprintf("商品IDの長さは%d文字である必要があります", LENGTH))
+		return nil, errs.NewDomainError(
+			"INVALID_ARGUMENT", fmt.Sprintf("商品IDの長さは%d文字である必要があります", LENGTH),
+		)
 	}
 	// 引数の文字数チェック
-	if !regexp.MustCompile(REGEXP).MatchString(value) {
-		return nil, errs.NewDomainError("商品IDはUUIDの形式である必要があります")
+	if !getUUIDRegexp().MatchString(value) {
+		return nil, errs.NewDomainError("INVALID_ARGUMENT", "商品IDはUUIDの形式である必要があります")
 	}
 
 	return &ProductId{value: value}, nil

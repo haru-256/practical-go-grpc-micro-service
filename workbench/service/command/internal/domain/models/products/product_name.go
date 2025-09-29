@@ -22,7 +22,10 @@ func NewProductName(value string) (*ProductName, error) {
 	const MAX_LENGTH int = 100 // 最大文字数
 
 	if count := utf8.RuneCountInString(value); count < MIN_LENGTH || count > MAX_LENGTH {
-		return nil, errs.NewDomainError(fmt.Sprintf("商品名は%d文字以上%d文字以下で入力してください", MIN_LENGTH, MAX_LENGTH))
+		return nil, errs.NewDomainError(
+			"INVALID_ARGUMENT",
+			fmt.Sprintf("商品名は%d文字以上%d文字以下で入力してください", MIN_LENGTH, MAX_LENGTH),
+		)
 	}
 
 	return &ProductName{value: value}, nil

@@ -385,6 +385,8 @@ func (s *ProductService) GetProduct(ctx context.Context, id string) (*Product, e
 
 #### 4.2.2. エラータイプ判定とハンドリング
 
+Go 1.13から導入された`errors.As`は、エラーチェーンを遡って特定のエラー型を判定するための標準的な方法です。これにより、エラーの型に応じた分岐処理を安全かつ簡潔に記述できます。
+
 ```go
 // カスタムエラー型の定義
 type DomainError struct {
@@ -400,24 +402,34 @@ func (e *DomainError) Error() string {
     return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
-func (e *DomainError) Unwrap() error {
-    return e.Cause
-}
-
-// エラータイプ別のハンドリング
-func (h *Handler) handleError(err error) *connect.Error {
+// エラータイプ別のハンドリング (プレゼンテーション層)
+func handleError(err error) *connect.Error {
     var domainErr *DomainError
+    var mysqlErr *mysql.MySQLError
+    var netErr *net.OpError
+
+    // errors.As を使ってエラーチェーンを遡り、型をチェックする
     if errors.As(err, &domainErr) {
+        // ドメインエラーの場合
         switch domainErr.Code {
         case "NOT_FOUND":
             return connect.NewError(connect.CodeNotFound, domainErr)
         case "INVALID_ARGUMENT":
             return connect.NewError(connect.CodeInvalidArgument, domainErr)
-        case "PERMISSION_DENIED":
-            return connect.NewError(connect.CodePermissionDenied, domainErr)
         default:
             return connect.NewError(connect.CodeInternal, domainErr)
         }
+    } else if errors.As(err, &mysqlErr) {
+        // MySQL固有のエラーの場合
+        switch mysqlErr.Number {
+        case 1062: // Duplicate entry
+            return connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("duplicate entry: %w", err))
+        default:
+            return connect.NewError(connect.CodeInternal, fmt.Errorf("database error: %w", err))
+        }
+    } else if errors.As(err, &netErr) {
+        // ネットワークエラーの場合
+        return connect.NewError(connect.CodeUnavailable, fmt.Errorf("network error: %w", err))
     }
     
     // システムエラーの場合

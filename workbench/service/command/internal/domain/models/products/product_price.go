@@ -21,7 +21,10 @@ func NewProductPrice(value uint32) (*ProductPrice, error) {
 	const MAX_VALUE uint32 = 1000000 // 最大値(1,000,000円)
 
 	if value < MIN_VALUE || value > MAX_VALUE {
-		return nil, errs.NewDomainError(fmt.Sprintf("商品価格は%d円以上%d円以下で入力してください", MIN_VALUE, MAX_VALUE))
+		return nil, errs.NewDomainError(
+			"INVALID_ARGUMENT",
+			fmt.Sprintf("商品価格は%d円以上%d円以下で入力してください", MIN_VALUE, MAX_VALUE),
+		)
 	}
 
 	return &ProductPrice{value: value}, nil
