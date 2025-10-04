@@ -9,16 +9,19 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 )
 
-// 商品番号を保持する値オブジェクト(UUIDを保持する)
+// ProductId は商品IDを表す値オブジェクトです。
+// UUID形式の文字列を保持し、商品の一意な識別子として機能します。
 type ProductId struct {
 	value string // 商品番号(UUID)
 }
 
-// valueフィールドのゲッター
+// Value は商品IDの値を返します。
 func (p *ProductId) Value() string {
 	return p.value
 }
 
+// Equals は2つの商品IDの同一性を検証します。
+// 値が一致する場合、またはアドレスが同じ場合にtrueを返します。
 func (p *ProductId) Equals(other *ProductId) bool {
 	if other == nil {
 		return false
@@ -35,7 +38,8 @@ var getUUIDRegexp = sync.OnceValue(func() *regexp.Regexp {
 	return regexp.MustCompile(REGEXP)
 })
 
-// コンストラクタ
+// NewProductId は商品IDを生成します。
+// 引数はUUID形式の文字列である必要があります（36文字）。
 func NewProductId(value string) (*ProductId, error) {
 	// フィールドの長さ
 	const LENGTH int = 36

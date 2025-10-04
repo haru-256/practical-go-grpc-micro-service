@@ -2,6 +2,10 @@
 
 .PHONY: ginkgo
 ginkgo: ## Run tests
+	ginkgo run ./...
+
+.PHONY: ginkgo-detail
+ginkgo-detail: ## Run tests with detailed output
 	ginkgo run -v ./...
 
 .PHONY: help
