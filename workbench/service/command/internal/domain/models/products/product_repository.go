@@ -9,7 +9,7 @@ import (
 // データベースへの商品データのCRUD操作を提供します。
 type ProductRepository interface {
 	// ExistsById は指定された商品IDが存在するかチェックします。
-	ExistsById(ctx context.Context, train *sql.Tx, id *ProductId) (bool, error)
+	ExistsById(ctx context.Context, tx *sql.Tx, id *ProductId) (bool, error)
 	// ExistsByName は指定された商品名が存在するかチェックします。
 	ExistsByName(ctx context.Context, train *sql.Tx, name *ProductName) (bool, error)
 	// Create は新しい商品を作成します。

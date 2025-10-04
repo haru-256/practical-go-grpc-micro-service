@@ -66,16 +66,17 @@ func (p *Product) Equals(other *Product) (bool, error) {
 // price: 商品価格
 // category: カテゴリ
 func NewProduct(name *ProductName, price *ProductPrice, category *categories.Category) (*Product, error) {
-	if uid, err := uuid.NewRandom(); err != nil {
+	uid, err := uuid.NewRandom()
+	if err != nil {
 		return nil, errs.NewDomainErrorWithCause("INTERNAL", "商品IDの生成に失敗しました", err)
-	} else {
-		if id, err := NewProductId(uid.String()); err != nil {
-			return nil, errs.NewDomainErrorWithCause("INTERNAL", "商品IDの生成に失敗しました", err)
-		} else {
-			// 生成に成功した場合は何もしない
-			return &Product{id: id, name: name, price: price, category: category}, nil
-		}
 	}
+
+	id, err := NewProductId(uid.String())
+	if err != nil {
+		return nil, errs.NewDomainErrorWithCause("INTERNAL", "商品IDの生成に失敗しました", err)
+	}
+
+	return &Product{id: id, name: name, price: price, category: category}, nil
 }
 
 // BuildProduct は既存の商品IDを使用して商品エンティティを再構築します。

@@ -41,16 +41,17 @@ func (c *Category) Equals(other *Category) (bool, error) {
 // カテゴリIDは自動的にUUIDとして生成されます。
 // name: カテゴリ名
 func NewCategory(name *CategoryName) (*Category, error) {
-	if uid, err := uuid.NewRandom(); err != nil {
+	uid, err := uuid.NewRandom()
+	if err != nil {
 		return nil, errs.NewDomainErrorWithCause("INTERNAL", "カテゴリIDの生成に失敗しました", err)
-	} else {
-		if id, err := NewCategoryId(uid.String()); err != nil {
-			return nil, errs.NewDomainErrorWithCause("INTERNAL", "カテゴリIDの生成に失敗しました", err)
-		} else {
-			// 生成に成功した場合は何もしない
-			return &Category{id: id, name: name}, nil
-		}
 	}
+
+	id, err := NewCategoryId(uid.String())
+	if err != nil {
+		return nil, errs.NewDomainErrorWithCause("INTERNAL", "カテゴリIDの生成に失敗しました", err)
+	}
+
+	return &Category{id: id, name: name}, nil
 }
 
 // BuildCategory は既存のカテゴリIDを使用してカテゴリエンティティを再構築します。
