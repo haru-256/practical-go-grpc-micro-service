@@ -7,7 +7,7 @@ codeToTestRatio:
   code:
     - "**/*.go"
     - "!**/*_test.go"
-    - "!gen/**"
+    - "!**/gen"
   test:
     - "**/*_test.go"
 testExecutionTime:
