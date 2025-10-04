@@ -11,7 +11,7 @@ type ProductRepository interface {
 	// ExistsById は指定された商品IDが存在するかチェックします。
 	ExistsById(ctx context.Context, tx *sql.Tx, id *ProductId) (bool, error)
 	// ExistsByName は指定された商品名が存在するかチェックします。
-	ExistsByName(ctx context.Context, train *sql.Tx, name *ProductName) (bool, error)
+ExistsByName(ctx context.Context, tx *sql.Tx, name *ProductName) (bool, error)
 	// Create は新しい商品を作成します。
 	Create(ctx context.Context, tx *sql.Tx, product *Product) error
 	// UpdateById は商品IDを指定して商品情報を更新します。
