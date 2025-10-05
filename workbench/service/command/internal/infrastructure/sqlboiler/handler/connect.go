@@ -73,7 +73,7 @@ func DBConnect() error {
 
 	// 接続文字列を生成する
 	rdbms := "mysql"
-	connectStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", config.User, config.Pass, config.Host, config.Port, config.DBName)
+connectStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.User, config.Pass, config.Host, config.Port, config.DBName)
 
 	// DB接続
 	conn, err := sql.Open(rdbms, connectStr)
