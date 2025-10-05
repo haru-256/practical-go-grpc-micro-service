@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -87,6 +88,7 @@ func DBConnect() error {
 
 	// boil.SetDBはグローバルにDB接続を設定する
 	boil.SetDB(conn)
-	// boil.SetDebug(true) // SQLログを出力する場合
+	logLevel := strings.ToLower(utils.GetEnv("LOG_LEVEL", "debug"))
+	boil.DebugMode = logLevel == "debug" // デバッグモードに設定 生成されたSQLを出力する
 	return nil
 }
