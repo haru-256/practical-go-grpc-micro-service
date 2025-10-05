@@ -90,6 +90,7 @@ connectStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.User, con
 	conn.SetConnMaxLifetime(config.ConnMaxLifetime) // 接続の最大生存時間
 	conn.SetConnMaxIdleTime(config.ConnMaxIdleTime) // 接続の最大アイドル時間
 
+	// FIXME: DBConnect 関数でグローバルな状態を設定する代わりに、生成した *sql.DB コネクションを返し、それを必要とするリポジトリ層などのコンポーネントにコンストラクタ経由で注入（Inject）するようにリファクタリングしてください。
 	// boil.SetDBはグローバルにDB接続を設定する
 	boil.SetDB(conn)
 	logLevel := strings.ToLower(utils.GetEnv("LOG_LEVEL", "debug"))
