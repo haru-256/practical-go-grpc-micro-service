@@ -13,13 +13,13 @@ import (
 )
 
 type DBConfig struct {
-	DBName          string        `toml:"dbname"`             //	データベース名
-	Host            string        `toml:"host"`               //	ホスト名
-	Port            int           `toml:"port"`               //	ポート番号
-	User            string        `toml:"user"`               //	ユーザー名
-	Pass            string        `toml:"pass"`               //	パスワード
-	MaxIdleConns    int           `toml:"max_idle_conns"`     //	最大アイドル接続数
-	MaxOpenConns    int           `toml:"max_open_conns"`     //	最大接続数
+	DBName          string        `toml:"dbname"`            //	データベース名
+	Host            string        `toml:"host"`              //	ホスト名
+	Port            int           `toml:"port"`              //	ポート番号
+	User            string        `toml:"user"`              //	ユーザー名
+	Pass            string        `toml:"pass"`              //	パスワード
+	MaxIdleConns    int           `toml:"max_idle_conns"`    //	最大アイドル接続数
+	MaxOpenConns    int           `toml:"max_open_conns"`    //	最大接続数
 	ConnMaxLifetime time.Duration `toml:"conn_max_lifetime"` //	接続の最大生存時間(分)
 	ConnMaxIdleTime time.Duration `toml:"idle_timeout"`      //	接続の最大アイドル時間(分)
 }

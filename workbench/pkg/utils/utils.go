@@ -68,6 +68,12 @@ func GetEnv[T EnvType](key string, defaultValue T) T {
 			panic(err)
 		}
 		result = v
+	case int64:
+		v, err := strconv.ParseInt(valStr, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		result = v
 	case bool:
 		v, err := strconv.ParseBool(valStr)
 		if err != nil {
@@ -88,8 +94,7 @@ func GetEnv[T EnvType](key string, defaultValue T) T {
 		}
 		result = v
 	default:
-		// コンパイル時にここには到達しない（EnvTypeで制約しているため）
-		return defaultValue
+		panic("unsupported type in GetEnv")
 	}
 
 	return result.(T)
