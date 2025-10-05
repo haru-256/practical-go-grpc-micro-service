@@ -20,8 +20,8 @@ type DBConfig struct {
 	Pass            string        `toml:"pass"`               //	パスワード
 	MaxIdleConns    int           `toml:"max_idle_conns"`     //	最大アイドル接続数
 	MaxOpenConns    int           `toml:"max_open_conns"`     //	最大接続数
-	ConnMaxLifetime time.Duration `toml:"conn_max_life_time"` //	接続の最大生存時間(分)
-	ConnMaxIdleTime time.Duration `toml:"conn_max_idle_time"` //	接続の最大アイドル時間(分)
+	ConnMaxLifetime time.Duration `toml:"conn_max_lifetime"` //	接続の最大生存時間(分)
+	ConnMaxIdleTime time.Duration `toml:"idle_timeout"`      //	接続の最大アイドル時間(分)
 }
 
 func loadConfigFromEnv() DBConfig {
