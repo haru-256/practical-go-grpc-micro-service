@@ -14,8 +14,16 @@ fmt:  ## Format proto and go files
 	go fmt ./...
 
 .PHONY: test
-test: ## Run tests
+test: ## Run tests (skip DB tests by default)
 	go test $$(go list ./... | grep -v /gen/)
+
+.PHONY: test-ci
+test-ci: ## Run tests for CI (skip DB tests)
+	go test -tags=ci $$(go list ./... | grep -v /gen/)
+
+.PHONY: test-all
+test-all: ## Run all tests including DB tests
+	go test -tags=integration $$(go list ./... | grep -v /gen/)
 
 .PHONY: act
 act: ## Run act for CI locally

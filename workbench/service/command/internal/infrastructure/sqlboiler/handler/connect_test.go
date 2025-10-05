@@ -1,3 +1,5 @@
+//go:build integration || !ci
+
 package handler
 
 import (
