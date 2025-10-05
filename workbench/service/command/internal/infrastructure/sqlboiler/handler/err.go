@@ -13,13 +13,13 @@ import (
 func DBErrHandler(err error) error {
 	var opErr *net.OpError
 	var driverErr *mysql.MySQLError
-	if errors.As(err, &opErr) { // 接続がタイムアウトかネットワーク関連の問題が原因で接続が確立できない?
+	if errors.As(err, &opErr) { // 接続タイムアウトやネットワーク関連の問題で接続が確立できない場合
 		// TODO: slogに変更する
 		log.Println(err.Error())
 		return errs.NewInternalErrorWithCause("DB_CONNECTION_ERROR", opErr.Error(), opErr)
-	} else if errors.As(err, &driverErr) { // MySQLドライバエラー?
-		log.Printf("Code:%d Message:%s \n", driverErr.Number, driverErr.Message)
-		if driverErr.Number == 1062 { // 一意制約違反?
+	} else if errors.As(err, &driverErr) { // MySQLドライバエラーの場合
+		log.Printf("Code:%d Message:%s", driverErr.Number, driverErr.Message)
+		if driverErr.Number == 1062 { // 一意制約違反の場合
 			return errs.NewCRUDErrorWithCause("DB_UNIQUE_CONSTRAINT_VIOLATION", "一意制約違反です。", driverErr)
 		} else {
 			return errs.NewInternalErrorWithCause("DB_DRIVER_ERROR", driverErr.Message, driverErr)
