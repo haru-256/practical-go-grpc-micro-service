@@ -1,0 +1,18 @@
+# TODO: tomlファイルではなく、環境変数から取得するように変更する
+
+[mysql] # 使用するRDBMS
+dbname = "sample_db" # データベース名
+# host = "command_db" # ホスト名
+host = "localhost" # ホスト名
+port = 3306 # ポート番号
+user = "root" # ユーザー名
+pass = "password" # パスワード
+sslmode = "false" # SSLモード
+whitelist = [ # アクセスするデータベースオブジェクト
+  "product",  # productテーブル
+  "category", # categoryテーブル
+]
+max_idle_conns = 10 # 最大アイドル接続数
+max_open_conns = 100 # 最大オープン接続数
+conn_max_lifetime = "1800s" # 接続の最大寿命（秒）
+idle_timeout = "500s" # アイドル接続のタイムアウト（秒）
