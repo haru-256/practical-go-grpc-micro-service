@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -52,10 +53,10 @@ type EnvType interface {
 //
 // Panics:
 //   - 環境変数の値が指定された型に変換できない場合
-func GetEnv[T EnvType](key string, defaultValue T) T {
+func GetEnv[T EnvType](key string, defaultValue T) (T, error) {
 	valStr, ok := os.LookupEnv(key)
 	if !ok {
-		return defaultValue
+		return defaultValue, nil
 	}
 
 	var result any
@@ -65,37 +66,37 @@ func GetEnv[T EnvType](key string, defaultValue T) T {
 	case int:
 		v, err := strconv.Atoi(valStr)
 		if err != nil {
-			panic(err)
+			return defaultValue, err
 		}
 		result = v
 	case int64:
 		v, err := strconv.ParseInt(valStr, 10, 64)
 		if err != nil {
-			panic(err)
+			return defaultValue, err
 		}
 		result = v
 	case bool:
 		v, err := strconv.ParseBool(valStr)
 		if err != nil {
-			panic(err)
+			return defaultValue, err
 		}
 		result = v
 	case float64:
 		v, err := strconv.ParseFloat(valStr, 64)
 		if err != nil {
-			panic(err)
+			return defaultValue, err
 		}
 		result = v
 	case time.Duration:
 		// ここで文字列をパースして time.Duration に変換
 		v, err := time.ParseDuration(valStr)
 		if err != nil {
-			panic(err)
+			return defaultValue, err
 		}
 		result = v
 	default:
-		panic("unsupported type in GetEnv")
+		return defaultValue, fmt.Errorf("GetEnvでサポートされていない型が指定されました: %T", defaultValue)
 	}
 
-	return result.(T)
+	return result.(T), nil
 }

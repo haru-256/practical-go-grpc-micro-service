@@ -29,7 +29,8 @@ var _ = Describe("GetEnv", func() {
 					})
 				}
 
-				result := GetEnv(envKey, defaultValue)
+				result, err := GetEnv(envKey, defaultValue)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(expected))
 			},
 			Entry("環境変数が設定されている場合、環境変数の値を返す",
@@ -51,7 +52,8 @@ var _ = Describe("GetEnv", func() {
 					})
 				}
 
-				result := GetEnv(envKey, defaultValue)
+				result, err := GetEnv(envKey, defaultValue)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(expected))
 			},
 			Entry("環境変数が設定されている場合、環境変数の値を返す",
@@ -73,10 +75,10 @@ var _ = Describe("GetEnv", func() {
 				Expect(os.Unsetenv(key)).To(Succeed())
 			})
 
-			It("パニックする", func() {
-				Expect(func() {
-					GetEnv(key, 0)
-				}).To(Panic())
+			It("エラーを返す", func() {
+				result, err := GetEnv(key, 0)
+				Expect(err).To(HaveOccurred())
+				Expect(result).To(Equal(0)) // デフォルト値を返す
 			})
 		})
 	})
@@ -91,7 +93,8 @@ var _ = Describe("GetEnv", func() {
 					})
 				}
 
-				result := GetEnv(envKey, defaultValue)
+				result, err := GetEnv(envKey, defaultValue)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(expected))
 			},
 			Entry("trueが設定されている場合、trueを返す",
@@ -117,10 +120,10 @@ var _ = Describe("GetEnv", func() {
 				Expect(os.Unsetenv(key)).To(Succeed())
 			})
 
-			It("パニックする", func() {
-				Expect(func() {
-					GetEnv(key, false)
-				}).To(Panic())
+			It("エラーを返す", func() {
+				result, err := GetEnv(key, false)
+				Expect(err).To(HaveOccurred())
+				Expect(result).To(Equal(false)) // デフォルト値を返す
 			})
 		})
 	})
@@ -135,7 +138,8 @@ var _ = Describe("GetEnv", func() {
 					})
 				}
 
-				result := GetEnv(envKey, defaultValue)
+				result, err := GetEnv(envKey, defaultValue)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(expected))
 			},
 			Entry("環境変数が設定されている場合、環境変数の値を返す",
@@ -159,10 +163,10 @@ var _ = Describe("GetEnv", func() {
 				Expect(os.Unsetenv(key)).To(Succeed())
 			})
 
-			It("パニックする", func() {
-				Expect(func() {
-					GetEnv(key, 0.0)
-				}).To(Panic())
+			It("エラーを返す", func() {
+				result, err := GetEnv(key, 0.0)
+				Expect(err).To(HaveOccurred())
+				Expect(result).To(Equal(0.0)) // デフォルト値を返す
 			})
 		})
 	})

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -24,18 +25,36 @@ type DBConfig struct {
 	ConnMaxIdleTime time.Duration `toml:"idle_timeout"`      //	接続の最大アイドル時間(分)
 }
 
-func loadConfigFromEnv() DBConfig {
-	return DBConfig{
-		DBName:          utils.GetEnv("DB_NAME", "sample_db"),
-		Host:            utils.GetEnv("DB_HOST", "localhost"),
-		Port:            utils.GetEnv("DB_PORT", 3306),
-		User:            utils.GetEnv("DB_USER", "root"),
-		Pass:            utils.GetEnv("DB_PASSWORD", "password"),
-		MaxIdleConns:    utils.GetEnv("DB_MAX_IDLE_CONNS", 10),
-		MaxOpenConns:    utils.GetEnv("DB_MAX_OPEN_CONNS", 100),
-		ConnMaxLifetime: utils.GetEnv("DB_CONN_MAX_LIFETIME", time.Duration(30)*time.Minute),
-		ConnMaxIdleTime: utils.GetEnv("DB_CONN_MAX_IDLE_TIME", time.Duration(5)*time.Second),
+// getEnvWithError は GetEnv を呼び出し、エラーが発生した場合はエラーリストに追加してデフォルト値を返します。
+func getEnvWithError[T utils.EnvType](key string, defaultValue T, errs *[]error) T {
+	val, err := utils.GetEnv(key, defaultValue)
+	if err != nil {
+		*errs = append(*errs, err)
+		return defaultValue // エラー発生時はデフォルト値を返す
 	}
+	return val
+}
+
+func loadConfigFromEnv() (DBConfig, error) {
+	var configErrors []error
+
+	cfg := DBConfig{
+		DBName:          getEnvWithError("DB_NAME", "sample_db", &configErrors),
+		Host:            getEnvWithError("DB_HOST", "localhost", &configErrors),
+		Port:            getEnvWithError("DB_PORT", 3306, &configErrors),
+		User:            getEnvWithError("DB_USER", "root", &configErrors),
+		Pass:            getEnvWithError("DB_PASSWORD", "password", &configErrors),
+		MaxIdleConns:    getEnvWithError("DB_MAX_IDLE_CONNS", 10, &configErrors),
+		MaxOpenConns:    getEnvWithError("DB_MAX_OPEN_CONNS", 100, &configErrors),
+		ConnMaxLifetime: getEnvWithError("DB_CONN_MAX_LIFETIME", time.Duration(30)*time.Minute, &configErrors),
+		ConnMaxIdleTime: getEnvWithError("DB_CONN_MAX_IDLE_TIME", time.Duration(5)*time.Second, &configErrors),
+	}
+
+	// すべての環境変数を読み込んだ後、エラーがあればまとめて返す
+	if len(configErrors) > 0 {
+		return cfg, errors.Join(configErrors...)
+	}
+	return cfg, nil
 }
 
 // database.tomlから接続情報を取得してDbConfig型で返す
@@ -59,7 +78,10 @@ func loadConfig() (*DBConfig, error) {
 		config = &mysqlConfig
 	} else {
 		// 環境変数が無い場合は環境変数から取得する
-		c := loadConfigFromEnv()
+		c, err := loadConfigFromEnv()
+		if err != nil {
+			return nil, err
+		}
 		config = &c
 	}
 	return config, nil
@@ -93,7 +115,10 @@ func DBConnect() error {
 	// FIXME: DBConnect 関数でグローバルな状態を設定する代わりに、生成した *sql.DB コネクションを返し、それを必要とするリポジトリ層などのコンポーネントにコンストラクタ経由で注入（Inject）するようにリファクタリングしてください。
 	// boil.SetDBはグローバルにDB接続を設定する
 	boil.SetDB(conn)
-	logLevel := strings.ToLower(utils.GetEnv("LOG_LEVEL", "debug"))
-	boil.DebugMode = logLevel == "debug" // デバッグモードに設定 生成されたSQLを出力する
+	logLevel, err := utils.GetEnv("LOG_LEVEL", "debug")
+	if err != nil {
+		return err
+	}
+	boil.DebugMode = strings.ToLower(logLevel) == "debug" // デバッグモードに設定 生成されたSQLを出力する
 	return nil
 }
