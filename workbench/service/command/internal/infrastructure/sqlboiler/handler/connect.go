@@ -51,7 +51,10 @@ func loadConfig() (*DBConfig, error) {
 		if err != nil {
 			return nil, err
 		}
-		mysqlConfig := m["mysql"]
+		mysqlConfig, ok := m["mysql"]
+		if !ok {
+			return nil, fmt.Errorf("key 'mysql' not found in config file: %s", path)
+		}
 		config = &mysqlConfig
 	} else {
 		// 環境変数が無い場合は環境変数から取得する
