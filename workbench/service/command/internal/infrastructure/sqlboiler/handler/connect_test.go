@@ -311,7 +311,8 @@ port = 5432
 
 		AfterEach(func() {
 			if tempFile != nil {
-				os.Remove(tempFile.Name())
+				err := os.Remove(tempFile.Name())
+				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 
