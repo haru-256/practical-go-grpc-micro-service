@@ -48,7 +48,9 @@ jobs:
           go-version-file: ./workbench/go.mod
           cache-dependency-path: ./workbench/go.sum
       - name: test
-        run: go test ./... -coverprofile=coverage.out
+        run: go test ./... -coverprofile=coverage.out -tags=ci
+        env:
+          GINKGO_LABEL_FILTER: "!DBConnect"
       - name: report coverage
         uses: k1LoW/octocov-action@v1
         with:
