@@ -28,10 +28,12 @@ plugins:
     out: gen/docs
     opt:
       - markdown,README.md
-  - remote: buf.build/bufbuild/validate-go:v1.2.1
-    out: gen/go
-    opt:
-      - paths=source_relative
+  # protovalidateはruntime時のvalidationなのでコード生成のpluginは不要のよう
+  # https://protovalidate.com/quickstart/#protovalidate-quickstart
+  # - remote: buf.build/bufbuild/validate-go:v1.2.1
+  #   out: gen/go
+  #   opt:
+  #     - paths=source_relative
   - remote: buf.build/connectrpc/go:v1.18.1
     out: gen/go
     opt:
