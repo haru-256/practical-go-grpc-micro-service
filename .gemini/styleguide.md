@@ -258,12 +258,14 @@ message UpdateProductRequest {
 ##### 🔄 冪等性とリトライ対応
 
 ```protobuf
+import "buf/validate/validate.proto";
+
 message CreateOrderRequest {
   Order order = 1;
   
   // 冪等性キー（UUID v4推奨）
   string idempotency_key = 2 [
-    (validate.rules).string = {
+    (buf.validate.field).string = {
       pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
       ignore_empty: true
     }
@@ -277,22 +279,36 @@ message CreateOrderRequest {
 
 ##### ✅ バリデーション戦略
 
+protovalidateを使用したバリデーションは、型安全で宣言的な方法でメッセージの制約を定義できます。以下は基本的なバリデーションパターンです：
+
 ```protobuf
-import "validate/validate.proto";
+import "buf/validate/validate.proto";
 
 message CreateUserRequest {
-  string email = 1 [(validate.rules).string.email = true];
-  string name = 2 [(validate.rules).string = {
+  // メールアドレスのバリデーション
+  string email = 1 [(buf.validate.field).string.email = true];
+  
+  // 文字列の長さとパターンのバリデーション
+  string name = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 100
     pattern: "^[a-zA-Z0-9\\s\\-_]+$"
   }];
-  int32 age = 3 [(validate.rules).int32 = {
+  
+  // 数値の範囲バリデーション
+  int32 age = 3 [(buf.validate.field).int32 = {
     gte: 0
     lte: 150
   }];
 }
 ```
+
+**protovalidateの利点：**
+
+- **ランタイムバリデーション**: コード生成不要で、ランタイムにバリデーションを実行
+- **Opaque API対応**: 新しいprotoc-gen-goのOpaque APIと完全互換
+- **宣言的**: バリデーションロジックがprotoファイルで一元管理される
+- **型安全**: コンパイル時に制約の妥当性がチェックされる
 
 #### 4.1.3. 🔄 API進化戦略
 

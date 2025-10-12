@@ -48,7 +48,7 @@ jobs:
           go-version-file: ./workbench/go.mod
           cache-dependency-path: ./workbench/go.sum
       - name: test
-        run: go test $(go list ./... | grep -v /gen/) -coverprofile=coverage.out -tags=ci
+        run: go test ./... -coverprofile=coverage.out -tags=ci
         env:
           GINKGO_LABEL_FILTER: "!DBConnect"
       - name: report coverage
