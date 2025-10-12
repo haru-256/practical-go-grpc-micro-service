@@ -19,7 +19,7 @@ plugins:
       - paths=source_relative
       - default_api_level=API_OPAQUE
   # GoのgRPCコードを生成するプラグイン
-  - remote: buf.build/grpc/go
+  - remote: buf.build/grpc/go:v1.5.1
     out: gen/go
     opt:
       - paths=source_relative
