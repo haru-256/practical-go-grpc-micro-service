@@ -2,6 +2,7 @@
 //  CommandService用のParam型とResult型を定義したprotoファイル
 //
 
+// edition = "2023"; // TODO: pluginが対応したら有効化する
 syntax = "proto3";
 
 package command.v1;

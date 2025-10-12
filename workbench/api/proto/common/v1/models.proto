@@ -2,6 +2,7 @@
 // クライアントとサーバ間で利用するデータ格納型を定義したprotoファイル
 //
 
+// edition = "2023"; // TODO: pluginが対応したら有効化する
 syntax = "proto3";
 
 package common.v1;
@@ -19,5 +20,6 @@ message Product {
   string id = 1 [(buf.validate.field).string.min_len = 1]; // 商品Id
   string name = 2 [(buf.validate.field).string.min_len = 1]; // 商品名
   int32 price = 3 [(buf.validate.field).int32.gt = 0]; // 単価
+  // Category category = 4 [features.field_presence = EXPLICIT]; // edition用
   optional Category category = 4; // 商品カテゴリ
 }
