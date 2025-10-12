@@ -54,7 +54,7 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## common/v1/error.proto
-
+edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 
 
 <a name="common-v1-Error"></a>
@@ -86,7 +86,7 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## common/v1/models.proto
-
+edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 
 
 <a name="common-v1-Category"></a>
@@ -116,7 +116,9 @@
 | id | [string](#string) |  | 商品Id |
 | name | [string](#string) |  | 商品名 |
 | price | [int32](#int32) |  | 単価 |
-| category | [Category](#common-v1-Category) | optional | 商品カテゴリ |
+| category | [Category](#common-v1-Category) | optional | Category category = 4 [features.field_presence = EXPLICIT]; // edition用
+
+商品カテゴリ |
 
 
 
@@ -136,7 +138,7 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## command/v1/command.proto
-
+edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 
 
 <a name="command-v1-CreateCategoryRequest"></a>
@@ -399,7 +401,7 @@ ProductService用のRequest/Response型
 <p align="right"><a href="#top">Top</a></p>
 
 ## query/v1/query.proto
-
+edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 
 
 <a name="query-v1-GetCategoryByIdRequest"></a>
