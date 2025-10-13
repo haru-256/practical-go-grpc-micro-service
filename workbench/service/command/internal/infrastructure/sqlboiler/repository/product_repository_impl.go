@@ -76,7 +76,7 @@ func (r *productRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, na
 //
 // Returns:
 //   - error: データベースエラーが発生した場合
-func (r *productRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, Product *products.Product) error {
+func (r *productRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product *products.Product) error {
 	newProduct := models.Product{
 		ObjID:      Product.Id().Value(),
 		Name:       Product.Name().Value(),
