@@ -105,7 +105,7 @@ func (r *productRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, Prod
 	upModel, err := models.Products(condition).One(ctx, tx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("商品番号: %s は存在しないため、更新できませんでした。", Product.Id().Value()))
+			return errs.NewCRUDErrorWithCause("NOT_FOUND", fmt.Sprintf("商品番号: %s は存在しないため、更新できませんでした。", Product.Id().Value()), err)
 		}
 		return handler.DBErrHandler(err)
 	}
