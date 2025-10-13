@@ -18,6 +18,7 @@ linters:
     paths:
       - api/ # 生成コードを除外
       - db/
+      - service/command/internal/infrastructure/sqlboiler/models
 
   settings:
     govet:
