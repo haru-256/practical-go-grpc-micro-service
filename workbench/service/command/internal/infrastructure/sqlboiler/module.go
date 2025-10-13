@@ -22,6 +22,7 @@ var Module = fx.Module(
 		handler.NewDBConfig,
 		handler.NewDatabase,
 		repository.NewCategoryRepository,
+		repository.NewProductRepository,
 	),
 	fx.Invoke(registerLifecycleHooks),
 )
