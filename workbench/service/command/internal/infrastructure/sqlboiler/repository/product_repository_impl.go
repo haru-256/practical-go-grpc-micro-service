@@ -78,10 +78,10 @@ func (r *productRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, na
 //   - error: データベースエラーが発生した場合
 func (r *productRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product *products.Product) error {
 	newProduct := models.Product{
-		ObjID:      Product.Id().Value(),
-		Name:       Product.Name().Value(),
-		Price:      int(Product.Price().Value()),
-		CategoryID: Product.Category().Id().Value(),
+		ObjID:      product.Id().Value(),
+		Name:       product.Name().Value(),
+		Price:      int(product.Price().Value()),
+		CategoryID: product.Category().Id().Value(),
 	}
 	// NOTE: boil.Infer() でauto-incrementのIDは無視され、勝手にDB側で採番された後、sqlboiler側の構造体にセットされる
 	if err := newProduct.Insert(ctx, tx, boil.Infer()); err != nil {

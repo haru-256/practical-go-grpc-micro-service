@@ -84,7 +84,7 @@ func (r *categoryRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, cat
 	upModel, err := models.Categories(condition).One(ctx, tx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、更新できませんでした。", category.Id().Value()))
+			return errs.NewCRUDErrorWithCause("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、更新できませんでした。", category.Id().Value()), err)
 		}
 		return handler.DBErrHandler(err)
 	}
