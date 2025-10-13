@@ -142,7 +142,7 @@ func NewDatabase(config *DBConfig) (*sql.DB, error) {
 	}
 	// 接続確認
 	if err = db.Ping(); err != nil {
-		defer db.Close()
+		_ = db.Close() // エラーハンドリングよりもPingエラーを優先
 		return nil, DBErrHandler(err)
 	}
 	// 接続プールの設定

@@ -24,7 +24,7 @@ func TestRepImplPackage(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	absPath, _ := filepath.Abs("../config/database.toml")
-	os.Setenv("DATABASE_TOML_PATH", absPath)
+	Expect(os.Setenv("DATABASE_TOML_PATH", absPath)).To(Succeed())
 	config, err := handler.NewDBConfig()
 	Expect(err).NotTo(HaveOccurred(), "DBConfigの生成に失敗しました。")
 	_, err = handler.NewDatabase(config)
@@ -55,13 +55,13 @@ var _ = Describe("categoryRepositoryImpl構造体", Ordered, Label("CategoryRepo
 	DescribeTable(
 		"ExistsByNameの動作確認",
 		func(name string, expected bool) {
-			catName, err := categories.NewCategoryName(name)
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
-			category, err := categories.NewCategory(catName)
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
-			result, err := rep.ExistsByName(ctx, tx, category.Name())
-Expect(err).NotTo(HaveOccurred(), "ExistsByNameの実行に失敗しました。")
-Expect(result).To(Equal(expected), "存在するカテゴリ名に対してExistsByNameがfalseを返しました。")
+			catName, cateNameErr := categories.NewCategoryName(name)
+			Expect(cateNameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
+			category, cateErr := categories.NewCategory(catName)
+			Expect(cateErr).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
+			result, existsErr := rep.ExistsByName(ctx, tx, category.Name())
+			Expect(existsErr).NotTo(HaveOccurred(), "ExistsByNameの実行に失敗しました。")
+			Expect(result).To(Equal(expected), "存在するカテゴリ名に対してExistsByNameがfalseを返しました。")
 		},
 		Entry("文房具", "文房具", true),
 		Entry("食品", "食品", false),
@@ -69,26 +69,26 @@ Expect(result).To(Equal(expected), "存在するカテゴリ名に対してExist
 
 	Context("Createの動作確認", func() {
 		It("新しいカテゴリを作成できること", func() {
-			name, err := categories.NewCategoryName("食品")
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
-			category, err := categories.NewCategory(name)
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
+			name, nameErr := categories.NewCategoryName("食品")
+			Expect(nameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
+			category, categoryErr := categories.NewCategory(name)
+			Expect(categoryErr).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
 
-			err = rep.Create(ctx, tx, category)
-			Expect(err).NotTo(HaveOccurred(), "カテゴリの作成に失敗しました。")
+			createErr := rep.Create(ctx, tx, category)
+			Expect(createErr).NotTo(HaveOccurred(), "カテゴリの作成に失敗しました。")
 		})
 		It("重複するobj_idでエラーになること", func() {
 			// 文房具のobj_idを指定してカテゴリを作成する
-			id, err := categories.NewCategoryId("b1524011-b6af-417e-8bf2-f449dd58b5c0")
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリIDの生成に失敗しました。")
-			name, err := categories.NewCategoryName("新しい文房具")
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
-			category, err := categories.BuildCategory(id, name)
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
+			id, idErr := categories.NewCategoryId("b1524011-b6af-417e-8bf2-f449dd58b5c0")
+			Expect(idErr).NotTo(HaveOccurred(), "テスト用カテゴリIDの生成に失敗しました。")
+			name, nameErr := categories.NewCategoryName("新しい文房具")
+			Expect(nameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
+			category, categoryErr := categories.BuildCategory(id, name)
+			Expect(categoryErr).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
 
-			err = rep.Create(ctx, tx, category)
-			Expect(err).To(HaveOccurred())
-			crudErr, ok := err.(*errs.CRUDError)
+			createErr := rep.Create(ctx, tx, category)
+			Expect(createErr).To(HaveOccurred())
+			crudErr, ok := createErr.(*errs.CRUDError)
 			Expect(ok).To(BeTrue())
 			Expect(crudErr.Code).To(Equal("DB_UNIQUE_CONSTRAINT_VIOLATION"))
 			Expect(crudErr.Message).To(ContainSubstring("一意制約違反です。"))

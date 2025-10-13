@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 
@@ -81,17 +82,17 @@ func (r *categoryRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, categor
 func (r *categoryRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, category *categories.Category) error {
 	condition := models.CategoryWhere.ObjID.EQ(category.Id().Value())
 	upModel, err := models.Categories(condition).One(ctx, tx)
-	if upModel == nil {
-		return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、更新できませんでした。", category.Id().Value()))
-	}
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、更新できませんでした。", category.Id().Value()))
+		}
 		return handler.DBErrHandler(err)
 	}
 	// Update the fields of upModel as needed
 	upModel.ObjID = category.Id().Value()
 	upModel.Name = category.Name().Value()
-	if _, err := upModel.Update(ctx, tx, boil.Whitelist(models.CategoryColumns.ObjID, models.CategoryColumns.Name)); err != nil {
-		return handler.DBErrHandler(err)
+	if _, updateErr := upModel.Update(ctx, tx, boil.Whitelist(models.CategoryColumns.ObjID, models.CategoryColumns.Name)); updateErr != nil {
+		return handler.DBErrHandler(updateErr)
 	}
 	return nil
 }
@@ -109,14 +110,14 @@ func (r *categoryRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, cat
 func (r *categoryRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id *categories.CategoryId) error {
 	condition := models.CategoryWhere.ObjID.EQ(id.Value())
 	delModel, err := models.Categories(condition).One(ctx, tx)
-	if delModel == nil {
-		return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、削除できませんでした。", id.Value()))
-	}
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、削除できませんでした。", id.Value()))
+		}
 		return handler.DBErrHandler(err)
 	}
-	if _, err := delModel.Delete(ctx, tx); err != nil {
-		return handler.DBErrHandler(err)
+	if _, deleteErr := delModel.Delete(ctx, tx); deleteErr != nil {
+		return handler.DBErrHandler(deleteErr)
 	}
 	return nil
 }
