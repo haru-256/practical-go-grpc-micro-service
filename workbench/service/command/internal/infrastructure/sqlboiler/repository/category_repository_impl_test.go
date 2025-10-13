@@ -60,8 +60,8 @@ var _ = Describe("categoryRepositoryImpl構造体", Ordered, Label("CategoryRepo
 			category, err := categories.NewCategory(catName)
 			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
 			result, err := rep.ExistsByName(ctx, tx, category.Name())
-			Expect(err).NotTo(HaveOccurred(), "ExistsByIdの実行に失敗しました。")
-			Expect(result).To(Equal(expected), "存在するカテゴリIDに対してExistsByIdがfalseを返しました。")
+Expect(err).NotTo(HaveOccurred(), "ExistsByNameの実行に失敗しました。")
+Expect(result).To(Equal(expected), "存在するカテゴリ名に対してExistsByNameがfalseを返しました。")
 		},
 		Entry("文房具", "文房具", true),
 		Entry("食品", "食品", false),
