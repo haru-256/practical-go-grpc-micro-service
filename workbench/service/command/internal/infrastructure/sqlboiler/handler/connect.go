@@ -13,6 +13,8 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/utils"
 )
 
+// DBConfig はデータベース接続設定を保持する構造体です。
+// TOMLファイルまたは環境変数から読み込まれます。
 type DBConfig struct {
 	DBName          string        `toml:"dbname"`            //	データベース名
 	Host            string        `toml:"host"`              //	ホスト名
@@ -35,6 +37,23 @@ func getEnvWithError[T utils.EnvType](key string, defaultValue T, errs *[]error)
 	return val
 }
 
+// loadConfigFromEnv は環境変数からデータベース設定を読み込みます。
+// 環境変数が設定されていない場合は、デフォルト値が使用されます。
+//
+// 環境変数:
+//   - DB_NAME: データベース名（デフォルト: "sample_db"）
+//   - DB_HOST: ホスト名（デフォルト: "localhost"）
+//   - DB_PORT: ポート番号（デフォルト: 3306）
+//   - DB_USER: ユーザー名（デフォルト: "root"）
+//   - DB_PASSWORD: パスワード（デフォルト: "password"）
+//   - DB_MAX_IDLE_CONNS: 最大アイドル接続数（デフォルト: 10）
+//   - DB_MAX_OPEN_CONNS: 最大接続数（デフォルト: 100）
+//   - DB_CONN_MAX_LIFETIME: 接続の最大生存時間（デフォルト: 30分）
+//   - DB_CONN_MAX_IDLE_TIME: 接続の最大アイドル時間（デフォルト: 5秒）
+//
+// Returns:
+//   - DBConfig: 読み込まれた設定（エラーがある場合もデフォルト値で設定されます）
+//   - error: 環境変数の解析エラーがある場合、すべてのエラーを結合したもの
 func loadConfigFromEnv() (DBConfig, error) {
 	var configErrors []error
 
@@ -57,8 +76,17 @@ func loadConfigFromEnv() (DBConfig, error) {
 	return cfg, nil
 }
 
-// database.tomlから接続情報を取得してDbConfig型で返す
-func loadConfig() (*DBConfig, error) {
+// NewDBConfig はデータベース設定を生成します。
+// DATABASE_TOML_PATH環境変数が設定されている場合はTOMLファイルから読み込み、
+// 設定されていない場合は環境変数から読み込みます。
+//
+// 環境変数:
+//   - DATABASE_TOML_PATH: TOMLファイルのパス（任意）
+//
+// Returns:
+//   - *DBConfig: データベース設定
+//   - error: ファイル読み込みエラー、パースエラー、または環境変数エラー
+func NewDBConfig() (*DBConfig, error) {
 	// 環境変数からファイルパスを取得する
 	path, ok := os.LookupEnv("DATABASE_TOML_PATH")
 	// 設定されている場合はそのパスを使用する
@@ -87,38 +115,48 @@ func loadConfig() (*DBConfig, error) {
 	return config, nil
 }
 
-func DBConnect() error {
-	config, err := loadConfig()
-	if err != nil {
-		return DBErrHandler(err)
-	}
-
+// NewDatabase は指定された設定でMySQLデータベース接続を確立します。
+// この関数はSQLBoilerのグローバル状態も設定します。
+//
+// Note: この関数はboil.SetDB()を通じてグローバルなDB接続を設定します。
+// これはSQLBoilerの設計上の要件によるもので、以下の理由から意図的な設計選択です:
+//   - SQLBoilerの生成コードはグローバルに設定されたDB接続を期待します
+//   - リポジトリメソッドは*sql.Txを引数で受け取り、トランザクション境界を明示的に制御します
+//   - グローバルDBはトランザクション生成のみに使用され、実際のクエリは注入された*sql.Txを使用します
+//
+// Parameters:
+//   - config: データベース設定
+//
+// Returns:
+//   - *sql.DB: データベース接続（呼び出し元でクローズする必要があります）
+//   - error: 接続エラーまたは設定エラー
+func NewDatabase(config *DBConfig) (*sql.DB, error) {
 	// 接続文字列を生成する
 	rdbms := "mysql"
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", config.User, config.Pass, config.Host, config.Port, config.DBName)
 
 	// DB接続
-	conn, err := sql.Open(rdbms, connectStr)
+	db, err := sql.Open(rdbms, connectStr)
 	if err != nil {
-		return DBErrHandler(err)
+		return nil, DBErrHandler(err)
 	}
 	// 接続確認
-	if err = conn.Ping(); err != nil {
-		return DBErrHandler(err)
+	if err = db.Ping(); err != nil {
+		_ = db.Close() // エラーハンドリングよりもPingエラーを優先
+		return nil, DBErrHandler(err)
 	}
 	// 接続プールの設定
-	conn.SetMaxIdleConns(config.MaxIdleConns)       // 最大アイドル接続数
-	conn.SetMaxOpenConns(config.MaxOpenConns)       // 最大接続数
-	conn.SetConnMaxLifetime(config.ConnMaxLifetime) // 接続の最大生存時間
-	conn.SetConnMaxIdleTime(config.ConnMaxIdleTime) // 接続の最大アイドル時間
+	db.SetMaxIdleConns(config.MaxIdleConns)       // 最大アイドル接続数
+	db.SetMaxOpenConns(config.MaxOpenConns)       // 最大接続数
+	db.SetConnMaxLifetime(config.ConnMaxLifetime) // 接続の最大生存時間
+	db.SetConnMaxIdleTime(config.ConnMaxIdleTime) // 接続の最大アイドル時間
 
-	// FIXME: DBConnect 関数でグローバルな状態を設定する代わりに、生成した *sql.DB コネクションを返し、それを必要とするリポジトリ層などのコンポーネントにコンストラクタ経由で注入（Inject）するようにリファクタリングしてください。
-	// boil.SetDBはグローバルにDB接続を設定する
-	boil.SetDB(conn)
+	// Configure SQLBoiler globally (required by SQLBoiler's design)
+	boil.SetDB(db)
 	logLevel, err := utils.GetEnv("LOG_LEVEL", "debug")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	boil.DebugMode = strings.ToLower(logLevel) == "debug" // デバッグモードに設定 生成されたSQLを出力する
-	return nil
+	return db, nil
 }

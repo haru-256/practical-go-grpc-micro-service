@@ -8,6 +8,12 @@ ginkgo: ## Run tests
 ginkgo-detail: ## Run tests with detailed output
 	ginkgo run -v ./...
 
+.PHONY: generate-db-models
+generate-db-models: ## Generate DB models
+	# TODO: dbが立ち上がっていないとエラーになるので、docker-composeで立ち上げるようにする
+	cd internal/infrastructure/sqlboiler && \
+		sqlboiler mysql -c config/database.toml -o models --no-tests --wipe
+
 .PHONY: help
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

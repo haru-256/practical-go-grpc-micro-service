@@ -9,7 +9,20 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 )
 
-// データベースアクセスエラーのハンドリング
+// DBErrHandler はデータベースアクセスエラーを適切なドメインエラーに変換します。
+//
+// この関数は以下のエラータイプを処理します:
+//   - *net.OpError: ネットワーク接続エラー（接続タイムアウト等）
+//   - *mysql.MySQLError: MySQLドライバ固有のエラー
+//   - 1062: 一意制約違反
+//   - その他: ドライバエラー
+//   - その他: 不明なエラー
+//
+// Parameters:
+//   - err: データベース操作から返されたエラー
+//
+// Returns:
+//   - error: ドメイン層のエラー型に変換されたエラー
 func DBErrHandler(err error) error {
 	var opErr *net.OpError
 	var driverErr *mysql.MySQLError
