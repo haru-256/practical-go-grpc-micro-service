@@ -15,7 +15,7 @@ type ProductRepository interface {
 	// Create は新しい商品を作成します。
 	Create(ctx context.Context, tx *sql.Tx, product *Product) error
 	// UpdateById は商品IDを指定して商品情報を更新します。
-	UpdateById(ctx context.Context, tx *sql.Tx, product *ProductId) error
+UpdateById(ctx context.Context, tx *sql.Tx, product *Product) error
 	// DeleteById は商品IDを指定して商品を削除します。
 	DeleteById(ctx context.Context, tx *sql.Tx, id *ProductId) error
 }
