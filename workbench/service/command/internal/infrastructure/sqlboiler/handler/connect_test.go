@@ -209,7 +209,7 @@ var _ = Describe("loadConfigFromEnv関数", func() {
 	})
 })
 
-var _ = Describe("loadConfig関数", func() {
+var _ = Describe("NewDBConfig関数", func() {
 	var originalEnvVars map[string]string
 
 	BeforeEach(func() {
@@ -241,7 +241,7 @@ var _ = Describe("loadConfig関数", func() {
 
 	Context("DATABASE_TOML_PATHが設定されている場合", func() {
 		BeforeEach(func() {
-			absPath, err := filepath.Abs("../config/sqlboiler.toml")
+			absPath, err := filepath.Abs("../config/database.toml")
 			if err != nil {
 				Fail("Failed to get absolute path")
 			}
@@ -249,7 +249,7 @@ var _ = Describe("loadConfig関数", func() {
 		})
 
 		It("TOMLファイルから設定を読み込む", func() {
-			config, err := loadConfig()
+			config, err := NewDBConfig()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).NotTo(BeNil())
 			Expect(config.DBName).To(Equal("sample_db"))
@@ -267,7 +267,7 @@ var _ = Describe("loadConfig関数", func() {
 		})
 
 		It("環境変数から設定を読み込む", func() {
-			config, err := loadConfig()
+			config, err := NewDBConfig()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(config).NotTo(BeNil())
 			Expect(config.DBName).To(Equal("env_test_db"))
@@ -282,7 +282,7 @@ var _ = Describe("loadConfig関数", func() {
 		})
 
 		It("エラーを返す", func() {
-			config, err := loadConfig()
+			config, err := NewDBConfig()
 			Expect(err).To(HaveOccurred())
 			Expect(config).To(BeNil())
 		})
@@ -317,7 +317,7 @@ port = 5432
 		})
 
 		It("エラーを返す", func() {
-			config, err := loadConfig()
+			config, err := NewDBConfig()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("key 'mysql' not found"))
 			Expect(config).To(BeNil())
@@ -325,7 +325,7 @@ port = 5432
 	})
 })
 
-var _ = Describe("DBConnect関数", Label("DBConnect"), func() {
+var _ = Describe("NewDatabase関数", Label("DBConnect"), func() {
 	var originalEnvVars map[string]string
 
 	BeforeEach(func() {
@@ -336,7 +336,7 @@ var _ = Describe("DBConnect関数", Label("DBConnect"), func() {
 		}
 
 		// テスト前のセットアップ処理
-		absPath, err := filepath.Abs("../config/sqlboiler.toml")
+		absPath, err := filepath.Abs("../config/database.toml")
 		if err != nil {
 			Fail("Failed to get absolute path")
 		}
@@ -354,20 +354,67 @@ var _ = Describe("DBConnect関数", Label("DBConnect"), func() {
 		}
 	})
 
-	DescribeTable("DBConnectの動作確認",
-		func(expectError bool, expectedErrorCode string) {
-			err := DBConnect()
+	DescribeTable("NewDatabaseの動作確認",
+		func(setupConfig func() *DBConfig, expectError bool, expectedErrorSubstring string) {
+			config := setupConfig()
+			db, err := NewDatabase(config)
 			if expectError {
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(expectedErrorCode))
+				if expectedErrorSubstring != "" {
+					Expect(err.Error()).To(ContainSubstring(expectedErrorSubstring))
+				}
+				Expect(db).To(BeNil())
 			} else {
 				Expect(err).NotTo(HaveOccurred())
+				Expect(db).NotTo(BeNil())
+				// 接続をクリーンアップ
+				if db != nil {
+					Expect(db.Close()).To(Succeed())
+				}
 			}
 		},
-		Entry("正常系: TOMLファイルから接続", false, ""),
+		Entry("正常系: 有効な設定で接続", func() *DBConfig {
+			return &DBConfig{
+				DBName:          "sample_db",
+				Host:            "localhost",
+				Port:            3306,
+				User:            "root",
+				Pass:            "password",
+				MaxIdleConns:    10,
+				MaxOpenConns:    100,
+				ConnMaxLifetime: 30 * time.Minute,
+				ConnMaxIdleTime: 5 * time.Second,
+			}
+		}, false, ""),
+		Entry("異常系: 不正なホスト名", func() *DBConfig {
+			return &DBConfig{
+				DBName:          "sample_db",
+				Host:            "invalid_host",
+				Port:            3306,
+				User:            "root",
+				Pass:            "password",
+				MaxIdleConns:    10,
+				MaxOpenConns:    100,
+				ConnMaxLifetime: 30 * time.Minute,
+				ConnMaxIdleTime: 5 * time.Second,
+			}
+		}, true, ""),
+		Entry("異常系: 不正なポート番号", func() *DBConfig {
+			return &DBConfig{
+				DBName:          "sample_db",
+				Host:            "localhost",
+				Port:            99999,
+				User:            "root",
+				Pass:            "password",
+				MaxIdleConns:    10,
+				MaxOpenConns:    100,
+				ConnMaxLifetime: 30 * time.Minute,
+				ConnMaxIdleTime: 5 * time.Second,
+			}
+		}, true, ""),
 	)
 
-	Context("環境変数から接続する場合", func() {
+	Context("環境変数から設定を取得して接続する場合", func() {
 		BeforeEach(func() {
 			Expect(os.Unsetenv("DATABASE_TOML_PATH")).To(Succeed())
 			Expect(os.Setenv("DB_NAME", "sample_db")).To(Succeed())
@@ -377,9 +424,30 @@ var _ = Describe("DBConnect関数", Label("DBConnect"), func() {
 			Expect(os.Setenv("DB_PASSWORD", "password")).To(Succeed())
 		})
 
-		It("環境変数から接続できる", func() {
-			err := DBConnect()
+		It("環境変数から取得した設定で接続できる", func() {
+			config, err := NewDBConfig()
 			Expect(err).NotTo(HaveOccurred())
+
+			db, err := NewDatabase(config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(db).NotTo(BeNil())
+
+			// 接続をクリーンアップ
+			Expect(db.Close()).To(Succeed())
+		})
+	})
+
+	Context("TOMLファイルから設定を取得して接続する場合", func() {
+		It("TOMLファイルから取得した設定で接続できる", func() {
+			config, err := NewDBConfig()
+			Expect(err).NotTo(HaveOccurred())
+
+			db, err := NewDatabase(config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(db).NotTo(BeNil())
+
+			// 接続をクリーンアップ
+			Expect(db.Close()).To(Succeed())
 		})
 	})
 })

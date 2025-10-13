@@ -8,8 +8,8 @@ import (
 // CategoryRepository はカテゴリエンティティの永続化を担うリポジトリインターフェースです。
 // データベースへのカテゴリデータのCRUD操作を提供します。
 type CategoryRepository interface {
-	// ExistsById は指定されたカテゴリIDが存在するかチェックします。
-	ExistsById(ctx context.Context, tx *sql.Tx, id *CategoryId) (bool, error)
+	// ExistsByName は指定されたカテゴリ名が存在するかチェックします。
+	ExistsByName(ctx context.Context, tx *sql.Tx, name *CategoryName) (bool, error)
 	// Create は新しいカテゴリを作成します。
 	Create(ctx context.Context, tx *sql.Tx, category *Category) error
 	// UpdateById はカテゴリIDを指定してカテゴリ情報を更新します。
