@@ -122,6 +122,21 @@ func (r *categoryRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id 
 	return nil
 }
 
+func (r *categoryRepositoryImpl) DeleteByName(ctx context.Context, tx *sql.Tx, name *categories.CategoryName) error {
+	condition := models.CategoryWhere.Name.EQ(name.Value())
+	delModel, err := models.Categories(condition).One(ctx, tx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリ名: %s は存在しないため、削除できませんでした。", name.Value()))
+		}
+		return handler.DBErrHandler(err)
+	}
+	if _, deleteErr := delModel.Delete(ctx, tx); deleteErr != nil {
+		return handler.DBErrHandler(deleteErr)
+	}
+	return nil
+}
+
 // CategoryAfterInsertHook はカテゴリの挿入後に実行されるフックです。
 // 新規作成されたカテゴリの情報をログに出力します。
 //

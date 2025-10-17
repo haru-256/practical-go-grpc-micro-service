@@ -1,36 +1,21 @@
 //go:build integration || !ci
 
+// Package repository_test provides integration tests for repository implementations.
+// These tests verify the CategoryRepository and ProductRepository implementations
+// using a real database connection with transaction rollback for test isolation.
 package repository
 
 import (
 	"context"
 	"database/sql"
-	"os"
-	"path/filepath"
-	"testing"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestRepImplPackage(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Repository Implementation Suite")
-}
-
-var _ = BeforeSuite(func() {
-	absPath, _ := filepath.Abs("../config/database.toml")
-	Expect(os.Setenv("DATABASE_TOML_PATH", absPath)).To(Succeed())
-	config, err := handler.NewDBConfig()
-	Expect(err).NotTo(HaveOccurred(), "DBConfigの生成に失敗しました。")
-	_, err = handler.NewDatabase(config)
-	Expect(err).NotTo(HaveOccurred(), "データベース接続が失敗したのでテストを中止します。")
-})
 
 var _ = Describe("categoryRepositoryImpl構造体", Ordered, Label("CategoryRepositoryインターフェースメソッドのテスト"), func() {
 	var rep categories.CategoryRepository
@@ -93,6 +78,74 @@ var _ = Describe("categoryRepositoryImpl構造体", Ordered, Label("CategoryRepo
 			Expect(ok).To(BeTrue())
 			Expect(crudErr.Code).To(Equal("DB_UNIQUE_CONSTRAINT_VIOLATION"))
 			Expect(crudErr.Message).To(ContainSubstring("一意制約違反です。"))
+		})
+	})
+
+	Context("DeleteByIdの動作確認", func() {
+		It("既存のカテゴリを削除できること", func() {
+			// まず新しいカテゴリを作成
+			name, nameErr := categories.NewCategoryName("ID削除テストカテゴリ")
+			Expect(nameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
+			category, categoryErr := categories.NewCategory(name)
+			Expect(categoryErr).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
+
+			createErr := rep.Create(ctx, tx, category)
+			Expect(createErr).NotTo(HaveOccurred(), "カテゴリの作成に失敗しました。")
+
+			// 作成したカテゴリをIDで削除
+			deleteErr := rep.DeleteById(ctx, tx, category.Id())
+			Expect(deleteErr).NotTo(HaveOccurred(), "カテゴリの削除に失敗しました。")
+
+			// 削除されたカテゴリが存在しないことを確認
+			exists, existsErr := rep.ExistsByName(ctx, tx, category.Name())
+			Expect(existsErr).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse(), "削除したカテゴリがまだ存在しています。")
+		})
+
+		It("存在しないカテゴリIDで削除しようとするとエラーになること", func() {
+			id, idErr := categories.NewCategoryId("00000000-0000-0000-0000-000000000000")
+			Expect(idErr).NotTo(HaveOccurred(), "テスト用カテゴリIDの生成に失敗しました。")
+
+			deleteErr := rep.DeleteById(ctx, tx, id)
+			Expect(deleteErr).To(HaveOccurred())
+			crudErr, ok := deleteErr.(*errs.CRUDError)
+			Expect(ok).To(BeTrue())
+			Expect(crudErr.Code).To(Equal("NOT_FOUND"))
+			Expect(crudErr.Message).To(ContainSubstring("存在しないため、削除できませんでした。"))
+		})
+	})
+
+	Context("DeleteByNameの動作確認", func() {
+		It("既存のカテゴリを削除できること", func() {
+			// まず新しいカテゴリを作成
+			name, nameErr := categories.NewCategoryName("削除テストカテゴリ")
+			Expect(nameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
+			category, categoryErr := categories.NewCategory(name)
+			Expect(categoryErr).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました。")
+
+			createErr := rep.Create(ctx, tx, category)
+			Expect(createErr).NotTo(HaveOccurred(), "カテゴリの作成に失敗しました。")
+
+			// 作成したカテゴリを削除
+			deleteErr := rep.DeleteByName(ctx, tx, category.Name())
+			Expect(deleteErr).NotTo(HaveOccurred(), "カテゴリの削除に失敗しました。")
+
+			// 削除されたカテゴリが存在しないことを確認
+			exists, existsErr := rep.ExistsByName(ctx, tx, category.Name())
+			Expect(existsErr).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse(), "削除したカテゴリがまだ存在しています。")
+		})
+
+		It("存在しないカテゴリ名で削除しようとするとエラーになること", func() {
+			name, nameErr := categories.NewCategoryName("存在しないカテゴリ")
+			Expect(nameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")
+
+			deleteErr := rep.DeleteByName(ctx, tx, name)
+			Expect(deleteErr).To(HaveOccurred())
+			crudErr, ok := deleteErr.(*errs.CRUDError)
+			Expect(ok).To(BeTrue())
+			Expect(crudErr.Code).To(Equal("NOT_FOUND"))
+			Expect(crudErr.Message).To(ContainSubstring("存在しないため、削除できませんでした。"))
 		})
 	})
 })
@@ -260,4 +313,5 @@ var _ = Describe("productRepositoryImpl構造体", Ordered, Label("ProductReposi
 			Expect(crudErr.Message).To(ContainSubstring("存在しないため、削除できませんでした。"))
 		})
 	})
+
 })

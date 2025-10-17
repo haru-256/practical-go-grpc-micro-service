@@ -16,4 +16,6 @@ type CategoryRepository interface {
 	UpdateById(ctx context.Context, tx *sql.Tx, category *Category) error
 	// DeleteById はカテゴリIDを指定してカテゴリを削除します。
 	DeleteById(ctx context.Context, tx *sql.Tx, id *CategoryId) error
+	// DeleteByName はカテゴリ名を指定してカテゴリを削除します。
+	DeleteByName(ctx context.Context, tx *sql.Tx, name *CategoryName) error
 }
