@@ -91,6 +91,8 @@ graph TB
 - **スケーラビリティ**: 各サービスを独立してスケール可能
 - **データベース最適化**: 用途に応じたデータベース設計
 - **型安全性**: Protocol Buffersによる厳密な型定義
+- **構造化ログ**: slogによるコンテキスト対応の構造化ログ
+- **依存性注入**: Uber Fxによる型安全な依存関係管理
 
 ## 🚀 クイックスタート
 
@@ -100,6 +102,32 @@ graph TB
 - [mise](https://mise.jdx.dev/) (開発環境管理)
 - Docker & Docker Compose
 - [buf](https://buf.build/) CLI
+
+### 設定ファイル
+
+各サービスは `config.toml` で設定を管理します：
+
+```toml
+[log]
+level = "info"     # ログレベル: debug, info, warn, error
+format = "text"    # ログフォーマット: text, json
+
+[mysql]
+dbname = "command_db"
+host = "localhost"
+port = 3306
+user = "root"
+pass = "password"
+max_idle_conns = 10
+max_open_conns = 100
+conn_max_lifetime = "1h"
+conn_max_idle_time = "10m"
+```
+
+環境変数で設定を上書き可能：
+
+- `LOG_LEVEL`, `LOG_FORMAT`: ログ設定
+- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`: データベース設定
 
 ### セットアップ
 

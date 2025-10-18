@@ -417,6 +417,100 @@ go tool ginkgo run ./...
 | CategoryId | string | UUID形式、36文字 |
 | CategoryName | string | 1〜100文字 |
 
+## ロギング
+
+このサービスは構造化ログ（structured logging）として`log/slog`を使用しています。
+
+### ロガーの使用方法
+
+すべての層で、依存性注入されたロガーを使用してログを出力します：
+
+```go
+// エラーログ
+logger.ErrorContext(ctx, "商品の作成に失敗しました", 
+    slog.String("product_name", name),
+    slog.Any("error", err))
+
+// 情報ログ
+logger.InfoContext(ctx, "商品を作成しました", 
+    slog.String("product_id", id.Value()),
+    slog.String("product_name", name.Value()))
+
+// 警告ログ
+logger.WarnContext(ctx, "商品名が重複しています", 
+    slog.String("product_name", name.Value()))
+```
+
+### ログレベル
+
+設定ファイルまたは環境変数で変更可能：
+
+- `debug`: デバッグ情報（開発環境）
+- `info`: 一般的な情報（本番環境推奨）
+- `warn`: 警告
+- `error`: エラー
+
+### ログフォーマット
+
+- `text`: 人間が読みやすいテキスト形式（開発環境）
+- `json`: JSON形式（本番環境推奨、ログ集約システムに適している）
+
+## 設定管理
+
+このサービスは、設定管理に[Viper](https://github.com/spf13/viper)を使用し、TOMLファイルと環境変数の両方をサポートしています。
+
+### 設定ファイル
+
+デフォルトの設定ファイルは`config.toml`です：
+
+```toml
+[log]
+level = "info"
+format = "text"
+
+[mysql]
+dbname = "command_db"
+host = "localhost"
+port = 3306
+user = "command_user"
+password = "command_pass"
+max_idle_conns = 10
+max_open_conns = 100
+conn_max_lifetime = "1h"
+```
+
+### 環境変数による上書き
+
+環境変数を使用して設定を上書きできます（プレフィックス: なし）：
+
+**ログ設定:**
+
+- `LOG_LEVEL`: ログレベル（debug/info/warn/error）
+- `LOG_FORMAT`: ログフォーマット（text/json）
+
+**データベース設定（`DB_`プレフィックス）:**
+
+- `DB_MYSQL_DBNAME`: データベース名
+- `DB_MYSQL_HOST`: ホスト名
+- `DB_MYSQL_PORT`: ポート番号
+- `DB_MYSQL_USER`: ユーザー名
+- `DB_MYSQL_PASSWORD`: パスワード
+- `DB_MYSQL_MAX_IDLE_CONNS`: 最大アイドル接続数
+- `DB_MYSQL_MAX_OPEN_CONNS`: 最大オープン接続数
+- `DB_MYSQL_CONN_MAX_LIFETIME`: 接続最大ライフタイム
+
+**使用例:**
+
+```bash
+# 本番環境でJSON形式のログを使用
+export LOG_LEVEL=info
+export LOG_FORMAT=json
+
+# データベース接続設定
+export DB_MYSQL_HOST=prod-db.example.com
+export DB_MYSQL_PASSWORD=secure_password
+```
+
 ## 開発時の注意点
 
 1. **ドメイン駆動設計の原則を守る**
