@@ -17,7 +17,7 @@ func NewLogger(config *viper.Viper) (*slog.Logger, error) {
 		return nil, err
 	}
 
-	isDevelopment := config.GetString("env") == "development" // e.g. from config
+	isDevelopment := config.GetString("env") == "dev"
 	opts := &slog.HandlerOptions{
 		Level:     level,
 		AddSource: isDevelopment,
