@@ -46,7 +46,7 @@ command/
 
 アプリケーションのエントリポイントを含みます。
 
-- **server/main.go**: アプリケーションの起動処理、依存関係の注入、サーバーの設定を行います
+- **server/main.go**: アプリケーションの起動処理、Uber Fxによる依存関係の注入、サーバーの設定を行います
 
 ### internal/application/
 
@@ -57,6 +57,17 @@ command/
   - ドメインオブジェクトの協調
   - トランザクション管理
   - 外部サービスとの連携
+
+- **service/**: サービスインターフェース定義
+  - `ProductService`: 商品に関するビジネスロジック（Add/Update/Delete）
+  - `CategoryService`: カテゴリに関するビジネスロジック（Add/Update/Delete）
+  - `TransactionManager`: トランザクション管理
+
+- **impl/**: サービス実装
+  - `ProductServiceImpl`: ProductServiceの具象実装
+  - `CategoryServiceImpl`: CategoryServiceの具象実装
+
+- **module.go**: Uber Fxモジュール定義（アプリケーション層の依存関係を構成）
 
 ### internal/domain/
 
@@ -129,6 +140,14 @@ product.ChangeName(newName)
   - メッセージング（Event Bus、Message Queue）
   - ファイルシステムへのアクセス
 
+- **sqlboiler/**: SQLBoilerを使用したデータベース実装
+  - **repository/**: リポジトリ実装
+    - `ProductRepositoryImpl`: 商品リポジトリの具象実装
+    - `CategoryRepositoryImpl`: カテゴリリポジトリの具象実装
+    - `TransactionManagerImpl`: トランザクションマネージャーの具象実装
+  - **handler/**: データベース接続管理
+  - **module.go**: Uber Fxモジュール定義（インフラ層の依存関係を構成）
+
 ### internal/presentation/
 
 プレゼンテーション層（Presentation Layer）を実装します。
@@ -160,19 +179,79 @@ product.ChangeName(newName)
 
 ## 実装ガイドライン
 
-### 1. 依存関係の管理
+### 1. 依存関係の管理と設計パターン
 
-- 依存関係注入（DI）を使用して、各層の結合度を下げる
-- インターフェースを活用して、実装の詳細を隠蔽する
+#### 「インターフェースを受け入れ、具象（struct）を返す」原則
+
+このプロジェクトでは、Goの重要な設計思想に従っています：
+
+**コンストラクタの設計原則:**
+
+```go
+// ✅ 推奨: インターフェースを受け取り、具象型を返す
+func NewProductServiceImpl(
+    repo products.ProductRepository,  // インターフェースを受け入れる
+    tm service.TransactionManager,    // インターフェースを受け入れる
+) *ProductServiceImpl {               // 具象型を返す
+    return &ProductServiceImpl{
+        repo: repo,
+        tm:   tm,
+    }
+}
+
+// 使用例
+svc := impl.NewProductServiceImpl(repo, tm)
+var service service.ProductService = svc  // 必要に応じてインターフェースとして扱う
+```
+
+**この原則の利点:**
+
+- **柔軟性**: 呼び出し側がインターフェースとして扱うか、具象型として扱うかを選択できる
+- **明示性**: コンストラクタ名（`NewXxxImpl`）で具象型を返すことが明確
+- **テスタビリティ**: モックを使った単体テストが容易
+- **DIフレームワークとの親和性**: Uber Fxで簡単にインターフェースに変換可能
+
+#### Uber Fxによる依存性注入
+
+依存性注入には**Uber Fx**を使用しています：
+
+```go
+// internal/application/module.go
+var Module = fx.Module(
+    "application",
+    sqlboiler.Module,  // インフラ層を含める
+    fx.Provide(
+        // 具象型を返すコンストラクタをインターフェースに変換
+        fx.Annotate(
+            impl.NewProductServiceImpl,
+            fx.As(new(service.ProductService)),
+        ),
+        fx.Annotate(
+            impl.NewCategoryServiceImpl,
+            fx.As(new(service.CategoryService)),
+        ),
+    ),
+)
+```
+
+**Fxの利点:**
+
+- **自動的な依存解決**: コンストラクタの引数から依存関係を自動解決
+- **ライフサイクル管理**: リソースの初期化と終了処理を自動管理
+- **モジュラー設計**: 層ごとにモジュールを分離して可視化
+- **型安全**: コンパイル時に依存関係の整合性を検証
+
+詳細は [プロジェクトスタイルガイド](../../.gemini/styleguide.md#432-モジュール構造とuber-fxによる依存性注入) を参照してください。
 
 ### 2. エラーハンドリング
 
-- ドメインエラーは`internal/errs`で定義
-- 各層で適切なエラー変換を行う
+各層で適切なエラー型を使用し、エラー情報を保持しながら上位層に伝播させます。
 
 #### エラーの種類
 
-ドメイン層では、`errs.DomainError` を使用してドメインに関連するエラーを表現します。
+**ドメインエラー (`errs.DomainError`)**
+
+ドメイン層で発生する、ビジネスルール違反を表すエラーです。
 
 **エラーコード:**
 
@@ -196,6 +275,57 @@ if err != nil {
 }
 ```
 
+**アプリケーションエラー (`errs.ApplicationError`)**
+
+アプリケーション層で発生する、ビジネスロジック上のエラーです。
+
+**エラーコード例:**
+
+- **PRODUCT_ALREADY_EXISTS**: 商品名の重複
+- **CATEGORY_ALREADY_EXISTS**: カテゴリ名の重複
+
+**使用例:**
+
+```go
+// 商品名の重複チェック
+exists, err := s.repo.ExistsByName(ctx, tx, product.Name())
+if err != nil {
+    return err
+}
+if exists {
+    return errs.NewApplicationError("PRODUCT_ALREADY_EXISTS", "商品名が既に存在します")
+}
+```
+
+**CRUDエラー (`errs.CRUDError`)**
+
+リポジトリ層で発生する、データアクセスに関するエラーです。
+
+**エラーコード例:**
+
+- **NOT_FOUND**: リソースが見つからない
+- **DUPLICATE_KEY**: 主キーやユニークキーの重複
+
+**使用例:**
+
+```go
+// リソースが見つからない場合
+if errors.Is(err, sql.ErrNoRows) {
+    return errs.NewCRUDError("NOT_FOUND", 
+        fmt.Sprintf("商品番号: %s は存在しません", id.Value()))
+}
+```
+
+#### エラーラッピング
+
+エラーは`fmt.Errorf`の`%w`を使用してラッピングし、コンテキスト情報を追加します：
+
+```go
+if err := s.repo.Create(ctx, tx, product); err != nil {
+    return fmt.Errorf("failed to create product %s: %w", product.Name().Value(), err)
+}
+```
+
 ### 3. トランザクション管理
 
 - アプリケーション層でトランザクション境界を管理
@@ -203,13 +333,17 @@ if err != nil {
 
 ### 4. テスト戦略
 
-- 各層ごとにユニットテストを実装
-- ドメイン層のテストは外部依存なしで実行可能
-- インテグレーションテストでエンドツーエンドの動作を確認
+各層ごとにユニットテストと統合テストを実装し、包括的なテストカバレッジを確保しています。
+
+#### テストツール
+
+- **Ginkgo v2**: BDDスタイルのテストフレームワーク
+- **Gomega**: マッチャーライブラリ
+- **gomock**: モック生成ツール
 
 #### ドメイン層のテスト
 
-ドメイン層には、Ginkgo/Gomega を使用した包括的なテストが用意されています。
+ドメイン層には、外部依存なしで実行できる包括的なテストが用意されています。
 
 ```bash
 # すべてのドメイン層テストを実行
@@ -219,11 +353,51 @@ go test ./internal/domain/models/...
 go test -cover ./internal/domain/models/...
 ```
 
-テスト構成:
+**テスト構成:**
 
 - **値オブジェクトのテスト**: バリデーションルールの検証
 - **エンティティのテスト**: 生成、再構築、変更、同一性検証
 - **テーブル駆動テスト**: `DescribeTable` を使用した効率的なテストケース定義
+
+#### アプリケーション層のテスト
+
+アプリケーション層には、ユニットテストと統合テストの両方があります。
+
+**ユニットテスト（gomock使用）:**
+
+```bash
+# Product Service ユニットテスト
+go test ./internal/application/impl/product_impl_test.go
+
+# Category Service ユニットテスト  
+go test ./internal/application/impl/category_impl_test.go
+```
+
+モックを使用して、依存関係を分離したテストを実行します。
+
+**統合テスト（実際のDB使用）:**
+
+```bash
+# Product Service 統合テスト
+go test ./internal/application/impl/product_impl_integration_test.go
+
+# Category Service 統合テスト
+go test ./internal/application/impl/category_impl_integration_test.go
+```
+
+実際のPostgreSQLデータベースを使用して、エンドツーエンドの動作を検証します。
+
+#### すべてのテストを実行
+
+Ginkgoを使用してプロジェクト全体のテストを実行：
+
+```bash
+# Makefileを使用（推奨）
+make ginkgo
+
+# または直接実行
+go tool ginkgo run ./...
+```
 
 #### バリデーションルール
 
@@ -268,6 +442,16 @@ go test -cover ./internal/domain/models/...
    - 依存関係は常にドメイン層に向かう（依存性逆転の原則）
    - リポジトリはインターフェースのみドメイン層で定義、実装はインフラ層
 
+6. **「インターフェースを受け入れ、具象を返す」原則の遵守**
+   - コンストラクタは必ず具象型（`*XxxImpl`）を返す
+   - コンストラクタ名に`Impl`サフィックスを付ける（例：`NewProductServiceImpl`）
+   - Fxモジュールで`fx.Annotate`と`fx.As`を使用してインターフェースに変換
+
+7. **レイヤー間の責務分離**
+   - **Service層**: ビジネスロジック（重複チェックなど）のみを実装
+   - **Repository層**: データアクセスと存在確認を実装
+   - Service層でのUpdate/Delete時は、存在チェックをRepository層に委譲
+
 ## ビルドとテスト
 
 ### ビルド
@@ -283,18 +467,35 @@ go build -o bin/command-service ./cmd/server
 ### テスト実行
 
 ```bash
-# すべてのテストを実行
-make test
+# すべてのテストを実行（Ginkgo使用）
+make ginkgo
 
-# カバレッジレポート付き
-make test-coverage
+# または
+go tool ginkgo run ./...
 
-# ドメイン層のみ
-go test ./internal/domain/models/...
+# 特定の層のテスト
+go test ./internal/domain/models/...        # ドメイン層
+go test ./internal/application/impl/...     # アプリケーション層
+go test ./internal/infrastructure/...       # インフラ層
 
-# 特定のパッケージ
+# 個別のパッケージ
 go test ./internal/domain/models/products
 go test ./internal/domain/models/categories
+go test ./internal/application/impl -run TestProductService
+go test ./internal/application/impl -run TestCategoryService
+```
+
+### データベースセットアップ
+
+統合テストを実行する前に、PostgreSQLデータベースを起動してください：
+
+```bash
+# データベースの起動（docker-compose使用）
+cd ../../db
+make up
+
+# データベースの停止
+make down
 ```
 
 ### Lint実行
@@ -305,6 +506,29 @@ make lint
 
 ## 参考リンク
 
-- [CQRS Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs)
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Domain-Driven Design](https://www.domainlanguage.com/ddd/)
+### 設計パターンとアーキテクチャ
+
+- [CQRS Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/cqrs) - Microsoft Azure アーキテクチャセンター
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin
+- [Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans
+
+### Go言語とベストプラクティス
+
+- [Effective Go](https://golang.org/doc/effective_go) - Go言語公式ガイド
+- [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) - Goコードレビューのベストプラクティス
+
+### 依存性注入
+
+- [Uber Fx Documentation](https://uber-go.github.io/fx/) - Uber Fx公式ドキュメント
+- [Fx Modules Guide](https://uber-go.github.io/fx/modules.html) - モジュール設計パターン
+
+### テスティング
+
+- [Ginkgo](https://onsi.github.io/ginkgo/) - BDDスタイルのテストフレームワーク
+- [Gomega](https://onsi.github.io/gomega/) - マッチャーライブラリ
+- [gomock](https://github.com/golang/mock) - モック生成ツール
+
+### プロジェクト内部リソース
+
+- [プロジェクトスタイルガイド](../../.gemini/styleguide.md) - コーディング規約と設計原則
+- [Domain Layer README](./internal/domain/README.md) - ドメイン層の詳細
