@@ -2,7 +2,7 @@
 
 .PHONY: init
 init: ## Initial setup
-	go mod tidy
+	go mod init
 	octocov init
 
 .PHONY: lint
@@ -24,6 +24,10 @@ test-ci: ## Run tests for CI (skip DB tests)
 .PHONY: test-all
 test-all: ## Run all tests including DB tests
 	go test -tags=integration $$(go list ./... | grep -v /gen/)
+
+.PHONY: install-tools
+install-tools: ## Install tools
+	mise install
 
 .PHONY: act
 act: ## Run act for CI locally

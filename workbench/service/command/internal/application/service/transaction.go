@@ -8,6 +8,8 @@ import (
 // TransactionManager はデータベーストランザクションの管理を担うインターフェースです。
 // トランザクションの開始、コミット、ロールバックといった操作を提供し、
 // アプリケーションサービス層でのトランザクション制御を可能にします。
+//
+//go:generate go tool mockgen -source=$GOFILE -destination=./mock_transaction.go -package=service
 type TransactionManager interface {
 	// Begin は新しいデータベーストランザクションを開始します。
 	//

@@ -79,7 +79,7 @@ func cleanupCategory(tm service.TransactionManager, repo categories.CategoryRepo
 	_ = tm.Complete(tx, err)
 }
 
-var _ = Describe("Category Service Integration", Ordered, func() {
+var _ = Describe("CategoryService Integration Test", Ordered, func() {
 	var (
 		cs   service.CategoryService
 		tm   service.TransactionManager
@@ -92,9 +92,9 @@ var _ = Describe("Category Service Integration", Ordered, func() {
 		setupDatabase()
 
 		// サービスとリポジトリの初期化
-		repo = repository.NewCategoryRepository()
-		tm = repository.NewTransactionManager()
-		cs = NewCategoryService(repo, tm)
+		repo = repository.NewCategoryRepositoryImpl()
+		tm = repository.NewTransactionManagerImpl()
+		cs = NewCategoryServiceImpl(repo, tm)
 	})
 
 	BeforeEach(func() {

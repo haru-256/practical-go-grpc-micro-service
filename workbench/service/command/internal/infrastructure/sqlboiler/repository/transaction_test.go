@@ -22,7 +22,7 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 	)
 
 	BeforeAll(func() {
-		tm = NewTransactionManager()
+		tm = NewTransactionManagerImpl()
 	})
 
 	BeforeEach(func() {

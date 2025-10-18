@@ -14,16 +14,22 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/models"
 )
 
-// productRepositoryImpl は商品リポジトリのSQLBoilerを使用した実装です。
-type productRepositoryImpl struct{}
+// ProductRepositoryImpl は商品リポジトリのSQLBoilerを使用した実装です。
+type ProductRepositoryImpl struct{}
 
-// NewProductRepository は新しいProductRepositoryインスタンスを生成します。
+// NewProductRepositoryImpl は新しいProductRepositoryImplインスタンスを生成します。
 // この関数は、商品の挿入、更新、削除後に実行されるフックを登録します。
-func NewProductRepository() products.ProductRepository {
+// 具象型を返すことで、呼び出し側が必要に応じてインターフェースとして扱えるようにします。
+//
+// 使用例:
+//
+//	repo := repository.NewProductRepositoryImpl()
+//	var productRepo products.ProductRepository = repo  // インターフェースとして使用
+func NewProductRepositoryImpl() *ProductRepositoryImpl {
 	models.AddProductHook(boil.AfterInsertHook, ProductAfterInsertHook)
 	models.AddProductHook(boil.AfterUpdateHook, ProductAfterUpdateHook)
 	models.AddProductHook(boil.AfterDeleteHook, ProductAfterDeleteHook)
-	return &productRepositoryImpl{}
+	return &ProductRepositoryImpl{}
 }
 
 // ExistsById は指定された商品IDが存在するかどうかをチェックします。
@@ -36,7 +42,7 @@ func NewProductRepository() products.ProductRepository {
 // Returns:
 //   - bool: 商品が存在する場合はtrue、存在しない場合はfalse
 //   - error: データベースエラーが発生した場合
-func (r *productRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *products.ProductId) (bool, error) {
+func (r *ProductRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *products.ProductId) (bool, error) {
 	condition := models.ProductWhere.ObjID.EQ(id.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
 	if err != nil {
@@ -52,10 +58,17 @@ func (r *productRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *
 //   - tx: トランザクション
 //   - name: チェック対象の商品名
 //
+// ExistsByName は指定された商品名が既に存在するかをチェックします。
+//
+// Parameters:
+//   - ctx: コンテキスト
+//   - tx: トランザクション
+//   - name: チェックする商品名
+//
 // Returns:
 //   - bool: 商品が存在する場合はtrue、存在しない場合はfalse
 //   - error: データベースエラーが発生した場合
-func (r *productRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, name *products.ProductName) (bool, error) {
+func (r *ProductRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, name *products.ProductName) (bool, error) {
 	condition := models.ProductWhere.Name.EQ(name.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
 	if err != nil {
@@ -76,7 +89,7 @@ func (r *productRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, na
 //
 // Returns:
 //   - error: データベースエラーが発生した場合
-func (r *productRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product *products.Product) error {
+func (r *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product *products.Product) error {
 	newProduct := models.Product{
 		ObjID:      product.Id().Value(),
 		Name:       product.Name().Value(),
@@ -100,7 +113,7 @@ func (r *productRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product 
 // Returns:
 //   - error: 商品が存在しない場合はNOT_FOUNDエラー、
 //     データベースエラーが発生した場合はそのエラー
-func (r *productRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, Product *products.Product) error {
+func (r *ProductRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, Product *products.Product) error {
 	condition := models.ProductWhere.ObjID.EQ(Product.Id().Value())
 	upModel, err := models.Products(condition).One(ctx, tx)
 	if err != nil {
@@ -135,7 +148,7 @@ func (r *productRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, Prod
 // Returns:
 //   - error: 商品が存在しない場合はNOT_FOUNDエラー、
 //     データベースエラーが発生した場合はそのエラー
-func (r *productRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id *products.ProductId) error {
+func (r *ProductRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id *products.ProductId) error {
 	condition := models.ProductWhere.ObjID.EQ(id.Value())
 	delModel, err := models.Products(condition).One(ctx, tx)
 	if err != nil {
