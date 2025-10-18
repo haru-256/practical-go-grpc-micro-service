@@ -25,8 +25,8 @@ import (
 //   - アプリケーション停止時のDB接続クローズ処理
 var Module = fx.Module(
 	"sqlboiler",
+	config.Module,
 	fx.Provide(
-		config.NewViper,
 		handler.NewDBConfig,
 		handler.NewDatabase,
 		logger.NewLogger,

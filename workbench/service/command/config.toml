@@ -1,6 +1,6 @@
 [log]
 level = "info"
-format = "text"
+format = "json"
 
 [mysql] # sqlboiler用のDB設定
 dbname = "sample_db" # データベース名
