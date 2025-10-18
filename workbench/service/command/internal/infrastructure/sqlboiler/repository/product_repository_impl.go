@@ -49,6 +49,7 @@ func (r *ProductRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *
 	condition := models.ProductWhere.ObjID.EQ(id.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
 	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to check if product exists", slog.Any("error", err))
 		return false, handler.DBErrHandler(err)
 	}
 	return exists, nil
@@ -68,6 +69,7 @@ func (r *ProductRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, na
 	condition := models.ProductWhere.Name.EQ(name.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
 	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to check if product exists", slog.Any("error", err))
 		return false, handler.DBErrHandler(err)
 	}
 	return exists, nil
@@ -94,6 +96,7 @@ func (r *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product 
 	}
 	// NOTE: boil.Infer() でauto-incrementのIDは無視され、勝手にDB側で採番された後、sqlboiler側の構造体にセットされる
 	if err := newProduct.Insert(ctx, tx, boil.Infer()); err != nil {
+		r.logger.ErrorContext(ctx, "Failed to create product", slog.Any("error", err))
 		return handler.DBErrHandler(err)
 	}
 	return nil

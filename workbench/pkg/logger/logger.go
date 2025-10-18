@@ -17,14 +17,20 @@ func NewLogger(config *viper.Viper) (*slog.Logger, error) {
 		return nil, err
 	}
 
+	isDevelopment := config.GetString("env") == "development" // e.g. from config
+	opts := &slog.HandlerOptions{
+		Level:     level,
+		AddSource: isDevelopment,
+	}
+
 	// ハンドラの設定
 	var handler slog.Handler
 	logFormat := config.GetString("log.format")
 	switch logFormat {
 	case "json":
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})
+		handler = slog.NewJSONHandler(os.Stdout, opts)
 	default:
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})
+		handler = slog.NewTextHandler(os.Stdout, opts)
 	}
 
 	// OtelHandlerでラップしてトレース情報を自動追加
