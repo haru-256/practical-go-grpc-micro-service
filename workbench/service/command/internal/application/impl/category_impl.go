@@ -48,7 +48,7 @@ func (s *CategoryServiceImpl) Add(ctx context.Context, category *categories.Cate
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
 		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Fatalln("トランザクションの完了に失敗しました:", completeErr)
+			log.Println("トランザクションの完了に失敗しました:", completeErr)
 		}
 	}()
 
@@ -86,9 +86,8 @@ func (s *CategoryServiceImpl) Update(ctx context.Context, category *categories.C
 		return err
 	}
 	defer func() {
-		err = s.tm.Complete(tx, err)
-		if err != nil {
-			log.Fatalln("トランザクションの完了に失敗しました:", err)
+		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
+			log.Println("トランザクションの完了に失敗しました:", completeErr)
 		}
 	}()
 
@@ -118,7 +117,7 @@ func (s *CategoryServiceImpl) Delete(ctx context.Context, category *categories.C
 	defer func() {
 		err = s.tm.Complete(tx, err)
 		if err != nil {
-			log.Fatalln("トランザクションの完了に失敗しました:", err)
+			log.Println("トランザクションの完了に失敗しました:", err)
 		}
 	}()
 

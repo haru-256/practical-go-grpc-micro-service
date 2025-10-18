@@ -32,13 +32,6 @@ func NewCategoryRepositoryImpl() *CategoryRepositoryImpl {
 	return &CategoryRepositoryImpl{}
 }
 
-// ExistsByName は指定された名前のカテゴリが存在するかどうかをチェックします。
-//
-// Parameters:
-//   - ctx: コンテキスト
-//   - tx: トランザクション
-//   - name: チェック対象のカテゴリ名
-//
 // ExistsByName は指定されたカテゴリ名が既に存在するかをチェックします。
 //
 // Parameters:

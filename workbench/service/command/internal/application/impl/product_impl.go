@@ -47,7 +47,7 @@ func (s *ProductServiceImpl) Add(ctx context.Context, product *products.Product)
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
 		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Fatalln("トランザクションの完了に失敗しました:", completeErr)
+			log.Print("トランザクションの完了に失敗しました:", completeErr)
 		}
 	}()
 
@@ -85,7 +85,7 @@ func (s *ProductServiceImpl) Update(ctx context.Context, product *products.Produ
 	}
 	defer func() {
 		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Fatalln("トランザクションの完了に失敗しました:", completeErr)
+			log.Println("トランザクションの完了に失敗しました:", completeErr)
 		}
 	}()
 
@@ -113,7 +113,7 @@ func (s *ProductServiceImpl) Delete(ctx context.Context, product *products.Produ
 	}
 	defer func() {
 		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Fatalln("トランザクションの完了に失敗しました:", completeErr)
+			log.Println("トランザクションの完了に失敗しました:", completeErr)
 		}
 	}()
 

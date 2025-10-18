@@ -56,13 +56,6 @@ func (r *ProductRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *
 // Parameters:
 //   - ctx: コンテキスト
 //   - tx: トランザクション
-//   - name: チェック対象の商品名
-//
-// ExistsByName は指定された商品名が既に存在するかをチェックします。
-//
-// Parameters:
-//   - ctx: コンテキスト
-//   - tx: トランザクション
 //   - name: チェックする商品名
 //
 // Returns:
