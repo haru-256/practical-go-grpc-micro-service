@@ -115,9 +115,8 @@ func (s *CategoryServiceImpl) Delete(ctx context.Context, category *categories.C
 		return err
 	}
 	defer func() {
-		err = s.tm.Complete(tx, err)
-		if err != nil {
-			log.Println("トランザクションの完了に失敗しました:", err)
+		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
+			log.Println("トランザクションの完了に失敗しました:", completeErr)
 		}
 	}()
 

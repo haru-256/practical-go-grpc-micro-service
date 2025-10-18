@@ -2,7 +2,7 @@
 
 .PHONY: init
 init: ## Initial setup
-	go mod init
+	go mod tidy
 	octocov init
 
 .PHONY: lint
