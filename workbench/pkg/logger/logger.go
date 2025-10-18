@@ -57,12 +57,12 @@ func (h *OtelHandler) Handle(ctx context.Context, r slog.Record) error {
 	spanCtx := trace.SpanContextFromContext(ctx)
 
 	// SpanContextが有効な場合のみ、trace_idとspan_idをログに追加
-if spanCtx.IsValid() {
-	r.AddAttrs(
-		slog.String("trace_id", spanCtx.TraceID().String()),
-		slog.String("span_id", spanCtx.SpanID().String()),
-	)
-}
+	if spanCtx.IsValid() {
+		r.AddAttrs(
+			slog.String("trace_id", spanCtx.TraceID().String()),
+			slog.String("span_id", spanCtx.SpanID().String()),
+		)
+	}
 
 	return h.Next.Handle(ctx, r)
 }

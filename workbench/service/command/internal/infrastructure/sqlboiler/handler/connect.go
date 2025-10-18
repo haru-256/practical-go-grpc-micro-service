@@ -50,16 +50,16 @@ func getKey[T any](v *viper.Viper, key string, errs *[]error) T {
 	}
 
 	switch any(zero).(type) {
-case string:
-	return any(v.GetString(key)).(T)
-case int:
-	return any(v.GetInt(key)).(T)
-case bool:
-	return any(v.GetBool(key)).(T)
-case time.Duration:
-	// v.GetDuration() を使うことで、"30m" や "1h" のような文字列を
-	// time.Duration型へ安全にパースする処理をViperに任せます。
-	return any(v.GetDuration(key)).(T)
+	case string:
+		return any(v.GetString(key)).(T)
+	case int:
+		return any(v.GetInt(key)).(T)
+	case bool:
+		return any(v.GetBool(key)).(T)
+	case time.Duration:
+		// v.GetDuration() を使うことで、"30m" や "1h" のような文字列を
+		// time.Duration型へ安全にパースする処理をViperに任せます。
+		return any(v.GetDuration(key)).(T)
 	default:
 		*errs = append(*errs, fmt.Errorf("unsupported type for key '%s'", key))
 		return zero
