@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
@@ -15,21 +15,24 @@ import (
 )
 
 // CategoryRepositoryImpl はカテゴリリポジトリのSQLBoilerを使用した実装です。
-type CategoryRepositoryImpl struct{}
+type CategoryRepositoryImpl struct {
+	logger *slog.Logger
+}
 
 // NewCategoryRepositoryImpl は新しいCategoryRepositoryImplインスタンスを生成します。
 // この関数は、カテゴリの挿入、更新、削除後に実行されるフックを登録します。
+// フック関数はファクトリー関数により生成され、渡されたloggerをクロージャーに保持します。
 // 具象型を返すことで、呼び出し側が必要に応じてインターフェースとして扱えるようにします。
 //
 // 使用例:
 //
-//	repo := repository.NewCategoryRepositoryImpl()
+//	repo := repository.NewCategoryRepositoryImpl(logger)
 //	var categoryRepo categories.CategoryRepository = repo  // インターフェースとして使用
-func NewCategoryRepositoryImpl() *CategoryRepositoryImpl {
-	models.AddCategoryHook(boil.AfterInsertHook, CategoryAfterInsertHook)
-	models.AddCategoryHook(boil.AfterUpdateHook, CategoryAfterUpdateHook)
-	models.AddCategoryHook(boil.AfterDeleteHook, CategoryAfterDeleteHook)
-	return &CategoryRepositoryImpl{}
+func NewCategoryRepositoryImpl(logger *slog.Logger) *CategoryRepositoryImpl {
+	models.AddCategoryHook(boil.AfterInsertHook, categoryHookFactory(boil.AfterInsertHook, logger))
+	models.AddCategoryHook(boil.AfterUpdateHook, categoryHookFactory(boil.AfterUpdateHook, logger))
+	models.AddCategoryHook(boil.AfterDeleteHook, categoryHookFactory(boil.AfterDeleteHook, logger))
+	return &CategoryRepositoryImpl{logger: logger}
 }
 
 // ExistsByName は指定されたカテゴリ名が既に存在するかをチェックします。
@@ -46,6 +49,7 @@ func (r *CategoryRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, n
 	condition := models.CategoryWhere.Name.EQ(name.Value())
 	exists, err := models.Categories(condition).Exists(ctx, tx)
 	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to check if category exists", slog.Any("error", err))
 		return false, handler.DBErrHandler(err)
 	}
 	return exists, nil
@@ -70,6 +74,7 @@ func (r *CategoryRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, categor
 	}
 	// NOTE: boil.Infer() でauto-incrementのIDは無視され、勝手にDB側で採番された後、sqlboiler側の構造体にセットされる
 	if err := newCategory.Insert(ctx, tx, boil.Infer()); err != nil {
+		r.logger.ErrorContext(ctx, "Failed to create category", slog.Any("error", err))
 		return handler.DBErrHandler(err)
 	}
 	return nil
@@ -153,47 +158,42 @@ func (r *CategoryRepositoryImpl) DeleteByName(ctx context.Context, tx *sql.Tx, n
 	return nil
 }
 
-// CategoryAfterInsertHook はカテゴリの挿入後に実行されるフックです。
-// 新規作成されたカテゴリの情報をログに出力します。
+// categoryHookFactory は指定されたフックタイプに応じたカテゴリ用フック関数を生成します。
+// loggerをクロージャーに保持し、各フック実行時に構造化ログを出力します。
 //
 // Parameters:
-//   - ctx: コンテキスト
-//   - exec: コンテキスト付きエグゼキューター
-//   - category: 挿入されたカテゴリ
+//   - hookType: フックのタイプ（AfterInsertHook, AfterUpdateHook, AfterDeleteHook）
+//   - logger: 構造化ログ出力に使用するlogger
 //
 // Returns:
-//   - error: 常にnilを返します
-func CategoryAfterInsertHook(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
-	log.Printf("カテゴリが新規作成されました。ID=%s, Name=%s", category.ObjID, category.Name)
-	return nil
-}
-
-// CategoryAfterUpdateHook はカテゴリの更新後に実行されるフックです。
-// 更新されたカテゴリの情報をログに出力します。
+//   - func: SQLBoilerのフック関数
 //
-// Parameters:
-//   - ctx: コンテキスト
-//   - exec: コンテキスト付きエグゼキューター
-//   - category: 更新されたカテゴリ
-//
-// Returns:
-//   - error: 常にnilを返します
-func CategoryAfterUpdateHook(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
-	log.Printf("カテゴリが更新されました。ID=%s, Name=%s", category.ObjID, category.Name)
-	return nil
-}
-
-// CategoryAfterDeleteHook はカテゴリの削除後に実行されるフックです。
-// 削除されたカテゴリの情報をログに出力します。
-//
-// Parameters:
-//   - ctx: コンテキスト
-//   - exec: コンテキスト付きエグゼキューター
-//   - category: 削除されたカテゴリ
-//
-// Returns:
-//   - error: 常にnilを返します
-func CategoryAfterDeleteHook(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
-	log.Printf("カテゴリが削除されました。ID=%s, Name=%s", category.ObjID, category.Name)
-	return nil
+// Panics:
+//   - hookTypeが想定外の値の場合
+func categoryHookFactory(hookType boil.HookPoint, logger *slog.Logger) func(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
+	switch hookType {
+	case boil.AfterInsertHook:
+		return func(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
+			logger.InfoContext(ctx, "カテゴリが新規作成されました",
+				slog.String("obj_id", category.ObjID),
+				slog.String("name", category.Name))
+			return nil
+		}
+	case boil.AfterUpdateHook:
+		return func(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
+			logger.InfoContext(ctx, "カテゴリが更新されました",
+				slog.String("obj_id", category.ObjID),
+				slog.String("name", category.Name))
+			return nil
+		}
+	case boil.AfterDeleteHook:
+		return func(ctx context.Context, exec boil.ContextExecutor, category *models.Category) error {
+			logger.InfoContext(ctx, "カテゴリが削除されました",
+				slog.String("obj_id", category.ObjID),
+				slog.String("name", category.Name))
+			return nil
+		}
+	default:
+		panic("Invalid hookType")
+	}
 }

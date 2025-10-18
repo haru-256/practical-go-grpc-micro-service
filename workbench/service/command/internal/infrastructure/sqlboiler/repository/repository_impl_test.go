@@ -8,6 +8,8 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"io"
+	"log/slog"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
@@ -24,7 +26,9 @@ var _ = Describe("categoryRepositoryImpl構造体", Ordered, Label("CategoryRepo
 	var err error
 
 	BeforeAll(func() {
-		rep = NewCategoryRepositoryImpl()
+		// テストではログ出力を破棄するloggerを使用
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		rep = NewCategoryRepositoryImpl(logger)
 	})
 
 	BeforeEach(func() {
@@ -158,7 +162,9 @@ var _ = Describe("productRepositoryImpl構造体", Ordered, Label("ProductReposi
 	var testCategory *categories.Category
 
 	BeforeAll(func() {
-		rep = NewProductRepositoryImpl()
+		// テストではログ出力を破棄するloggerを使用
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		rep = NewProductRepositoryImpl(logger)
 		// テスト用のカテゴリを作成
 		catName, catNameErr := categories.NewCategoryName("文房具")
 		Expect(catNameErr).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました。")

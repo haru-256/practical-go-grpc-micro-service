@@ -31,5 +31,5 @@ type TransactionManager interface {
 	//
 	// Returns:
 	//   - error: コミットまたはロールバックに失敗した場合のエラー
-	Complete(tx *sql.Tx, err error) error
+	Complete(ctx context.Context, tx *sql.Tx, err error) error
 }

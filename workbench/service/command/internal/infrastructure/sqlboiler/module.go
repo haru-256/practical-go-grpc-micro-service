@@ -3,9 +3,11 @@ package sqlboiler
 import (
 	"context"
 	"database/sql"
-	"log"
+	"log/slog"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/logger"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
@@ -24,8 +26,10 @@ import (
 var Module = fx.Module(
 	"sqlboiler",
 	fx.Provide(
+		config.NewViper,
 		handler.NewDBConfig,
 		handler.NewDatabase,
+		logger.NewLogger,
 		fx.Annotate(
 			repository.NewCategoryRepositoryImpl,
 			fx.As(new(categories.CategoryRepository)),
@@ -50,12 +54,11 @@ var Module = fx.Module(
 // Parameters:
 //   - lc: Fxライフサイクル
 //   - db: データベース接続
-func registerLifecycleHooks(lc fx.Lifecycle, db *sql.DB) {
+func registerLifecycleHooks(lc fx.Lifecycle, db *sql.DB, logger *slog.Logger) {
 	lc.Append(fx.Hook{
 		// OnStartはNewDatabaseで接続確認済みなので不要
 		OnStop: func(ctx context.Context) error {
-			// FIXME: 外部からloggerを受け取るようにする(DI)
-			log.Println("Closing database connection...")
+			logger.InfoContext(ctx, "Closing database connection...")
 			return db.Close()
 		},
 	})

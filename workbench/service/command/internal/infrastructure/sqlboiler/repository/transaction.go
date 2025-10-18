@@ -3,14 +3,16 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"log"
+	"log/slog"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 )
 
 // TransactionManagerImpl はSQLBoilerを使用したTransactionManagerの実装です。
-type TransactionManagerImpl struct{}
+type TransactionManagerImpl struct {
+	logger *slog.Logger
+}
 
 // NewTransactionManagerImpl は新しいTransactionManagerImplインスタンスを生成します。
 // 具象型を返すことで、呼び出し側が必要に応じてインターフェースとして扱えるようにします。
@@ -19,8 +21,8 @@ type TransactionManagerImpl struct{}
 //
 //	tm := repository.NewTransactionManagerImpl()
 //	var manager service.TransactionManager = tm  // インターフェースとして使用
-func NewTransactionManagerImpl() *TransactionManagerImpl {
-	return &TransactionManagerImpl{}
+func NewTransactionManagerImpl(logger *slog.Logger) *TransactionManagerImpl {
+	return &TransactionManagerImpl{logger: logger}
 }
 
 // Begin は新しいデータベーストランザクションを開始します。
@@ -41,26 +43,27 @@ func (tm *TransactionManagerImpl) Begin(ctx context.Context) (*sql.Tx, error) {
 
 // Complete はトランザクションを完了します。
 // errがnilの場合はコミット、非nilの場合はロールバックを実行します。
+// コミット/ロールバックの結果はログに記録されます。
 //
 // Parameters:
+//   - ctx: コンテキスト（ログ出力に使用）
 //   - tx: 完了するトランザクション
-//   - err: トランザクション中に発生したエラー（nilの場合はコミット）
+//   - err: トランザクション中に発生したエラー（nilの場合はコミット、非nilの場合はロールバック）
 //
 // Returns:
 //   - error: コミットまたはロールバック時にエラーが発生した場合
-func (tm *TransactionManagerImpl) Complete(tx *sql.Tx, err error) error {
+func (tm *TransactionManagerImpl) Complete(ctx context.Context, tx *sql.Tx, err error) error {
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return handler.DBErrHandler(rbErr)
 		} else {
-			// TODO: ロギングフレームワークを導入したら置き換える。また、DIでloggerを渡すようにする。
-			log.Println("トランザクションをロールバックしました")
+			tm.logger.WarnContext(ctx, "トランザクションをロールバックしました")
 		}
 	} else {
 		if cmErr := tx.Commit(); cmErr != nil {
 			return handler.DBErrHandler(cmErr)
 		} else {
-			log.Println("トランザクションをコミットしました")
+			tm.logger.InfoContext(ctx, "トランザクションをコミットしました")
 		}
 	}
 	return nil

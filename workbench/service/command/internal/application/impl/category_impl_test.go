@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
@@ -28,7 +30,9 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockRepo = categories.NewMockCategoryRepository(ctrl)
 		mockTm = service.NewMockTransactionManager(ctrl)
-		cs = NewCategoryServiceImpl(mockRepo, mockTm)
+		// テストではログ出力を破棄するloggerを使用
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		cs = NewCategoryServiceImpl(logger, mockRepo, mockTm)
 		ctx = context.Background()
 
 		// モックトランザクション（実際のオブジェクトをシミュレート）
@@ -53,7 +57,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(false, nil),
 					mockRepo.EXPECT().Create(ctx, mockTx, testCategory).Return(nil),
-					mockTm.EXPECT().Complete(mockTx, nil).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(nil),
 				)
 
 				// Act
@@ -70,8 +74,8 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(true, nil),
-					mockTm.EXPECT().Complete(mockTx, gomock.Any()).
-						Do(func(tx *sql.Tx, err error) {
+					mockTm.EXPECT().Complete(ctx, mockTx, gomock.Any()).
+						Do(func(ctx context.Context, tx *sql.Tx, err error) {
 							// Completeに渡されるエラーがApplicationErrorであることを検証
 							Expect(err).To(BeAssignableToTypeOf(&errs.ApplicationError{}))
 							appErr := err.(*errs.ApplicationError)
@@ -113,7 +117,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(false, existsErr),
-					mockTm.EXPECT().Complete(mockTx, existsErr).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, existsErr).Return(nil),
 				)
 
 				// Act
@@ -133,7 +137,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(false, nil),
 					mockRepo.EXPECT().Create(ctx, mockTx, testCategory).Return(createErr),
-					mockTm.EXPECT().Complete(mockTx, createErr).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, createErr).Return(nil),
 				)
 
 				// Act
@@ -153,7 +157,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().UpdateById(ctx, mockTx, testCategory).Return(nil),
-					mockTm.EXPECT().Complete(mockTx, nil).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(nil),
 				)
 
 				// Act
@@ -171,7 +175,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().UpdateById(ctx, mockTx, testCategory).Return(updateErr),
-					mockTm.EXPECT().Complete(mockTx, updateErr).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, updateErr).Return(nil),
 				)
 
 				// Act
@@ -206,7 +210,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().DeleteById(ctx, mockTx, testCategory.Id()).Return(nil),
-					mockTm.EXPECT().Complete(mockTx, nil).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(nil),
 				)
 
 				// Act
@@ -224,7 +228,7 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().DeleteById(ctx, mockTx, testCategory.Id()).Return(deleteErr),
-					mockTm.EXPECT().Complete(mockTx, deleteErr).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, deleteErr).Return(nil),
 				)
 
 				// Act

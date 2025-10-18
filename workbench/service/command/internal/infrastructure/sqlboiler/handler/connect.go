@@ -4,12 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
-	"github.com/haru-256/practical-go-grpc-micro-service/pkg/utils"
 	"github.com/spf13/viper"
 )
 
@@ -25,42 +23,25 @@ type DBConfig struct {
 	MaxOpenConns    int           //	最大接続数
 	ConnMaxLifetime time.Duration //	接続の最大生存時間(分)
 	ConnMaxIdleTime time.Duration //	接続の最大アイドル時間(分)
+	LogLevel        string        // ログレベル
 }
 
-func setupViper(configPath string, configName string) *viper.Viper {
-	v := viper.New()
-	v.AddConfigPath(configPath)
-	v.SetConfigName(configName)
-	v.SetConfigType("toml")
-
-	// 環境変数でtomlの設定を上書き可能にする
-	v.AutomaticEnv()
-
-	// 各設定キーを環境変数に明示的にバインド
-	bindings := map[string]string{
-		"mysql.dbname":             "DB_DBNAME",
-		"mysql.host":               "DB_HOST",
-		"mysql.port":               "DB_PORT",
-		"mysql.user":               "DB_USER",
-		"mysql.pass":               "DB_PASS",
-		"mysql.max_idle_conns":     "DB_MAX_IDLE_CONNS",
-		"mysql.max_open_conns":     "DB_MAX_OPEN_CONNS",
-		"mysql.conn_max_lifetime":  "DB_CONN_MAX_LIFETIME",
-		"mysql.conn_max_idle_time": "DB_CONN_MAX_IDLE_TIME",
-	}
-	for key, env := range bindings {
-		if err := v.BindEnv(key, env); err != nil {
-			log.Printf("failed to bind env for %s: %v", key, err)
-		}
-	}
-
-	if err := v.ReadInConfig(); err != nil {
-		log.Printf("config file not found: %v", err)
-	}
-
-	return v
-}
-
+// getKey はViperから型安全に設定値を取得するヘルパー関数です。
+// 指定されたキーが存在しない場合、またはサポートされていない型の場合はエラーを記録します。
+//
+// サポートされる型:
+//   - string
+//   - int
+//   - bool
+//   - time.Duration
+//
+// Parameters:
+//   - v: Viperインスタンス
+//   - key: 設定キー（例: "mysql.host"）
+//   - errs: エラーを蓄積するスライスへのポインタ
+//
+// Returns:
+//   - T: 設定値（エラーの場合はゼロ値）
 func getKey[T any](v *viper.Viper, key string, errs *[]error) T {
 	var zero T
 	if !v.IsSet(key) {
@@ -87,19 +68,20 @@ func getKey[T any](v *viper.Viper, key string, errs *[]error) T {
 }
 
 // NewDBConfig はデータベース設定を生成します。
-// TOMLファイルまたは環境変数から読み込みます。
-// デフォルトでは "../config" から "database" という名前の設定ファイルを読み込みます。
+// 外部から注入されたviperインスタンスを使用してTOMLファイルまたは環境変数から設定を読み込みます。
 //
 // 環境変数（DB_プレフィックス）:
 //   - DB_DBNAME, DB_HOST, DB_PORT, DB_USER, DB_PASS
 //   - DB_MAX_IDLE_CONNS, DB_MAX_OPEN_CONNS
 //   - DB_CONN_MAX_LIFETIME, DB_CONN_MAX_IDLE_TIME
 //
+// Parameters:
+//   - v: viper設定インスタンス（通常はconfig.NewViper()から取得）
+//
 // Returns:
 //   - *DBConfig: データベース設定
-//   - error: ファイル読み込みエラー、パースエラー、または環境変数エラー
-func NewDBConfig() (*DBConfig, error) {
-	v := setupViper("../config", "database")
+//   - error: パースエラー、または必須設定キーが存在しない場合
+func NewDBConfig(v *viper.Viper) (*DBConfig, error) {
 	var configErrors []error
 	cfg := DBConfig{
 		DBName:          getKey[string](v, "mysql.dbname", &configErrors),
@@ -111,6 +93,7 @@ func NewDBConfig() (*DBConfig, error) {
 		MaxOpenConns:    getKey[int](v, "mysql.max_open_conns", &configErrors),
 		ConnMaxLifetime: getKey[time.Duration](v, "mysql.conn_max_lifetime", &configErrors),
 		ConnMaxIdleTime: getKey[time.Duration](v, "mysql.conn_max_idle_time", &configErrors),
+		LogLevel:        getKey[string](v, "log.level", &configErrors),
 	}
 	// すべての環境変数を読み込んだ後、エラーがあればまとめて返す
 	if len(configErrors) > 0 {
@@ -157,10 +140,6 @@ func NewDatabase(config *DBConfig) (*sql.DB, error) {
 
 	// Configure SQLBoiler globally (required by SQLBoiler's design)
 	boil.SetDB(db)
-	logLevel, err := utils.GetEnv("LOG_LEVEL", "debug")
-	if err != nil {
-		return nil, err
-	}
-	boil.DebugMode = strings.ToLower(logLevel) == "debug" // デバッグモードに設定 生成されたSQLを出力する
+	boil.DebugMode = strings.ToLower(config.LogLevel) == "debug" // デバッグモードに設定 生成されたSQLを出力する
 	return db, nil
 }

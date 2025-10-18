@@ -57,15 +57,15 @@ func (mr *MockTransactionManagerMockRecorder) Begin(ctx any) *gomock.Call {
 }
 
 // Complete mocks base method.
-func (m *MockTransactionManager) Complete(tx *sql.Tx, err error) error {
+func (m *MockTransactionManager) Complete(ctx context.Context, tx *sql.Tx, err error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Complete", tx, err)
+	ret := m.ctrl.Call(m, "Complete", ctx, tx, err)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Complete indicates an expected call of Complete.
-func (mr *MockTransactionManagerMockRecorder) Complete(tx, err any) *gomock.Call {
+func (mr *MockTransactionManagerMockRecorder) Complete(ctx, tx, err any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockTransactionManager)(nil).Complete), tx, err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Complete", reflect.TypeOf((*MockTransactionManager)(nil).Complete), ctx, tx, err)
 }

@@ -13,7 +13,6 @@ tool (
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1
 	connectrpc.com/connect v1.19.1
-	github.com/BurntSushi/toml v1.5.0
 	github.com/aarondl/sqlboiler/v4 v4.19.5
 	github.com/aarondl/strmangle v0.0.9
 	github.com/friendsofgo/errors v0.9.2

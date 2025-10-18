@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io"
+	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	. "github.com/onsi/ginkgo/v2"
@@ -22,7 +24,9 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 	)
 
 	BeforeAll(func() {
-		tm = NewTransactionManagerImpl()
+		// テストではログ出力を破棄するloggerを使用
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		tm = NewTransactionManagerImpl(logger)
 	})
 
 	BeforeEach(func() {
@@ -55,14 +59,14 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 
 		Context("エラーが渡された場合", func() {
 			It("トランザクションをロールバックすること", func() {
-				err := tm.Complete(tx, errors.New("何らかのエラー"))
+				err := tm.Complete(ctx, tx, errors.New("何らかのエラー"))
 				Expect(err).NotTo(HaveOccurred(), "ロールバックに失敗しました")
 			})
 		})
 
 		Context("エラーがnilの場合", func() {
 			It("トランザクションをコミットすること", func() {
-				err := tm.Complete(tx, nil)
+				err := tm.Complete(ctx, tx, nil)
 				Expect(err).NotTo(HaveOccurred(), "コミットに失敗しました")
 			})
 		})
@@ -74,7 +78,7 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 			Expect(err).NotTo(HaveOccurred())
 			Expect(tx).NotTo(BeNil())
 
-			err = tm.Complete(tx, errors.New("テスト用エラー"))
+			err = tm.Complete(ctx, tx, errors.New("テスト用エラー"))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -83,7 +87,7 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 			Expect(err).NotTo(HaveOccurred())
 			Expect(tx).NotTo(BeNil())
 
-			err = tm.Complete(tx, nil)
+			err = tm.Complete(ctx, tx, nil)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})

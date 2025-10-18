@@ -9,11 +9,12 @@ package impl
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io"
+	"log/slog"
 	"time"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
@@ -26,11 +27,8 @@ import (
 // database.tomlファイルを読み込み、テストデータベースへの接続を確立します。
 // この関数はBeforeAllフックで呼び出されることを想定しています。
 func setupDatabase() {
-	absPath, err := filepath.Abs("../../infrastructure/sqlboiler/config/database.toml")
-	Expect(err).NotTo(HaveOccurred())
-	Expect(os.Setenv("DATABASE_TOML_PATH", absPath)).To(Succeed())
-
-	config, err := handler.NewDBConfig()
+	v := config.NewViper("../../../", "config")
+	config, err := handler.NewDBConfig(v)
 	Expect(err).NotTo(HaveOccurred(), "DBConfigの生成に失敗しました")
 
 	_, err = handler.NewDatabase(config)
@@ -69,14 +67,14 @@ func cleanupCategory(tm service.TransactionManager, repo categories.CategoryRepo
 
 	exists, err := repo.ExistsByName(ctx, tx, category.Name())
 	if err != nil {
-		_ = tm.Complete(tx, err)
+		_ = tm.Complete(ctx, tx, err)
 		return
 	}
 
 	if exists {
 		err = repo.DeleteByName(ctx, tx, category.Name())
 	}
-	_ = tm.Complete(tx, err)
+	_ = tm.Complete(ctx, tx, err)
 }
 
 var _ = Describe("CategoryService Integration Test", Ordered, func() {
@@ -91,10 +89,13 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 		// データベース接続の初期化
 		setupDatabase()
 
+		// テストではログ出力を破棄するloggerを使用
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
 		// サービスとリポジトリの初期化
-		repo = repository.NewCategoryRepositoryImpl()
-		tm = repository.NewTransactionManagerImpl()
-		cs = NewCategoryServiceImpl(repo, tm)
+		repo = repository.NewCategoryRepositoryImpl(logger)
+		tm = repository.NewTransactionManagerImpl(logger)
+		cs = NewCategoryServiceImpl(logger, repo, tm)
 	})
 
 	BeforeEach(func() {
@@ -125,7 +126,7 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 			tx, err := tm.Begin(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
-				_ = tm.Complete(tx, err)
+				_ = tm.Complete(ctx, tx, err)
 			}()
 
 			exists, err := repo.ExistsByName(ctx, tx, testCategory.Name())
@@ -182,7 +183,7 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 			tx, err := tm.Begin(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
-				_ = tm.Complete(tx, err)
+				_ = tm.Complete(ctx, tx, err)
 			}()
 
 			exists, err := repo.ExistsByName(ctx, tx, updatedCategory.Name())
@@ -242,7 +243,7 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 			tx, err := tm.Begin(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
-				_ = tm.Complete(tx, err)
+				_ = tm.Complete(ctx, tx, err)
 			}()
 
 			exists, err := repo.ExistsByName(ctx, tx, testCategory.Name())
