@@ -2,7 +2,7 @@ package impl
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
@@ -11,8 +11,9 @@ import (
 
 // ProductServiceImpl は商品サービスの実装です。
 type ProductServiceImpl struct {
-	repo products.ProductRepository
-	tm   service.TransactionManager
+	repo   products.ProductRepository
+	tm     service.TransactionManager
+	logger *slog.Logger
 }
 
 // NewProductServiceImpl は新しいProductServiceImplインスタンスを生成します。
@@ -22,10 +23,11 @@ type ProductServiceImpl struct {
 //
 //	svc := impl.NewProductServiceImpl(repo, tm)
 //	var productService service.ProductService = svc  // インターフェースとして使用
-func NewProductServiceImpl(repo products.ProductRepository, tm service.TransactionManager) *ProductServiceImpl {
+func NewProductServiceImpl(logger *slog.Logger, repo products.ProductRepository, tm service.TransactionManager) *ProductServiceImpl {
 	return &ProductServiceImpl{
-		repo: repo,
-		tm:   tm,
+		repo:   repo,
+		tm:     tm,
+		logger: logger,
 	}
 }
 
@@ -46,8 +48,8 @@ func (s *ProductServiceImpl) Add(ctx context.Context, product *products.Product)
 	}
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
-		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Print("トランザクションの完了に失敗しました:", completeErr)
+		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
@@ -84,8 +86,8 @@ func (s *ProductServiceImpl) Update(ctx context.Context, product *products.Produ
 		return err
 	}
 	defer func() {
-		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Println("トランザクションの完了に失敗しました:", completeErr)
+		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
@@ -112,8 +114,8 @@ func (s *ProductServiceImpl) Delete(ctx context.Context, product *products.Produ
 		return err
 	}
 	defer func() {
-		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Println("トランザクションの完了に失敗しました:", completeErr)
+		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 

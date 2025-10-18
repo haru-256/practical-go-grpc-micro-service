@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
@@ -15,21 +15,24 @@ import (
 )
 
 // ProductRepositoryImpl は商品リポジトリのSQLBoilerを使用した実装です。
-type ProductRepositoryImpl struct{}
+type ProductRepositoryImpl struct {
+	logger *slog.Logger
+}
 
 // NewProductRepositoryImpl は新しいProductRepositoryImplインスタンスを生成します。
 // この関数は、商品の挿入、更新、削除後に実行されるフックを登録します。
+// フック関数はファクトリー関数により生成され、渡されたloggerをクロージャーに保持します。
 // 具象型を返すことで、呼び出し側が必要に応じてインターフェースとして扱えるようにします。
 //
 // 使用例:
 //
-//	repo := repository.NewProductRepositoryImpl()
+//	repo := repository.NewProductRepositoryImpl(logger)
 //	var productRepo products.ProductRepository = repo  // インターフェースとして使用
-func NewProductRepositoryImpl() *ProductRepositoryImpl {
-	models.AddProductHook(boil.AfterInsertHook, ProductAfterInsertHook)
-	models.AddProductHook(boil.AfterUpdateHook, ProductAfterUpdateHook)
-	models.AddProductHook(boil.AfterDeleteHook, ProductAfterDeleteHook)
-	return &ProductRepositoryImpl{}
+func NewProductRepositoryImpl(logger *slog.Logger) *ProductRepositoryImpl {
+	models.AddProductHook(boil.AfterInsertHook, productHookFactory(boil.AfterInsertHook, logger))
+	models.AddProductHook(boil.AfterUpdateHook, productHookFactory(boil.AfterUpdateHook, logger))
+	models.AddProductHook(boil.AfterDeleteHook, productHookFactory(boil.AfterDeleteHook, logger))
+	return &ProductRepositoryImpl{logger: logger}
 }
 
 // ExistsById は指定された商品IDが存在するかどうかをチェックします。
@@ -46,6 +49,7 @@ func (r *ProductRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *
 	condition := models.ProductWhere.ObjID.EQ(id.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
 	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to check if product exists", slog.Any("error", err))
 		return false, handler.DBErrHandler(err)
 	}
 	return exists, nil
@@ -65,6 +69,7 @@ func (r *ProductRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, na
 	condition := models.ProductWhere.Name.EQ(name.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
 	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to check if product exists", slog.Any("error", err))
 		return false, handler.DBErrHandler(err)
 	}
 	return exists, nil
@@ -91,6 +96,7 @@ func (r *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product 
 	}
 	// NOTE: boil.Infer() でauto-incrementのIDは無視され、勝手にDB側で採番された後、sqlboiler側の構造体にセットされる
 	if err := newProduct.Insert(ctx, tx, boil.Infer()); err != nil {
+		r.logger.ErrorContext(ctx, "Failed to create product", slog.Any("error", err))
 		return handler.DBErrHandler(err)
 	}
 	return nil
@@ -156,50 +162,51 @@ func (r *ProductRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id *
 	return nil
 }
 
-// ProductAfterInsertHook は商品の挿入後に実行されるフックです。
-// 新規作成された商品の情報をログに出力します。
+// productHookFactory は指定されたフックタイプに応じた商品用フック関数を生成します。
+// loggerをクロージャーに保持し、各フック実行時に構造化ログを出力します。
 //
 // Parameters:
-//   - ctx: コンテキスト
-//   - exec: コンテキスト付きエグゼキューター
-//   - product: 挿入された商品
+//   - hookType: フックのタイプ（AfterInsertHook, AfterUpdateHook, AfterDeleteHook）
+//   - logger: 構造化ログ出力に使用するlogger
 //
 // Returns:
-//   - error: 常にnilを返します
-func ProductAfterInsertHook(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
-	log.Printf("商品ID:%s 商品名:%s 単価:%d カテゴリ番号: %s を登録しました。\n",
-		product.ObjID, product.Name, product.Price, product.CategoryID)
-	return nil
-}
-
-// ProductAfterUpdateHook は商品の更新後に実行されるフックです。
-// 更新された商品の情報をログに出力します。
+//   - func: SQLBoilerのフック関数
 //
-// Parameters:
-//   - ctx: コンテキスト
-//   - exec: コンテキスト付きエグゼキューター
-//   - product: 更新された商品
-//
-// Returns:
-//   - error: 常にnilを返します
-func ProductAfterUpdateHook(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
-	log.Printf("商品ID:%s 商品名:%s 単価:%d カテゴリ番号: %s を変更しました。\n",
-		product.ObjID, product.Name, product.Price, product.CategoryID)
-	return nil
-}
-
-// ProductAfterDeleteHook は商品の削除後に実行されるフックです。
-// 削除された商品の情報をログに出力します。
-//
-// Parameters:
-//   - ctx: コンテキスト
-//   - exec: コンテキスト付きエグゼキューター
-//   - product: 削除された商品
-//
-// Returns:
-//   - error: 常にnilを返します
-func ProductAfterDeleteHook(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
-	log.Printf("商品ID:%s 商品名:%s 単価:%d カテゴリ番号: %s を削除しました。\n",
-		product.ObjID, product.Name, product.Price, product.CategoryID)
-	return nil
+// Panics:
+//   - hookTypeが想定外の値の場合
+func productHookFactory(hookType boil.HookPoint, logger *slog.Logger) func(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
+	switch hookType {
+	case boil.AfterInsertHook:
+		return func(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
+			logger.InfoContext(ctx, "商品を登録しました。",
+				slog.String("obj_id", product.ObjID),
+				slog.String("name", product.Name),
+				slog.Int("price", product.Price),
+				slog.String("category_id", product.CategoryID),
+			)
+			return nil
+		}
+	case boil.AfterUpdateHook:
+		return func(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
+			logger.InfoContext(ctx, "商品を変更しました。",
+				slog.String("obj_id", product.ObjID),
+				slog.String("name", product.Name),
+				slog.Int("price", product.Price),
+				slog.String("category_id", product.CategoryID),
+			)
+			return nil
+		}
+	case boil.AfterDeleteHook:
+		return func(ctx context.Context, exec boil.ContextExecutor, product *models.Product) error {
+			logger.InfoContext(ctx, "商品を削除しました。",
+				slog.String("obj_id", product.ObjID),
+				slog.String("name", product.Name),
+				slog.Int("price", product.Price),
+				slog.String("category_id", product.CategoryID),
+			)
+			return nil
+		}
+	default:
+		panic("Invalid hookType")
+	}
 }

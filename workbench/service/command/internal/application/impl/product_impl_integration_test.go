@@ -9,6 +9,8 @@ package impl
 import (
 	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"time"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
@@ -51,14 +53,14 @@ func cleanupProduct(tm service.TransactionManager, repo products.ProductReposito
 
 	exists, err := repo.ExistsById(ctx, tx, product.Id())
 	if err != nil {
-		_ = tm.Complete(tx, err)
+		_ = tm.Complete(ctx, tx, err)
 		return
 	}
 
 	if exists {
 		err = repo.DeleteById(ctx, tx, product.Id())
 	}
-	_ = tm.Complete(tx, err)
+	_ = tm.Complete(ctx, tx, err)
 }
 
 var _ = Describe("ProductService Integration Test", Ordered, func() {
@@ -75,11 +77,14 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 		// データベース接続の初期化（categoryのsetupDatabaseを再利用）
 		setupDatabase()
 
+		// テストではログ出力を破棄するloggerを使用
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
 		// サービスとリポジトリの初期化
-		productRepo = repository.NewProductRepositoryImpl()
-		categoryRepo = repository.NewCategoryRepositoryImpl()
-		tm = repository.NewTransactionManagerImpl()
-		ps = NewProductServiceImpl(productRepo, tm)
+		productRepo = repository.NewProductRepositoryImpl(logger)
+		categoryRepo = repository.NewCategoryRepositoryImpl(logger)
+		tm = repository.NewTransactionManagerImpl(logger)
+		ps = NewProductServiceImpl(logger, productRepo, tm)
 
 		// テスト用カテゴリの作成
 		ctx = context.Background()
@@ -92,7 +97,7 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 		tx, err := tm.Begin(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		err = categoryRepo.Create(ctx, tx, testCategory)
-		Expect(tm.Complete(tx, err)).To(Succeed())
+		Expect(tm.Complete(ctx, tx, err)).To(Succeed())
 	})
 
 	AfterAll(func() {
@@ -130,7 +135,7 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 			tx, err := tm.Begin(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
-				_ = tm.Complete(tx, err)
+				_ = tm.Complete(ctx, tx, err)
 			}()
 
 			exists, err := productRepo.ExistsById(ctx, tx, testProduct.Id())
@@ -197,7 +202,7 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 			tx, err := tm.Begin(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
-				_ = tm.Complete(tx, err)
+				_ = tm.Complete(ctx, tx, err)
 			}()
 
 			exists, err := productRepo.ExistsByName(ctx, tx, updatedProduct.Name())
@@ -261,7 +266,7 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 			tx, err := tm.Begin(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
-				_ = tm.Complete(tx, err)
+				_ = tm.Complete(ctx, tx, err)
 			}()
 
 			exists, err := productRepo.ExistsById(ctx, tx, testProduct.Id())

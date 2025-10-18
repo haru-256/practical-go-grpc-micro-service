@@ -19,8 +19,7 @@ install-tools: ## Install tools
 .PHONY: generate-db-models
 generate-db-models: ## Generate DB models
 	# TODO: dbが立ち上がっていないとエラーになるので、docker-composeで立ち上げるようにする
-	cd internal/infrastructure/sqlboiler && \
-		go tool sqlboiler mysql -c config/database.toml -o models --no-tests --wipe
+	go tool sqlboiler mysql -c config.toml -o internal/infrastructure/sqlboiler/models --no-tests --wipe
 
 .PHONY: generate-mocks
 generate-mocks: ## Generate mocks

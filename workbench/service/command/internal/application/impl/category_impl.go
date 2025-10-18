@@ -2,7 +2,7 @@ package impl
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
@@ -11,8 +11,9 @@ import (
 
 // CategoryServiceImpl はカテゴリサービスの実装です。
 type CategoryServiceImpl struct {
-	repo categories.CategoryRepository
-	tm   service.TransactionManager
+	repo   categories.CategoryRepository
+	tm     service.TransactionManager
+	logger *slog.Logger
 }
 
 // NewCategoryServiceImpl は新しいCategoryServiceImplインスタンスを生成します。
@@ -22,10 +23,11 @@ type CategoryServiceImpl struct {
 //
 //	svc := impl.NewCategoryServiceImpl(repo, tm)
 //	var categoryService service.CategoryService = svc  // インターフェースとして使用
-func NewCategoryServiceImpl(repo categories.CategoryRepository, tm service.TransactionManager) *CategoryServiceImpl {
+func NewCategoryServiceImpl(logger *slog.Logger, repo categories.CategoryRepository, tm service.TransactionManager) *CategoryServiceImpl {
 	return &CategoryServiceImpl{
-		repo: repo,
-		tm:   tm,
+		repo:   repo,
+		tm:     tm,
+		logger: logger,
 	}
 }
 
@@ -47,8 +49,8 @@ func (s *CategoryServiceImpl) Add(ctx context.Context, category *categories.Cate
 	}
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
-		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Println("トランザクションの完了に失敗しました:", completeErr)
+		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
@@ -86,8 +88,8 @@ func (s *CategoryServiceImpl) Update(ctx context.Context, category *categories.C
 		return err
 	}
 	defer func() {
-		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Println("トランザクションの完了に失敗しました:", completeErr)
+		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
@@ -115,8 +117,8 @@ func (s *CategoryServiceImpl) Delete(ctx context.Context, category *categories.C
 		return err
 	}
 	defer func() {
-		if completeErr := s.tm.Complete(tx, err); completeErr != nil {
-			log.Println("トランザクションの完了に失敗しました:", completeErr)
+		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
