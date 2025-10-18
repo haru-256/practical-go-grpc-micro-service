@@ -25,6 +25,10 @@ test-ci: ## Run tests for CI (skip DB tests)
 test-all: ## Run all tests including DB tests
 	go test -tags=integration $$(go list ./... | grep -v /gen/)
 
+.PHONY: install-tools
+install-tools: ## Install tools
+	mise install
+
 .PHONY: act
 act: ## Run act for CI locally
 	$(MAKE) -C ../ act-go

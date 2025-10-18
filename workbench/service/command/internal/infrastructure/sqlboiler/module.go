@@ -1,10 +1,13 @@
-package repository
+package sqlboiler
 
 import (
 	"context"
 	"database/sql"
 	"log"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/repository"
 	"go.uber.org/fx"
@@ -14,15 +17,27 @@ import (
 // このモジュールは以下を提供します:
 //   - データベース設定の読み込み（NewDBConfig）
 //   - データベース接続の確立（NewDatabase）
-//   - カテゴリリポジトリの実装（NewCategoryRepository）
+//   - カテゴリリポジトリの実装（NewCategoryRepositoryImpl → categories.CategoryRepository）
+//   - 商品リポジトリの実装（NewProductRepositoryImpl → products.ProductRepository）
+//   - トランザクションマネージャーの実装（NewTransactionManagerImpl → service.TransactionManager）
 //   - アプリケーション停止時のDB接続クローズ処理
 var Module = fx.Module(
 	"sqlboiler",
 	fx.Provide(
 		handler.NewDBConfig,
 		handler.NewDatabase,
-		repository.NewCategoryRepository,
-		repository.NewProductRepository,
+		fx.Annotate(
+			repository.NewCategoryRepositoryImpl,
+			fx.As(new(categories.CategoryRepository)),
+		),
+		fx.Annotate(
+			repository.NewProductRepositoryImpl,
+			fx.As(new(products.ProductRepository)),
+		),
+		fx.Annotate(
+			repository.NewTransactionManagerImpl,
+			fx.As(new(service.TransactionManager)),
+		),
 	),
 	fx.Invoke(registerLifecycleHooks),
 )
