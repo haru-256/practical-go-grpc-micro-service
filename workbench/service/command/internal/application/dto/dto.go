@@ -5,16 +5,6 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 )
 
-// CRUDOperation はDTO変換時のCRUD操作種別を表します。
-// この型はprotobufとの変換にのみ使用されます。
-type CRUDOperation int
-
-const (
-	CRUDInsert CRUDOperation = iota
-	CRUDUpdate
-	CRUDDelete
-)
-
 // CategoryDTO はカテゴリデータのDTOです。
 type CategoryDTO struct {
 	Id   string // カテゴリID
