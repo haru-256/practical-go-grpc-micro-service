@@ -59,15 +59,13 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 
 		Context("エラーが渡された場合", func() {
 			It("トランザクションをロールバックすること", func() {
-				err := tm.Complete(ctx, tx, errors.New("何らかのエラー"))
-				Expect(err).NotTo(HaveOccurred(), "ロールバックに失敗しました")
+				Expect(tm.Complete(ctx, tx, errors.New("何らかのエラー"))).To(Succeed(), "ロールバックに失敗しました")
 			})
 		})
 
 		Context("エラーがnilの場合", func() {
 			It("トランザクションをコミットすること", func() {
-				err := tm.Complete(ctx, tx, nil)
-				Expect(err).NotTo(HaveOccurred(), "コミットに失敗しました")
+				Expect(tm.Complete(ctx, tx, nil)).To(Succeed(), "コミットに失敗しました")
 			})
 		})
 	})
@@ -78,8 +76,7 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 			Expect(err).NotTo(HaveOccurred())
 			Expect(tx).NotTo(BeNil())
 
-			err = tm.Complete(ctx, tx, errors.New("テスト用エラー"))
-			Expect(err).NotTo(HaveOccurred())
+			Expect(tm.Complete(ctx, tx, errors.New("テスト用エラー"))).To(Succeed())
 		})
 
 		It("Begin→コミットの一連の流れが正常に動作すること", func() {
@@ -87,8 +84,7 @@ var _ = Describe("transactionManagerImpl", Ordered, Label("TransactionManagerイ
 			Expect(err).NotTo(HaveOccurred())
 			Expect(tx).NotTo(BeNil())
 
-			err = tm.Complete(ctx, tx, nil)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(tm.Complete(ctx, tx, nil)).To(Succeed())
 		})
 	})
 })

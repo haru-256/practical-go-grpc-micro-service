@@ -98,6 +98,21 @@ func (mr *MockCategoryRepositoryMockRecorder) ExistsByName(ctx, tx, name any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsByName", reflect.TypeOf((*MockCategoryRepository)(nil).ExistsByName), ctx, tx, name)
 }
 
+// FindById mocks base method.
+func (m *MockCategoryRepository) FindById(ctx context.Context, tx *sql.Tx, id *CategoryId) (*Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindById", ctx, tx, id)
+	ret0, _ := ret[0].(*Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindById indicates an expected call of FindById.
+func (mr *MockCategoryRepositoryMockRecorder) FindById(ctx, tx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindById", reflect.TypeOf((*MockCategoryRepository)(nil).FindById), ctx, tx, id)
+}
+
 // UpdateById mocks base method.
 func (m *MockCategoryRepository) UpdateById(ctx context.Context, tx *sql.Tx, category *Category) error {
 	m.ctrl.T.Helper()

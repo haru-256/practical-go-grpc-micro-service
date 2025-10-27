@@ -55,6 +55,42 @@ func (r *CategoryRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, n
 	return exists, nil
 }
 
+// FindById は指定されたIDのカテゴリを取得します。
+//
+// Parameters:
+//   - ctx: コンテキスト
+//   - tx: トランザクション
+//   - id: 取得するカテゴリのID
+//
+// Returns:
+//   - *categories.Category: 見つかったカテゴリエンティティ
+//   - error: カテゴリが存在しない場合はNOT_FOUNDエラー、
+//     データベースエラーが発生した場合はそのエラー
+func (r *CategoryRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id *categories.CategoryId) (*categories.Category, error) {
+	condition := models.CategoryWhere.ObjID.EQ(id.Value())
+	model, err := models.Categories(condition).One(ctx, tx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.NewCRUDErrorWithCause("NOT_FOUND", fmt.Sprintf("カテゴリ番号: %s は存在しないため、取得できませんでした。", id.Value()), err)
+		}
+		return nil, handler.DBErrHandler(err)
+	}
+
+	categoryId, err := categories.NewCategoryId(model.ObjID)
+	if err != nil {
+		return nil, err
+	}
+	categoryName, err := categories.NewCategoryName(model.Name)
+	if err != nil {
+		return nil, err
+	}
+	category, convErr := categories.BuildCategory(categoryId, categoryName)
+	if convErr != nil {
+		return nil, convErr
+	}
+	return category, nil
+}
+
 // Create は新しいカテゴリをデータベースに追加します。
 //
 // NOTE: boil.Infer() を使用することで、auto-incrementのIDは無視され、
@@ -197,3 +233,5 @@ func categoryHookFactory(hookType boil.HookPoint, logger *slog.Logger) func(ctx 
 		panic("Invalid hookType")
 	}
 }
+
+var _ categories.CategoryRepository = (*CategoryRepositoryImpl)(nil)

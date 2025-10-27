@@ -8,76 +8,20 @@ package impl
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
-	"time"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/repository"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// setupDatabase はテスト用のデータベース接続を初期化します。
-// database.tomlファイルを読み込み、テストデータベースへの接続を確立します。
-// この関数はBeforeAllフックで呼び出されることを想定しています。
-func setupDatabase() {
-	v := config.NewViper("../../../", "config")
-	config, err := handler.NewDBConfig(v)
-	Expect(err).NotTo(HaveOccurred(), "DBConfigの生成に失敗しました")
-
-	_, err = handler.NewDatabase(config)
-	Expect(err).NotTo(HaveOccurred(), "データベース接続が失敗したのでテストを中止します")
-}
-
-// generateUniqueCategoryName は各テストケースで使用するユニークなカテゴリ名を生成します。
-// カテゴリ名には20文字以下の制約があるため、ミリ秒単位のタイムスタンプを使用し、
-// 8桁に制限することで"TEST_12345678"のような形式（13文字）を生成します。
-//
-// Returns:
-//   - string: ユニークなカテゴリ名（例: "TEST_12345678"）
-func generateUniqueCategoryName() string {
-	return fmt.Sprintf("TEST_%d", time.Now().UnixMilli()%100000000)
-}
-
-// cleanupCategory はテスト終了後にテスト用カテゴリをデータベースから削除します。
-// この関数はAfterEachフックで呼び出され、テストの独立性を保証します。
-// カテゴリがnilの場合や削除に失敗した場合もエラーを返さず、
-// 次のテストに影響を与えないように設計されています。
-//
-// Parameters:
-//   - tm: トランザクションマネージャー
-//   - repo: カテゴリリポジトリ
-//   - category: 削除対象のカテゴリ（nilの場合は何もしない）
-func cleanupCategory(tm service.TransactionManager, repo categories.CategoryRepository, category *categories.Category) {
-	if category == nil {
-		return
-	}
-
-	ctx := context.Background()
-	tx, err := tm.Begin(ctx)
-	if err != nil {
-		return
-	}
-
-	exists, err := repo.ExistsByName(ctx, tx, category.Name())
-	if err != nil {
-		_ = tm.Complete(ctx, tx, err)
-		return
-	}
-
-	if exists {
-		err = repo.DeleteByName(ctx, tx, category.Name())
-	}
-	_ = tm.Complete(ctx, tx, err)
-}
-
-var _ = Describe("CategoryService Integration Test", Ordered, func() {
+var _ = Describe("CategoryService Integration Test", Label("IntegrationTests"), Label("CategoryService"), Ordered, func() {
 	var (
 		cs   service.CategoryService
 		tm   service.TransactionManager
@@ -87,7 +31,8 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 
 	BeforeAll(func() {
 		// データベース接続の初期化
-		setupDatabase()
+		err := testhelpers.SetupDatabase("../../../", "config")
+		Expect(err).NotTo(HaveOccurred())
 
 		// テストではログ出力を破棄するloggerを使用
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -103,45 +48,46 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 	})
 
 	Context("Addメソッドの動作確認", func() {
-		var testCategory *categories.Category
+		var testCategoryName *categories.CategoryName
 
 		BeforeEach(func() {
 			// 各テストで新しいユニークなカテゴリを作成
-			name, err := categories.NewCategoryName(generateUniqueCategoryName())
+			var err error
+			testCategoryName, err = categories.NewCategoryName(testhelpers.GenerateUniqueCategoryName())
 			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリ名の生成に失敗しました")
-			testCategory, err = categories.NewCategory(name)
-			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの生成に失敗しました")
-		})
-
-		AfterEach(func() {
-			// テスト終了後のクリーンアップ
-			cleanupCategory(tm, repo, testCategory)
 		})
 
 		It("新しいカテゴリを追加できること", func() {
-			err := cs.Add(ctx, testCategory)
+			createDTO := &dto.CreateCategoryDTO{
+				Name: testCategoryName.Value(),
+			}
+			result, err := cs.Add(ctx, createDTO)
 			Expect(err).NotTo(HaveOccurred(), "カテゴリの追加に失敗しました")
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal(testCategoryName.Value()))
+			DeferCleanup(testhelpers.CleanupCategory, tm, repo, result)
+			testCategory, err := dto.CategoryFromDTO(result)
+			Expect(err).NotTo(HaveOccurred(), "カテゴリDTOからドメインモデルへの変換に失敗しました")
 
 			// 追加されたカテゴリが存在することを確認
-			tx, err := tm.Begin(ctx)
+			exists, err := testhelpers.VerifyCategoryById(ctx, tm, repo, testCategory.Id())
 			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = tm.Complete(ctx, tx, err)
-			}()
-
-			exists, err := repo.ExistsByName(ctx, tx, testCategory.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeTrue(), "追加したカテゴリが存在しません")
+			Expect(exists).To(BeTrue(), "作成したカテゴリがDBに存在しません")
 		})
 
 		It("既存のカテゴリ名で追加しようとするとエラーになること", func() {
+			createDTO := &dto.CreateCategoryDTO{
+				Name: testCategoryName.Value(),
+			}
 			// 最初の追加
-			err := cs.Add(ctx, testCategory)
+			result, err := cs.Add(ctx, createDTO)
 			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(testhelpers.CleanupCategory, tm, repo, result)
 
 			// 重複追加
-			err = cs.Add(ctx, testCategory)
+			duplicateResult, err := cs.Add(ctx, createDTO)
 			Expect(err).To(HaveOccurred(), "重複するカテゴリ名で追加できてしまいました")
+			Expect(duplicateResult).To(BeNil())
 
 			// エラーの詳細を検証
 			appErr, ok := err.(*errs.ApplicationError)
@@ -152,62 +98,61 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 
 	Context("Updateメソッドの動作確認", func() {
 		var testCategory *categories.Category
+		var testCategoryDTO *dto.CategoryDTO
 
 		BeforeEach(func() {
+			var err error
 			// テスト用カテゴリを作成して追加
-			name, err := categories.NewCategoryName(generateUniqueCategoryName())
-			Expect(err).NotTo(HaveOccurred())
-			testCategory, err = categories.NewCategory(name)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = cs.Add(ctx, testCategory)
+			createDTO := &dto.CreateCategoryDTO{
+				Name: testhelpers.GenerateUniqueCategoryName(),
+			}
+			testCategoryDTO, err = cs.Add(ctx, createDTO)
 			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの追加に失敗しました")
-		})
-
-		AfterEach(func() {
-			// テスト終了後のクリーンアップ
-			cleanupCategory(tm, repo, testCategory)
+			testCategory, err = dto.CategoryFromDTO(testCategoryDTO)
+			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリDTOからドメインモデルへの変換に失敗しました")
+			DeferCleanup(testhelpers.CleanupCategory, tm, repo, testCategoryDTO)
 		})
 
 		It("既存のカテゴリを更新できること", func() {
 			// 更新されたカテゴリを作成
-			updatedName, err := categories.NewCategoryName(generateUniqueCategoryName())
+			updatedName, err := categories.NewCategoryName(testhelpers.GenerateUniqueCategoryName())
 			Expect(err).NotTo(HaveOccurred(), "更新用カテゴリ名の生成に失敗しました")
-			updatedCategory, err := categories.BuildCategory(testCategory.Id(), updatedName)
-			Expect(err).NotTo(HaveOccurred(), "更新用カテゴリの生成に失敗しました")
 
-			err = cs.Update(ctx, updatedCategory)
+			updateDTO := &dto.UpdateCategoryDTO{
+				Id:   testCategory.Id().Value(),
+				Name: updatedName.Value(),
+			}
+			result, err := cs.Update(ctx, updateDTO)
 			Expect(err).NotTo(HaveOccurred(), "カテゴリの更新に失敗しました")
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal(updatedName.Value()))
 
 			// 更新されたカテゴリが存在することを確認
-			tx, err := tm.Begin(ctx)
+			exists, err := testhelpers.VerifyCategoryById(ctx, tm, repo, testCategory.Id())
 			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = tm.Complete(ctx, tx, err)
-			}()
-
-			exists, err := repo.ExistsByName(ctx, tx, updatedCategory.Name())
+			Expect(exists).To(BeTrue(), "更新したカテゴリIDがDBに存在しません")
+			exists, err = testhelpers.VerifyCategoryByName(ctx, tm, repo, updatedName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeTrue(), "カテゴリ名が正しく更新されていません")
-
-			// 古いカテゴリ名が存在しないことを確認
-			oldExists, err := repo.ExistsByName(ctx, tx, testCategory.Name())
+			Expect(exists).To(BeTrue(), "更新したカテゴリ名がDBに存在しません")
+			exists, err = testhelpers.VerifyCategoryByName(ctx, tm, repo, testCategory.Name())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(oldExists).To(BeFalse(), "古いカテゴリ名が残っています")
-
-			// クリーンアップのために更新されたカテゴリを保存
-			testCategory = updatedCategory
+			Expect(exists).To(BeFalse(), "古いカテゴリ名がDBに存在しています")
 		})
 
 		It("存在しないカテゴリを更新しようとするとエラーになること", func() {
 			// 存在しないカテゴリを作成
-			nonExistentName, err := categories.NewCategoryName(generateUniqueCategoryName())
+			nonExistentName, err := categories.NewCategoryName(testhelpers.GenerateUniqueCategoryName())
 			Expect(err).NotTo(HaveOccurred())
 			nonExistentCategory, err := categories.NewCategory(nonExistentName)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = cs.Update(ctx, nonExistentCategory)
+			updateDTO := &dto.UpdateCategoryDTO{
+				Id:   nonExistentCategory.Id().Value(),
+				Name: nonExistentCategory.Name().Value(),
+			}
+			result, err := cs.Update(ctx, updateDTO)
 			Expect(err).To(HaveOccurred(), "存在しないカテゴリを更新できてしまいました")
+			Expect(result).To(BeNil())
 
 			// エラーの詳細を検証
 			crudErr, ok := err.(*errs.CRUDError)
@@ -218,48 +163,52 @@ var _ = Describe("CategoryService Integration Test", Ordered, func() {
 
 	Context("Deleteメソッドの動作確認", func() {
 		var testCategory *categories.Category
+		var testCategoryDTO *dto.CategoryDTO
 
 		BeforeEach(func() {
 			// テスト用カテゴリを作成して追加
-			name, err := categories.NewCategoryName(generateUniqueCategoryName())
+			name, err := categories.NewCategoryName(testhelpers.GenerateUniqueCategoryName())
 			Expect(err).NotTo(HaveOccurred())
 			testCategory, err = categories.NewCategory(name)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = cs.Add(ctx, testCategory)
+			createDTO := &dto.CreateCategoryDTO{
+				Name: testCategory.Name().Value(),
+			}
+			testCategoryDTO, err = cs.Add(ctx, createDTO)
 			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリの追加に失敗しました")
-		})
-
-		AfterEach(func() {
-			// テスト終了後のクリーンアップ（削除失敗時のため）
-			cleanupCategory(tm, repo, testCategory)
+			testCategory, err = dto.CategoryFromDTO(testCategoryDTO)
+			Expect(err).NotTo(HaveOccurred(), "テスト用カテゴリDTOからドメインモデルへの変換に失敗しました")
+			DeferCleanup(testhelpers.CleanupCategory, tm, repo, testCategoryDTO)
 		})
 
 		It("既存のカテゴリを削除できること", func() {
-			err := cs.Delete(ctx, testCategory)
+			deleteDTO := &dto.DeleteCategoryDTO{
+				Id: testCategory.Id().Value(),
+			}
+			result, err := cs.Delete(ctx, deleteDTO)
 			Expect(err).NotTo(HaveOccurred(), "カテゴリの削除に失敗しました")
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal(testCategory.Name().Value()))
 
 			// 削除されたことを確認
-			tx, err := tm.Begin(ctx)
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = tm.Complete(ctx, tx, err)
-			}()
-
-			exists, err := repo.ExistsByName(ctx, tx, testCategory.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeFalse(), "カテゴリが正しく削除されていません")
+			exists, _ := testhelpers.VerifyCategoryById(ctx, tm, repo, testCategory.Id())
+			Expect(exists).To(BeFalse(), "削除したカテゴリがDBに存在します")
 		})
 
 		It("存在しないカテゴリを削除しようとするとエラーになること", func() {
 			// 存在しないカテゴリを作成
-			nonExistentName, err := categories.NewCategoryName(generateUniqueCategoryName())
+			nonExistentName, err := categories.NewCategoryName(testhelpers.GenerateUniqueCategoryName())
 			Expect(err).NotTo(HaveOccurred())
 			nonExistentCategory, err := categories.NewCategory(nonExistentName)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = cs.Delete(ctx, nonExistentCategory)
+			deleteDTO := &dto.DeleteCategoryDTO{
+				Id: nonExistentCategory.Id().Value(),
+			}
+			result, err := cs.Delete(ctx, deleteDTO)
 			Expect(err).To(HaveOccurred(), "存在しないカテゴリを削除できてしまいました")
+			Expect(result).To(BeNil())
 
 			// エラーの詳細を検証
 			crudErr, ok := err.(*errs.CRUDError)

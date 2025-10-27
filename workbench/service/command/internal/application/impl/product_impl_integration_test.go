@@ -8,74 +8,35 @@ package impl
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"log/slog"
-	"time"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/repository"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// generateUniqueProductName は各テストケースで使用するユニークな商品名を生成します。
-// 商品名には100文字以下の制約があるため、ミリ秒単位のタイムスタンプを使用します。
-//
-// Returns:
-//   - string: ユニークな商品名（例: "TEST_PRODUCT_1234567890"）
-func generateUniqueProductName() string {
-	return fmt.Sprintf("TEST_PRODUCT_%d", time.Now().UnixMilli())
-}
-
-// cleanupProduct はテスト終了後にテスト用商品をデータベースから削除します。
-// この関数はAfterEachフックで呼び出され、テストの独立性を保証します。
-// 商品がnilの場合や削除に失敗した場合もエラーを返さず、
-// 次のテストに影響を与えないように設計されています。
-//
-// Parameters:
-//   - tm: トランザクションマネージャー
-//   - repo: 商品リポジトリ
-//   - product: 削除対象の商品（nilの場合は何もしない）
-func cleanupProduct(tm service.TransactionManager, repo products.ProductRepository, product *products.Product) {
-	if product == nil {
-		return
-	}
-
-	ctx := context.Background()
-	tx, err := tm.Begin(ctx)
-	if err != nil {
-		return
-	}
-
-	exists, err := repo.ExistsById(ctx, tx, product.Id())
-	if err != nil {
-		_ = tm.Complete(ctx, tx, err)
-		return
-	}
-
-	if exists {
-		err = repo.DeleteById(ctx, tx, product.Id())
-	}
-	_ = tm.Complete(ctx, tx, err)
-}
-
 var _ = Describe("ProductService Integration Test", Ordered, func() {
 	var (
 		ps           service.ProductService
+		cs           service.CategoryService
 		tm           service.TransactionManager
 		productRepo  products.ProductRepository
 		categoryRepo categories.CategoryRepository
 		ctx          context.Context
-		testCategory *categories.Category
 	)
 
 	BeforeAll(func() {
 		// データベース接続の初期化（categoryのsetupDatabaseを再利用）
-		setupDatabase()
+		err := testhelpers.SetupDatabase("../../../", "config")
+		Expect(err).NotTo(HaveOccurred())
 
 		// テストではログ出力を破棄するloggerを使用
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -84,25 +45,8 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 		productRepo = repository.NewProductRepositoryImpl(logger)
 		categoryRepo = repository.NewCategoryRepositoryImpl(logger)
 		tm = repository.NewTransactionManagerImpl(logger)
-		ps = NewProductServiceImpl(logger, productRepo, tm)
-
-		// テスト用カテゴリの作成
-		ctx = context.Background()
-		categoryName, err := categories.NewCategoryName(generateUniqueCategoryName())
-		Expect(err).NotTo(HaveOccurred())
-		testCategory, err = categories.NewCategory(categoryName)
-		Expect(err).NotTo(HaveOccurred())
-
-		// カテゴリをデータベースに追加
-		tx, err := tm.Begin(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		err = categoryRepo.Create(ctx, tx, testCategory)
-		Expect(tm.Complete(ctx, tx, err)).To(Succeed())
-	})
-
-	AfterAll(func() {
-		// テスト用カテゴリのクリーンアップ
-		cleanupCategory(tm, categoryRepo, testCategory)
+		ps = NewProductServiceImpl(logger, productRepo, categoryRepo, tm)
+		cs = NewCategoryServiceImpl(logger, categoryRepo, tm)
 	})
 
 	BeforeEach(func() {
@@ -110,11 +54,26 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 	})
 
 	Context("Addメソッドの動作確認", func() {
-		var testProduct *products.Product
+		var (
+			testProduct     *products.Product
+			testCategory    *categories.Category
+			testCategoryDTO *dto.CategoryDTO
+		)
 
 		BeforeEach(func() {
+			var err error
+			// 各テストで新しいユニークなカテゴリを作成
+			CreateCategoryDTO := &dto.CreateCategoryDTO{
+				Name: testhelpers.GenerateUniqueCategoryName(),
+			}
+			// カテゴリをデータベースに追加
+			testCategoryDTO, err = cs.Add(ctx, CreateCategoryDTO)
+			Expect(err).NotTo(HaveOccurred())
+			testCategory, err = dto.CategoryFromDTO(testCategoryDTO)
+			Expect(err).NotTo(HaveOccurred())
+
 			// 各テストで新しいユニークな商品を作成
-			name, err := products.NewProductName(generateUniqueProductName())
+			name, err := products.NewProductName(testhelpers.GenerateUniqueProductName())
 			Expect(err).NotTo(HaveOccurred(), "テスト用商品名の生成に失敗しました")
 			price, err := products.NewProductPrice(1000)
 			Expect(err).NotTo(HaveOccurred(), "テスト用商品価格の生成に失敗しました")
@@ -122,41 +81,56 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 			Expect(err).NotTo(HaveOccurred(), "テスト用商品の生成に失敗しました")
 		})
 
-		AfterEach(func() {
-			// テスト終了後のクリーンアップ
-			cleanupProduct(tm, productRepo, testProduct)
-		})
-
 		It("新しい商品を追加できること", func() {
-			err := ps.Add(ctx, testProduct)
+			createProductDTO := &dto.CreateProductDTO{
+				Name: testProduct.Name().Value(),
+				Category: &dto.CategoryDTO{
+					Id:   testProduct.Category().Id().Value(),
+					Name: testProduct.Category().Name().Value(),
+				},
+				Price: testProduct.Price().Value(),
+			}
+
+			result, err := ps.Add(ctx, createProductDTO)
 			Expect(err).NotTo(HaveOccurred(), "商品の追加に失敗しました")
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal(testProduct.Name().Value()))
+			Expect(result.Price).To(Equal(uint32(testProduct.Price().Value())))
+			DeferCleanup(testhelpers.CleanupProductCategory, tm, productRepo, categoryRepo, result, testCategoryDTO)
 
 			// 追加された商品が存在することを確認
-			tx, err := tm.Begin(ctx)
+			exists, err := testhelpers.VerifyProductByName(ctx, tm, productRepo, testProduct.Name())
 			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = tm.Complete(ctx, tx, err)
-			}()
-
-			exists, err := productRepo.ExistsById(ctx, tx, testProduct.Id())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeTrue(), "追加した商品が存在しません")
+			Expect(exists).To(BeTrue(), "追加した商品がDBに存在しません")
 		})
 
 		It("既存の商品名で追加しようとするとエラーになること", func() {
 			// 最初の追加
-			err := ps.Add(ctx, testProduct)
+			createProductDTO := &dto.CreateProductDTO{
+				Name: testProduct.Name().Value(),
+				Category: &dto.CategoryDTO{
+					Id:   testProduct.Category().Id().Value(),
+					Name: testProduct.Category().Name().Value(),
+				},
+				Price: testProduct.Price().Value(),
+			}
+			testProductDTO, err := ps.Add(ctx, createProductDTO)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(testProductDTO).NotTo(BeNil())
+			DeferCleanup(testhelpers.CleanupProductCategory, tm, productRepo, categoryRepo, testProductDTO, testCategoryDTO)
 
 			// 重複追加（同じ名前の新しい商品を作成）
-			duplicateName := testProduct.Name()
-			duplicatePrice, err := products.NewProductPrice(2000)
-			Expect(err).NotTo(HaveOccurred())
-			duplicateProduct, err := products.NewProduct(duplicateName, duplicatePrice, testCategory)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = ps.Add(ctx, duplicateProduct)
+			duplicateCreateProductDTO := &dto.CreateProductDTO{
+				Name: testProduct.Name().Value(),
+				Category: &dto.CategoryDTO{
+					Id:   testProduct.Category().Id().Value(),
+					Name: testProduct.Category().Name().Value(),
+				},
+				Price: testProduct.Price().Value(),
+			}
+			duplicateProductDTO, err := ps.Add(ctx, duplicateCreateProductDTO)
 			Expect(err).To(HaveOccurred(), "重複する商品名で追加できてしまいました")
+			Expect(duplicateProductDTO).To(BeNil())
 
 			// エラーの詳細を検証
 			appErr, ok := err.(*errs.ApplicationError)
@@ -166,69 +140,90 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 	})
 
 	Context("Updateメソッドの動作確認", func() {
-		var testProduct *products.Product
+		var (
+			testProduct     *products.Product
+			testCategory    *categories.Category
+			testCategoryDTO *dto.CategoryDTO
+			testProductDTO  *dto.ProductDTO
+		)
 
 		BeforeEach(func() {
+			var err error
+			// 各テストで新しいユニークなカテゴリを作成して追加
+			createCategoryDTO := &dto.CreateCategoryDTO{
+				Name: testhelpers.GenerateUniqueCategoryName(),
+			}
+			testCategoryDTO, err = cs.Add(ctx, createCategoryDTO)
+			Expect(err).NotTo(HaveOccurred())
+			testCategory, err = dto.CategoryFromDTO(testCategoryDTO)
+			Expect(err).NotTo(HaveOccurred())
+
 			// テスト用商品を作成して追加
-			name, err := products.NewProductName(generateUniqueProductName())
-			Expect(err).NotTo(HaveOccurred())
-			price, err := products.NewProductPrice(1000)
-			Expect(err).NotTo(HaveOccurred())
-			testProduct, err = products.NewProduct(name, price, testCategory)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = ps.Add(ctx, testProduct)
+			createProductDTO := &dto.CreateProductDTO{
+				Name:  testhelpers.GenerateUniqueProductName(),
+				Price: 1000,
+				Category: &dto.CategoryDTO{
+					Id:   testCategoryDTO.Id,
+					Name: testCategoryDTO.Name,
+				},
+			}
+			testProductDTO, err = ps.Add(ctx, createProductDTO)
 			Expect(err).NotTo(HaveOccurred(), "テスト用商品の追加に失敗しました")
-		})
+			testProduct, err = dto.ProductFromDTO(testProductDTO)
+			Expect(err).NotTo(HaveOccurred())
 
-		AfterEach(func() {
-			// テスト終了後のクリーンアップ
-			cleanupProduct(tm, productRepo, testProduct)
+			// クリーンアップ登録
+			DeferCleanup(testhelpers.CleanupProductCategory, tm, productRepo, categoryRepo, testProductDTO, testCategoryDTO)
 		})
 
 		It("既存の商品を更新できること", func() {
 			// 更新された商品を作成
-			updatedName, err := products.NewProductName(generateUniqueProductName())
+			updatedName, err := products.NewProductName(testhelpers.GenerateUniqueProductName())
 			Expect(err).NotTo(HaveOccurred(), "更新用商品名の生成に失敗しました")
 			updatedPrice, err := products.NewProductPrice(2000)
 			Expect(err).NotTo(HaveOccurred(), "更新用商品価格の生成に失敗しました")
-			updatedProduct, err := products.BuildProduct(testProduct.Id(), updatedName, updatedPrice, testCategory)
-			Expect(err).NotTo(HaveOccurred(), "更新用商品の生成に失敗しました")
 
-			err = ps.Update(ctx, updatedProduct)
+			updateDTO := &dto.UpdateProductDTO{
+				Id:         testProduct.Id().Value(),
+				Name:       updatedName.Value(),
+				CategoryId: testProduct.Category().Id().Value(),
+				Price:      updatedPrice.Value(),
+			}
+			result, err := ps.Update(ctx, updateDTO)
 			Expect(err).NotTo(HaveOccurred(), "商品の更新に失敗しました")
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal(updatedName.Value()))
+			Expect(result.Price).To(Equal(uint32(updatedPrice.Value())))
 
 			// 更新された商品が存在することを確認
-			tx, err := tm.Begin(ctx)
+			exists, err := testhelpers.VerifyProductByName(ctx, tm, productRepo, updatedName)
 			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = tm.Complete(ctx, tx, err)
-			}()
-
-			exists, err := productRepo.ExistsByName(ctx, tx, updatedProduct.Name())
-			Expect(err).NotTo(HaveOccurred())
-			Expect(exists).To(BeTrue(), "商品名が正しく更新されていません")
+			Expect(exists).To(BeTrue(), "更新した商品名がDBに存在しません")
 
 			// 古い商品名が存在しないことを確認
-			oldExists, err := productRepo.ExistsByName(ctx, tx, testProduct.Name())
+			oldExists, err := testhelpers.VerifyProductByName(ctx, tm, productRepo, testProduct.Name())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(oldExists).To(BeFalse(), "古い商品名が残っています")
-
-			// クリーンアップのために更新された商品を保存
-			testProduct = updatedProduct
+			Expect(oldExists).To(BeFalse(), "古い商品名がDBに残っています")
 		})
 
 		It("存在しない商品を更新しようとするとエラーになること", func() {
 			// 存在しない商品を作成
-			nonExistentName, err := products.NewProductName(generateUniqueProductName())
+			nonExistentName, err := products.NewProductName(testhelpers.GenerateUniqueProductName())
 			Expect(err).NotTo(HaveOccurred())
 			nonExistentPrice, err := products.NewProductPrice(3000)
 			Expect(err).NotTo(HaveOccurred())
 			nonExistentProduct, err := products.NewProduct(nonExistentName, nonExistentPrice, testCategory)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = ps.Update(ctx, nonExistentProduct)
+			updateDTO := &dto.UpdateProductDTO{
+				Id:         nonExistentProduct.Id().Value(),
+				Name:       nonExistentProduct.Name().Value(),
+				CategoryId: nonExistentProduct.Category().Id().Value(),
+				Price:      nonExistentProduct.Price().Value(),
+			}
+			result, err := ps.Update(ctx, updateDTO)
 			Expect(err).To(HaveOccurred(), "存在しない商品を更新できてしまいました")
+			Expect(result).To(BeNil())
 
 			// エラーの詳細を検証（リポジトリが返すエラー）
 			crudErr, ok := err.(*errs.CRUDError)
@@ -238,57 +233,80 @@ var _ = Describe("ProductService Integration Test", Ordered, func() {
 	})
 
 	Context("Deleteメソッドの動作確認", func() {
-		var testProduct *products.Product
+		var (
+			testCategory    *categories.Category
+			testCategoryDTO *dto.CategoryDTO
+			testProductDTO  *dto.ProductDTO
+		)
 
 		BeforeEach(func() {
+			var err error
+			// 各テストで新しいユニークなカテゴリを作成して追加
+			createCategoryDTO := &dto.CreateCategoryDTO{
+				Name: testhelpers.GenerateUniqueCategoryName(),
+			}
+			testCategoryDTO, err = cs.Add(ctx, createCategoryDTO)
+			Expect(err).NotTo(HaveOccurred())
+			testCategory, err = dto.CategoryFromDTO(testCategoryDTO)
+			Expect(err).NotTo(HaveOccurred())
+
 			// テスト用商品を作成して追加
-			name, err := products.NewProductName(generateUniqueProductName())
-			Expect(err).NotTo(HaveOccurred())
-			price, err := products.NewProductPrice(1000)
-			Expect(err).NotTo(HaveOccurred())
-			testProduct, err = products.NewProduct(name, price, testCategory)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = ps.Add(ctx, testProduct)
+			createProductDTO := &dto.CreateProductDTO{
+				Name:  testhelpers.GenerateUniqueProductName(),
+				Price: 1000,
+				Category: &dto.CategoryDTO{
+					Id:   testCategoryDTO.Id,
+					Name: testCategoryDTO.Name,
+				},
+			}
+			testProductDTO, err = ps.Add(ctx, createProductDTO)
 			Expect(err).NotTo(HaveOccurred(), "テスト用商品の追加に失敗しました")
-		})
 
-		AfterEach(func() {
-			// テスト終了後のクリーンアップ（削除失敗時のため）
-			cleanupProduct(tm, productRepo, testProduct)
+			// クリーンアップ登録
+			DeferCleanup(testhelpers.CleanupProductCategory, tm, productRepo, categoryRepo, testProductDTO, testCategoryDTO)
 		})
 
 		It("既存の商品を削除できること", func() {
-			err := ps.Delete(ctx, testProduct)
+			deleteDTO := &dto.DeleteProductDTO{
+				Id: testProductDTO.Id,
+			}
+			result, err := ps.Delete(ctx, deleteDTO)
 			Expect(err).NotTo(HaveOccurred(), "商品の削除に失敗しました")
+			Expect(result).NotTo(BeNil())
+			Expect(result.Name).To(Equal(testProductDTO.Name))
+			Expect(result.Price).To(Equal(uint32(testProductDTO.Price)))
 
 			// 削除されたことを確認
-			tx, err := tm.Begin(ctx)
+			productID, err := products.NewProductId(result.Id)
 			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				_ = tm.Complete(ctx, tx, err)
-			}()
-
-			exists, err := productRepo.ExistsById(ctx, tx, testProduct.Id())
+			exists, err := testhelpers.VerifyProductById(ctx, tm, productRepo, productID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeFalse(), "商品が正しく削除されていません")
 		})
 
 		It("存在しない商品を削除しようとするとエラーになること", func() {
 			// 存在しない商品を作成
-			nonExistentName, err := products.NewProductName(generateUniqueProductName())
+			nonExistentName, err := products.NewProductName(testhelpers.GenerateUniqueProductName())
 			Expect(err).NotTo(HaveOccurred())
 			nonExistentPrice, err := products.NewProductPrice(3000)
 			Expect(err).NotTo(HaveOccurred())
 			nonExistentProduct, err := products.NewProduct(nonExistentName, nonExistentPrice, testCategory)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = ps.Delete(ctx, nonExistentProduct)
+			deleteDTO := &dto.DeleteProductDTO{
+				Id: nonExistentProduct.Id().Value(),
+			}
+			result, err := ps.Delete(ctx, deleteDTO)
 			Expect(err).To(HaveOccurred(), "存在しない商品を削除できてしまいました")
+			Expect(result).To(BeNil())
 
 			// エラーの詳細を検証（リポジトリが返すエラー）
-			crudErr, ok := err.(*errs.CRUDError)
-			Expect(ok).To(BeTrue(), "返されたエラーがCRUDErrorではありません")
+			var crudErr *errs.CRUDError
+			if !errors.As(err, &crudErr) {
+				// デバッグ用にエラーの型を出力
+				GinkgoWriter.Printf("Error type: %T, Error: %v\n", err, err)
+			}
+			Expect(errors.As(err, &crudErr)).To(BeTrue(), "返されたエラーがCRUDErrorではありません")
 			Expect(crudErr.Code).To(Equal("NOT_FOUND"), "エラーコードが期待値と異なります")
 		})
 	})

@@ -4,6 +4,10 @@ env = "dev"
 level = "info"
 format = "json"
 
+[server]
+host = "localhost"
+port = 8083
+
 [mysql] # sqlboiler用のDB設定
 dbname = "sample_db" # データベース名
 # host = "command_db" # ホスト名

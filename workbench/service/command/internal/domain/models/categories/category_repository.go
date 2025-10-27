@@ -22,6 +22,20 @@ type CategoryRepository interface {
 	//   - error: データベースエラーが発生した場合
 	ExistsByName(ctx context.Context, tx *sql.Tx, name *CategoryName) (bool, error)
 
+	// FindById は指定されたIDのカテゴリを取得します。
+	// カテゴリが存在しない場合はNOT_FOUNDエラーを返します。
+	//
+	// Parameters:
+	//   - ctx: コンテキスト
+	//   - tx: トランザクション
+	//   - id: 取得するカテゴリのID
+	//
+	// Returns:
+	//   - *Category: 取得したカテゴリエンティティ
+	//   - error: カテゴリが存在しない場合はCRUDError (コード: NOT_FOUND)、
+	//     データベースエラーが発生した場合はそのエラー
+	FindById(ctx context.Context, tx *sql.Tx, id *CategoryId) (*Category, error)
+
 	// Create は新しいカテゴリをデータベースに作成します。
 	//
 	// Parameters:

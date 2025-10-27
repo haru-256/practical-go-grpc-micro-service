@@ -6,7 +6,6 @@ import (
 )
 
 // Category はカテゴリエンティティを表すドメインオブジェクトです。
-// カテゴリは、IDと名前を持ち、商品を分類するために使用されます。
 type Category struct {
 	id   *CategoryId   // カテゴリID
 	name *CategoryName // カテゴリ名
@@ -28,8 +27,6 @@ func (c *Category) ChangeName(name *CategoryName) {
 }
 
 // Equals は2つのカテゴリエンティティの同一性を検証します。
-// カテゴリIDが一致する場合、同一のカテゴリとして扱います。
-// otherがnilの場合はエラーを返します。
 func (c *Category) Equals(other *Category) (bool, error) {
 	if other == nil {
 		return false, errs.NewDomainError("INVALID_ARGUMENT", "比較対象のCategoryがnilです")
@@ -38,8 +35,6 @@ func (c *Category) Equals(other *Category) (bool, error) {
 }
 
 // NewCategory は新しいカテゴリエンティティを生成します。
-// カテゴリIDは自動的にUUIDとして生成されます。
-// name: カテゴリ名
 func NewCategory(name *CategoryName) (*Category, error) {
 	uid, err := uuid.NewRandom()
 	if err != nil {
@@ -55,9 +50,6 @@ func NewCategory(name *CategoryName) (*Category, error) {
 }
 
 // BuildCategory は既存のカテゴリIDを使用してカテゴリエンティティを再構築します。
-// データベースから取得したカテゴリデータを復元する際などに使用します。
-// id: カテゴリID
-// name: カテゴリ名
 func BuildCategory(id *CategoryId, name *CategoryName) (*Category, error) {
 	category := Category{
 		id:   id,

@@ -2,11 +2,11 @@
 
 .PHONY: ginkgo
 ginkgo: ## Run tests
-	go tool ginkgo run ./...
+	go tool ginkgo run -p --race ./...
 
 .PHONY: ginkgo-detail
 ginkgo-detail: ## Run tests with detailed output
-	go tool ginkgo run -v ./...
+	go tool ginkgo run -p --race -v ./...
 
 .PHONY: install-tools
 install-tools: ## Install tools
@@ -24,6 +24,20 @@ generate-db-models: ## Generate DB models
 .PHONY: generate-mocks
 generate-mocks: ## Generate mocks
 	go generate ./...
+
+.PHONY: curl-create-valid
+curl-create-valid: ## Run buf curl commands
+	buf curl --protocol grpc --http2-prior-knowledge \
+		--schema ../../api \
+		--data '{"crud": 1, "name": {"value": "test"}}' \
+		http://localhost:8083/command.v1.CategoryService/CreateCategory
+
+.PHONY: curl-create-invalid
+curl-create-invalid: ## Run buf curl commands
+	buf curl --protocol grpc --http2-prior-knowledge \
+		--schema ../../api \
+		--data '{"crud": 4, "name": {"value": "test"}}' \
+		http://localhost:8083/command.v1.CategoryService/CreateCategory
 
 .PHONY: help
 help: ## Show options

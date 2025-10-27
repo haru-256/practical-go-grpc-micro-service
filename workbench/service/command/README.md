@@ -83,8 +83,6 @@ command/
   - **products/**: 商品集約（Product エンティティ、ProductId、ProductName、ProductPrice、ProductRepository）
   - **categories/**: カテゴリ集約（Category エンティティ、CategoryId、CategoryName、CategoryRepository）
 
-詳細は [Domain Layer README](./internal/domain/README.md) を参照してください。
-
 #### ドメイン層の設計原則
 
 ##### ドメイン駆動設計（DDD）の適用
@@ -241,7 +239,7 @@ var Module = fx.Module(
 - **モジュラー設計**: 層ごとにモジュールを分離して可視化
 - **型安全**: コンパイル時に依存関係の整合性を検証
 
-詳細は [プロジェクトスタイルガイド](../../.gemini/styleguide.md#432-モジュール構造とuber-fxによる依存性注入) を参照してください。
+詳細は [プロジェクトスタイルガイド](../../../.gemini/styleguide.md) を参照してください。
 
 ### 2. エラーハンドリング
 
@@ -624,5 +622,4 @@ make lint
 
 ### プロジェクト内部リソース
 
-- [プロジェクトスタイルガイド](../../.gemini/styleguide.md) - コーディング規約と設計原則
-- [Domain Layer README](./internal/domain/README.md) - ドメイン層の詳細
+- [プロジェクトスタイルガイド](../../../.gemini/styleguide.md) - コーディング規約と設計原則

@@ -8,7 +8,6 @@ import (
 )
 
 // ProductName は商品名を表す値オブジェクトです。
-// 1文字以上100文字以下の文字列を保持します。
 type ProductName struct {
 	value string // 商品名
 }
@@ -19,7 +18,6 @@ func (p *ProductName) Value() string {
 }
 
 // NewProductName は商品名を生成します。
-// 1文字以上100文字以下の文字列である必要があります。
 func NewProductName(value string) (*ProductName, error) {
 	const MIN_LENGTH int = 1   // 最小文字数
 	const MAX_LENGTH int = 100 // 最大文字数

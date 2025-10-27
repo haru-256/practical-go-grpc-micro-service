@@ -243,6 +243,7 @@ make restore
 ### 5. レプリケーション開始
 
 Query DBでレプリケーションを開始します。
+DumpからGTIDを取得し、`query/ddl/replication.sql`に設定した後、レプリケーションを設定します。
 
 ```bash
 make start-replication

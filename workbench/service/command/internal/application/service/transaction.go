@@ -6,8 +6,6 @@ import (
 )
 
 // TransactionManager はデータベーストランザクションの管理を担うインターフェースです。
-// トランザクションの開始、コミット、ロールバックといった操作を提供し、
-// アプリケーションサービス層でのトランザクション制御を可能にします。
 //
 //go:generate go tool mockgen -source=$GOFILE -destination=./mock_transaction.go -package=service
 type TransactionManager interface {
@@ -17,19 +15,19 @@ type TransactionManager interface {
 	//   - ctx: コンテキスト
 	//
 	// Returns:
-	//   - *sql.Tx: 開始されたトランザクション
-	//   - error: トランザクション開始に失敗した場合のエラー
+	//   - *sql.Tx: トランザクション
+	//   - error: エラー
 	Begin(ctx context.Context) (*sql.Tx, error)
 
 	// Complete はトランザクションを完了します。
 	// errがnilの場合はコミット、nilでない場合はロールバックを実行します。
-	// この関数はdeferで呼び出されることを想定しています。
 	//
 	// Parameters:
-	//   - tx: 完了するトランザクション
-	//   - err: ビジネスロジック実行結果のエラー（nilの場合はコミット、非nilの場合はロールバック）
+	//   - ctx: コンテキスト
+	//   - tx: トランザクション
+	//   - err: エラー
 	//
 	// Returns:
-	//   - error: コミットまたはロールバックに失敗した場合のエラー
+	//   - error: エラー
 	Complete(ctx context.Context, tx *sql.Tx, err error) error
 }
