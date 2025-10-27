@@ -1,43 +1,12 @@
 package dto_test
 
 import (
-	pb "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-var _ = Describe("ToCRUDOperation", func() {
-	Context("正常系", func() {
-		It("pb.CRUD_CRUD_INSERTをCRUDInsertに変換できる", func() {
-			result, err := dto.ToCRUDOperation(pb.CRUD_CRUD_INSERT)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(dto.CRUDInsert))
-		})
-
-		It("pb.CRUD_CRUD_UPDATEをCRUDUpdateに変換できる", func() {
-			result, err := dto.ToCRUDOperation(pb.CRUD_CRUD_UPDATE)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(dto.CRUDUpdate))
-		})
-
-		It("pb.CRUD_CRUD_DELETEをCRUDDeleteに変換できる", func() {
-			result, err := dto.ToCRUDOperation(pb.CRUD_CRUD_DELETE)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(dto.CRUDDelete))
-		})
-	})
-
-	Context("異常系", func() {
-		It("不正なCRUD値の場合エラーを返す", func() {
-			_, err := dto.ToCRUDOperation(pb.CRUD(999))
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("不正なCRUD操作"))
-		})
-	})
-})
 
 var _ = Describe("NewCategoryDTOFromEntity", func() {
 	It("Categoryエンティティから正しくDTOを生成できる", func() {

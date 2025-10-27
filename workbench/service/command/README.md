@@ -32,11 +32,13 @@ command/
 │       └── main.go        # メイン関数
 ├── internal/              # 内部パッケージ（外部から直接importできない）
 │   ├── application/       # アプリケーション層
+│   ├── config/           # 設定管理
 │   ├── domain/           # ドメイン層
 │   │   └── models/       # ドメインモデル定義
 │   ├── errs/             # エラー定義
 │   ├── infrastructure/   # インフラストラクチャ層
-│   └── presentation/     # プレゼンテーション層
+│   ├── presentation/     # プレゼンテーション層
+│   └── testhelpers/      # テストヘルパー関数
 └── README.md             # このファイル
 ```
 
@@ -151,10 +153,61 @@ product.ChangeName(newName)
 プレゼンテーション層（Presentation Layer）を実装します。
 
 - **責務**:
-  - gRPCハンドラーの実装
+  - gRPC/Connect RPCハンドラーの実装
   - リクエスト/レスポンスの変換
-  - 入力値の検証
-  - 認証・認可の処理
+  - 入力値の検証（Protovalidateを使用）
+  - サーバーのライフサイクル管理
+
+- **server/**: gRPC/Connect RPCサーバー実装
+  - **handler.go**: CategoryServiceとProductServiceのハンドラー実装
+    - `CategoryServiceHandlerImpl`: カテゴリ作成・更新・削除のエンドポイント
+    - `ProductServiceHandlerImpl`: 商品作成・更新・削除のエンドポイント
+  - **server.go**: HTTPサーバーとルーティングの設定
+  - **server_logger.go**: ロギングインターセプター
+  - **handler_test.go**: ハンドラーのユニットテスト（mockを使用）
+  - **handler_integration_test.go**: ハンドラーの統合テスト（実際のDBを使用）
+
+- **module.go**: Uber Fxモジュール定義（プレゼンテーション層の依存関係とライフサイクル管理）
+
+### internal/config/
+
+設定管理を実装します。
+
+- **責務**:
+  - Viperを使用した設定ファイルの読み込み
+  - 環境変数のバインディング
+  - 設定値の提供
+
+- **config.go**: Viper設定の初期化とバインディング
+
+### internal/testhelpers/
+
+テストで使用するヘルパー関数を提供します。
+
+- **責務**:
+  - テストデータの生成
+  - データベースのセットアップとクリーンアップ
+  - リクエストビルダー
+  - データ検証ヘルパー
+
+- **db.go**: データベース初期化と検証ヘルパー
+  - `SetupDatabase`: テスト用データベース接続の初期化
+  - `VerifyCategoryById/ByName`: カテゴリの存在確認
+  - `VerifyProductById/ByName`: 商品の存在確認
+
+- **cleanup.go**: テストデータのクリーンアップ
+  - `CleanupCategory`: カテゴリの削除
+  - `CleanupProduct`: 商品の削除
+  - `GenerateUniqueCategoryName`: ユニークなカテゴリ名生成
+  - `GenerateUniqueProductName`: ユニークな商品名生成
+
+- **request_builder.go**: gRPCリクエストビルダー
+  - `CreateCategoryRequest`: カテゴリ作成リクエスト生成
+  - `CreateUpdateCategoryRequest`: カテゴリ更新リクエスト生成
+  - `CreateDeleteCategoryRequest`: カテゴリ削除リクエスト生成
+  - `CreateProductRequest`: 商品作成リクエスト生成
+  - `UpdateProductRequest`: 商品更新リクエスト生成
+  - `DeleteProductRequest`: 商品削除リクエスト生成
 
 ## アーキテクチャパターン
 
@@ -364,11 +417,12 @@ go test -cover ./internal/domain/models/...
 **ユニットテスト（gomock使用）:**
 
 ```bash
-# Product Service ユニットテスト
-go test ./internal/application/impl/product_impl_test.go
+# Product Service ユニットテスト（リポジトリとトランザクションマネージャーをモック化）
+go tool ginkgo --label-filter="UnitTests" ./internal/application/impl
 
-# Category Service ユニットテスト  
-go test ./internal/application/impl/category_impl_test.go
+# または特定のテストのみ
+go test -v ./internal/application/impl -run TestProductServiceImpl
+go test -v ./internal/application/impl -run TestCategoryServiceImpl
 ```
 
 モックを使用して、依存関係を分離したテストを実行します。
@@ -376,14 +430,37 @@ go test ./internal/application/impl/category_impl_test.go
 **統合テスト（実際のDB使用）:**
 
 ```bash
-# Product Service 統合テスト
-go test ./internal/application/impl/product_impl_integration_test.go
+# すべての統合テスト実行
+go tool ginkgo --label-filter="IntegrationTests" ./internal/application/impl
 
-# Category Service 統合テスト
-go test ./internal/application/impl/category_impl_integration_test.go
+# または個別に実行
+go test -v ./internal/application/impl -run ProductService.*Integration
+go test -v ./internal/application/impl -run CategoryService.*Integration
 ```
 
-実際のPostgreSQLデータベースを使用して、エンドツーエンドの動作を検証します。
+実際のMySQLデータベースを使用して、エンドツーエンドの動作を検証します。
+
+#### プレゼンテーション層のテスト
+
+プレゼンテーション層（ハンドラー）にも、ユニットテストと統合テストがあります。
+
+**ユニットテスト（Application Serviceをモック化）:**
+
+```bash
+# ハンドラーのユニットテスト（Application Serviceをモック化）
+go tool ginkgo --label-filter="UnitTests" ./internal/presentation/server
+```
+
+Application Serviceをモック化し、ハンドラーのロジック（バリデーション、エラーハンドリング、レスポンス生成）を検証します。
+
+**統合テスト（実際のサービスとDB使用）:**
+
+```bash
+# ハンドラーの統合テスト（実際のサービスとDBを使用）
+go tool ginkgo --label-filter="IntegrationTests" ./internal/presentation/server
+```
+
+実際のApplication ServiceとMySQLデータベースを使用して、gRPCハンドラーの動作を検証します。testhelpersを使用してデータベースの状態を確認します。
 
 #### すべてのテストを実行
 
@@ -395,6 +472,38 @@ make ginkgo
 
 # または直接実行
 go tool ginkgo run ./...
+
+# ユニットテストのみ実行
+go tool ginkgo --label-filter="UnitTests" run ./...
+
+# 統合テストのみ実行（データベースが必要）
+go tool ginkgo --label-filter="IntegrationTests" run ./...
+```
+
+#### テストヘルパーの活用
+
+`internal/testhelpers` パッケージには、テストで使用できる便利な関数が用意されています：
+
+```go
+// データベースのセットアップ
+err := testhelpers.SetupDatabase("../../", "config")
+
+// データの検証
+exists, err := testhelpers.VerifyProductById(ctx, tm, repo, productId)
+exists, err := testhelpers.VerifyCategoryByName(ctx, tm, repo, categoryName)
+
+// クリーンアップ（DeferCleanupと組み合わせて使用）
+DeferCleanup(testhelpers.CleanupProduct, tm, repo, productDTO)
+DeferCleanup(testhelpers.CleanupCategory, tm, repo, categoryDTO)
+
+// ユニークなテストデータ生成
+uniqueName := testhelpers.GenerateUniqueProductName()
+uniqueCategory := testhelpers.GenerateUniqueCategoryName()
+
+// gRPCリクエスト生成
+req := testhelpers.CreateProductRequest(name, price, categoryId, categoryName)
+req := testhelpers.UpdateProductRequest(id, name, price, categoryId)
+req := testhelpers.DeleteProductRequest(id)
 ```
 
 #### バリデーションルール
@@ -579,7 +688,7 @@ go test ./internal/application/impl -run TestCategoryService
 
 ### データベースセットアップ
 
-統合テストを実行する前に、PostgreSQLデータベースを起動してください：
+統合テストを実行する前に、MySQLデータベースを起動してください：
 
 ```bash
 # データベースの起動（docker-compose使用）
@@ -588,6 +697,9 @@ make up
 
 # データベースの停止
 make down
+
+# データベースのクリーンアップ
+make clean
 ```
 
 ### Lint実行
