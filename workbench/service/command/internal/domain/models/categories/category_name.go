@@ -8,7 +8,6 @@ import (
 )
 
 // CategoryName はカテゴリ名を表す値オブジェクトです。
-// 1文字以上100文字以下の文字列を保持します。
 type CategoryName struct {
 	value string // カテゴリ名
 }
@@ -19,7 +18,6 @@ func (c *CategoryName) Value() string {
 }
 
 // NewCategoryName はカテゴリ名を生成します。
-// 1文字以上100文字以下の文字列である必要があります。
 func NewCategoryName(value string) (*CategoryName, error) {
 	const MIN_LENGTH int = 1  // 最小文字数
 	const MAX_LENGTH int = 20 // 最大文字数

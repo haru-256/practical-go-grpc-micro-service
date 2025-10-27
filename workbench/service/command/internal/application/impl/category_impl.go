@@ -4,12 +4,18 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 )
 
 // CategoryServiceImpl はカテゴリサービスの実装です。
+//
+// Fields:
+//   - repo: カテゴリのデータ永続化を担当するリポジトリ
+//   - tm: トランザクション管理を担当するマネージャー
+//   - logger: 構造化ログ出力を担当するロガー
 type CategoryServiceImpl struct {
 	repo   categories.CategoryRepository
 	tm     service.TransactionManager
@@ -17,12 +23,14 @@ type CategoryServiceImpl struct {
 }
 
 // NewCategoryServiceImpl は新しいCategoryServiceImplインスタンスを生成します。
-// インターフェースを受け入れ、具象型を返すことで、柔軟性と明確性を両立させます。
 //
-// 使用例:
+// Parameters:
+//   - logger: 構造化ログ出力用のロガー
+//   - repo: カテゴリデータの永続化を担うリポジトリ
+//   - tm: トランザクション管理を担うマネージャー
 //
-//	svc := impl.NewCategoryServiceImpl(repo, tm)
-//	var categoryService service.CategoryService = svc  // インターフェースとして使用
+// Returns:
+//   - *CategoryServiceImpl: 初期化されたカテゴリサービス実装
 func NewCategoryServiceImpl(logger *slog.Logger, repo categories.CategoryRepository, tm service.TransactionManager) *CategoryServiceImpl {
 	return &CategoryServiceImpl{
 		repo:   repo,
@@ -32,20 +40,24 @@ func NewCategoryServiceImpl(logger *slog.Logger, repo categories.CategoryReposit
 }
 
 // Add は新しいカテゴリを追加します。
-// カテゴリ名の重複をチェックし、既に存在する場合はApplicationErrorを返します。
-// トランザクション管理を行い、エラー時は自動的にロールバックされます。
+// カテゴリ名に重複がないことを確認してから、永続化します。
 //
 // Parameters:
-//   - ctx: コンテキスト
-//   - category: 追加するカテゴリ情報
+//   - ctx: リクエストコンテキスト
+//   - categoryDTO: 追加するカテゴリ情報
 //
 // Returns:
-//   - error: カテゴリ名が既に存在する場合はApplicationError (コード: CATEGORY_ALREADY_EXISTS)、
-//     データベースエラーが発生した場合はCRUDError
-func (s *CategoryServiceImpl) Add(ctx context.Context, category *categories.Category) error {
+//   - *dto.CategoryDTO: 作成されたカテゴリのDTO
+//   - error: カテゴリ名の重複や、その他の永続化に関するエラー
+func (s *CategoryServiceImpl) Add(ctx context.Context, categoryDTO *dto.CreateCategoryDTO) (*dto.CategoryDTO, error) {
+	category, err := dto.CategoryFromCreateDTO(categoryDTO)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := s.tm.Begin(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
@@ -56,36 +68,39 @@ func (s *CategoryServiceImpl) Add(ctx context.Context, category *categories.Cate
 
 	exists, err := s.repo.ExistsByName(ctx, tx, category.Name())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if exists {
 		// defer内で評価されるerrに代入し、トランザクション完了時にロールバックされるようにする
 		err = errs.NewApplicationError("CATEGORY_ALREADY_EXISTS", "Category already exists")
-		return err
+		return nil, err
 	}
 
 	if err = s.repo.Create(ctx, tx, category); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return dto.NewCategoryDTOFromEntity(category), nil
 }
 
 // Update は既存のカテゴリ情報を更新します。
-// リポジトリ層でカテゴリの存在確認を行い、存在しない場合はCRUDErrorを返します。
-// トランザクション管理を行い、エラー時は自動的にロールバックされます。
 //
 // Parameters:
-//   - ctx: コンテキスト
-//   - category: 更新するカテゴリ情報
+//   - ctx: リクエストコンテキスト
+//   - categoryDTO: 更新するカテゴリ情報（ID、名前を含む）
 //
 // Returns:
-//   - error: カテゴリが存在しない場合はCRUDError (コード: NOT_FOUND)、
-//     データベースエラーが発生した場合はCRUDError
-func (s *CategoryServiceImpl) Update(ctx context.Context, category *categories.Category) error {
+//   - *dto.CategoryDTO: 更新されたカテゴリのDTO
+//   - error: 指定したIDのカテゴリが存在しない場合や、その他の永続化に関するエラー
+func (s *CategoryServiceImpl) Update(ctx context.Context, categoryDTO *dto.UpdateCategoryDTO) (*dto.CategoryDTO, error) {
+	category, err := dto.CategoryFromUpdateDTO(categoryDTO)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := s.tm.Begin(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
@@ -94,27 +109,30 @@ func (s *CategoryServiceImpl) Update(ctx context.Context, category *categories.C
 	}()
 
 	if err = s.repo.UpdateById(ctx, tx, category); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return dto.NewCategoryDTOFromEntity(category), nil
 }
 
 // Delete は指定されたカテゴリを削除します。
-// リポジトリ層でカテゴリの存在確認を行い、存在しない場合はCRUDErrorを返します。
-// トランザクション管理を行い、エラー時は自動的にロールバックされます。
 //
 // Parameters:
-//   - ctx: コンテキスト
-//   - category: 削除するカテゴリ情報
+//   - ctx: リクエストコンテキスト
+//   - categoryDTO: 削除対象カテゴリのID情報
 //
 // Returns:
-//   - error: カテゴリが存在しない場合はCRUDError (コード: NOT_FOUND)、
-//     データベースエラーが発生した場合はCRUDError
-func (s *CategoryServiceImpl) Delete(ctx context.Context, category *categories.Category) error {
+//   - *dto.CategoryDTO: 削除されたカテゴリのDTO
+//   - error: 指定したIDのカテゴリが存在しない場合や、その他の永続化に関するエラー
+func (s *CategoryServiceImpl) Delete(ctx context.Context, categoryDTO *dto.DeleteCategoryDTO) (*dto.CategoryDTO, error) {
+	categoryID, err := dto.CategoryIdFromDeleteDTO(categoryDTO)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := s.tm.Begin(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() {
 		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
@@ -122,9 +140,16 @@ func (s *CategoryServiceImpl) Delete(ctx context.Context, category *categories.C
 		}
 	}()
 
-	if err = s.repo.DeleteById(ctx, tx, category.Id()); err != nil {
-		return err
+	category, err := s.repo.FindById(ctx, tx, categoryID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	if err = s.repo.DeleteById(ctx, tx, categoryID); err != nil {
+		return nil, err
+	}
+
+	return dto.NewCategoryDTOFromEntity(category), nil
 }
+
+var _ service.CategoryService = (*CategoryServiceImpl)(nil)

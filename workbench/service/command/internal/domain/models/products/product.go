@@ -7,7 +7,6 @@ import (
 )
 
 // Product は商品エンティティを表すドメインオブジェクトです。
-// 商品は、ID、名前、価格、カテゴリを持ち、ビジネスロジックをカプセル化します。
 type Product struct {
 	id       *ProductId           // 商品ID
 	name     *ProductName         // 商品名
@@ -51,8 +50,6 @@ func (p *Product) ChangeCategory(category *categories.Category) {
 }
 
 // Equals は2つの商品エンティティの同一性を検証します。
-// 商品IDが一致する場合、同一の商品として扱います。
-// otherがnilの場合はエラーを返します。
 func (p *Product) Equals(other *Product) (bool, error) {
 	if other == nil {
 		return false, errs.NewDomainError("INVALID_ARGUMENT", "比較対象のProductがnilです")
@@ -61,10 +58,6 @@ func (p *Product) Equals(other *Product) (bool, error) {
 }
 
 // NewProduct は新しい商品エンティティを生成します。
-// 商品IDは自動的にUUIDとして生成されます。
-// name: 商品名
-// price: 商品価格
-// category: カテゴリ
 func NewProduct(name *ProductName, price *ProductPrice, category *categories.Category) (*Product, error) {
 	uid, err := uuid.NewRandom()
 	if err != nil {
@@ -80,11 +73,6 @@ func NewProduct(name *ProductName, price *ProductPrice, category *categories.Cat
 }
 
 // BuildProduct は既存の商品IDを使用して商品エンティティを再構築します。
-// データベースから取得した商品データを復元する際などに使用します。
-// id: 商品ID
-// name: 商品名
-// price: 商品価格
-// category: カテゴリ
 func BuildProduct(id *ProductId, name *ProductName, price *ProductPrice, category *categories.Category) (*Product, error) {
 	product := Product{
 		id:       id,

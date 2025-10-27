@@ -9,13 +9,49 @@ package common.v1;
 
 import "buf/validate/validate.proto";
 
-//  商品カテゴリ型の定義
+//  商品カテゴリID型（削除リクエストなどで使用）
+message CategoryId {
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+    pattern: "^[a-zA-Z0-9_-]+$"
+  }]; // 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ、1-50文字）
+}
+
+message CategoryName {
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }]; // 商品カテゴリ名（1-100文字）
+}
+
+//  商品ID型（削除リクエストなどで使用）
+message ProductId {
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+    pattern: "^[a-zA-Z0-9_-]+$"
+  }]; // 商品番号（英数字、アンダースコア、ハイフンのみ、1-50文字）
+}
+
+message ProductName {
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }]; // 商品名（1-200文字）
+}
+
+message ProductPrice {
+  int32 value = 1 [(buf.validate.field).int32 = {gt: 0}]; // 商品単価（1以上の整数）
+}
+
+//  商品カテゴリ型の定義, レスポンス用でありvalidationは緩い
 message Category {
   string id = 1 [(buf.validate.field).string.min_len = 1]; // カテゴリ番号
   string name = 2 [(buf.validate.field).string.min_len = 1]; // カテゴリ名
 }
 
-//  商品型の定義
+//  商品型の定義, レスポンス用でありvalidationは緩い
 message Product {
   string id = 1 [(buf.validate.field).string.min_len = 1]; // 商品Id
   string name = 2 [(buf.validate.field).string.min_len = 1]; // 商品名

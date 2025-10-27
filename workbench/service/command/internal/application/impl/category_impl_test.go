@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
@@ -52,25 +53,40 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 	Describe("Add", func() {
 		Context("when category name does not exist", func() {
 			It("should successfully add a new category", func() {
+				// Arrange
+				createDTO := &dto.CreateCategoryDTO{
+					Name: "TestCategory",
+				}
+
 				// Arrange: モックの期待値を順序付きで設定
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(false, nil),
-					mockRepo.EXPECT().Create(ctx, mockTx, testCategory).Return(nil),
+					mockRepo.EXPECT().Create(ctx, mockTx, gomock.Any()).Do(
+						func(ctx context.Context, tx *sql.Tx, category *categories.Category) {
+							Expect(category).NotTo(BeNil())
+							Expect(category.Name()).To(Equal(testCategory.Name()))
+						}).Return(nil),
 					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(nil),
 				)
 
 				// Act
-				err := cs.Add(ctx, testCategory)
+				result, err := cs.Add(ctx, createDTO)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Name).To(Equal("TestCategory"))
 			})
 		})
 
 		Context("when category name already exists", func() {
 			It("should return ApplicationError with CATEGORY_ALREADY_EXISTS code", func() {
 				// Arrange
+				createDTO := &dto.CreateCategoryDTO{
+					Name: "TestCategory",
+				}
+
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(true, nil),
@@ -85,10 +101,11 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				)
 
 				// Act
-				err := cs.Add(ctx, testCategory)
+				result, err := cs.Add(ctx, createDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(BeAssignableToTypeOf(&errs.ApplicationError{}))
 				appErr := err.(*errs.ApplicationError)
 				Expect(appErr.Code).To(Equal("CATEGORY_ALREADY_EXISTS"))
@@ -98,14 +115,18 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when Begin fails", func() {
 			It("should return the error from Begin", func() {
 				// Arrange
+				createDTO := &dto.CreateCategoryDTO{
+					Name: "TestCategory",
+				}
 				beginErr := fmt.Errorf("failed to begin transaction")
 				mockTm.EXPECT().Begin(ctx).Return(nil, beginErr)
 
 				// Act
-				err := cs.Add(ctx, testCategory)
+				result, err := cs.Add(ctx, createDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(beginErr))
 			})
 		})
@@ -113,6 +134,9 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when ExistsByName fails", func() {
 			It("should return the error and rollback", func() {
 				// Arrange
+				createDTO := &dto.CreateCategoryDTO{
+					Name: "TestCategory",
+				}
 				existsErr := fmt.Errorf("database error")
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
@@ -121,10 +145,11 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 				)
 
 				// Act
-				err := cs.Add(ctx, testCategory)
+				result, err := cs.Add(ctx, createDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(existsErr))
 			})
 		})
@@ -132,19 +157,27 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when Create fails", func() {
 			It("should return the error and rollback", func() {
 				// Arrange
+				createDTO := &dto.CreateCategoryDTO{
+					Name: "TestCategory",
+				}
 				createErr := errs.NewCRUDError("DB_ERROR", "failed to create category")
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
 					mockRepo.EXPECT().ExistsByName(ctx, mockTx, testCategory.Name()).Return(false, nil),
-					mockRepo.EXPECT().Create(ctx, mockTx, testCategory).Return(createErr),
+					mockRepo.EXPECT().Create(ctx, mockTx, gomock.Any()).Do(
+						func(ctx context.Context, tx *sql.Tx, category *categories.Category) {
+							Expect(category).NotTo(BeNil())
+							Expect(category.Name()).To(Equal(testCategory.Name()))
+						}).Return(createErr),
 					mockTm.EXPECT().Complete(ctx, mockTx, createErr).Return(nil),
 				)
 
 				// Act
-				err := cs.Add(ctx, testCategory)
+				result, err := cs.Add(ctx, createDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(createErr))
 			})
 		})
@@ -154,35 +187,46 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when category exists", func() {
 			It("should successfully update the category", func() {
 				// Arrange
+				updateDTO := &dto.UpdateCategoryDTO{
+					Id:   testCategory.Id().Value(),
+					Name: "UpdatedCategory",
+				}
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
-					mockRepo.EXPECT().UpdateById(ctx, mockTx, testCategory).Return(nil),
+					mockRepo.EXPECT().UpdateById(ctx, mockTx, gomock.Any()).Return(nil),
 					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(nil),
 				)
 
 				// Act
-				err := cs.Update(ctx, testCategory)
+				result, err := cs.Update(ctx, updateDTO)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Name).To(Equal("UpdatedCategory"))
 			})
 		})
 
 		Context("when UpdateById fails", func() {
 			It("should return the error and rollback", func() {
 				// Arrange
+				updateDTO := &dto.UpdateCategoryDTO{
+					Id:   testCategory.Id().Value(),
+					Name: "UpdatedCategory",
+				}
 				updateErr := errs.NewCRUDError("NOT_FOUND", "category not found")
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
-					mockRepo.EXPECT().UpdateById(ctx, mockTx, testCategory).Return(updateErr),
+					mockRepo.EXPECT().UpdateById(ctx, mockTx, gomock.Any()).Return(updateErr),
 					mockTm.EXPECT().Complete(ctx, mockTx, updateErr).Return(nil),
 				)
 
 				// Act
-				err := cs.Update(ctx, testCategory)
+				result, err := cs.Update(ctx, updateDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(updateErr))
 			})
 		})
@@ -190,14 +234,19 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when Begin fails", func() {
 			It("should return the error from Begin", func() {
 				// Arrange
+				updateDTO := &dto.UpdateCategoryDTO{
+					Id:   testCategory.Id().Value(),
+					Name: "UpdatedCategory",
+				}
 				beginErr := fmt.Errorf("failed to begin transaction")
 				mockTm.EXPECT().Begin(ctx).Return(nil, beginErr)
 
 				// Act
-				err := cs.Update(ctx, testCategory)
+				result, err := cs.Update(ctx, updateDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(beginErr))
 			})
 		})
@@ -207,35 +256,45 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when category exists", func() {
 			It("should successfully delete the category", func() {
 				// Arrange
+				deleteDTO := &dto.DeleteCategoryDTO{
+					Id: testCategory.Id().Value(),
+				}
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
+					mockRepo.EXPECT().FindById(ctx, mockTx, testCategory.Id()).Return(testCategory, nil),
 					mockRepo.EXPECT().DeleteById(ctx, mockTx, testCategory.Id()).Return(nil),
 					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(nil),
 				)
 
 				// Act
-				err := cs.Delete(ctx, testCategory)
+				result, err := cs.Delete(ctx, deleteDTO)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Name).To(Equal("TestCategory"))
 			})
 		})
 
 		Context("when DeleteById fails", func() {
 			It("should return the error and rollback", func() {
 				// Arrange
+				deleteDTO := &dto.DeleteCategoryDTO{
+					Id: testCategory.Id().Value(),
+				}
 				deleteErr := errs.NewCRUDError("NOT_FOUND", "category not found")
 				gomock.InOrder(
 					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
-					mockRepo.EXPECT().DeleteById(ctx, mockTx, testCategory.Id()).Return(deleteErr),
+					mockRepo.EXPECT().FindById(ctx, mockTx, testCategory.Id()).Return(nil, deleteErr),
 					mockTm.EXPECT().Complete(ctx, mockTx, deleteErr).Return(nil),
 				)
 
 				// Act
-				err := cs.Delete(ctx, testCategory)
+				result, err := cs.Delete(ctx, deleteDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(deleteErr))
 			})
 		})
@@ -243,14 +302,18 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 		Context("when Begin fails", func() {
 			It("should return the error from Begin", func() {
 				// Arrange
+				deleteDTO := &dto.DeleteCategoryDTO{
+					Id: testCategory.Id().Value(),
+				}
 				beginErr := fmt.Errorf("failed to begin transaction")
 				mockTm.EXPECT().Begin(ctx).Return(nil, beginErr)
 
 				// Act
-				err := cs.Delete(ctx, testCategory)
+				result, err := cs.Delete(ctx, deleteDTO)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
 				Expect(err).To(Equal(beginErr))
 			})
 		})

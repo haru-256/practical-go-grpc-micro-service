@@ -10,7 +10,6 @@ import (
 )
 
 // CategoryId はカテゴリIDを表す値オブジェクトです。
-// UUID形式の文字列を保持し、カテゴリの一意な識別子として機能します。
 type CategoryId struct {
 	value string
 }
@@ -21,7 +20,6 @@ func (c *CategoryId) Value() string {
 }
 
 // Equals は2つのカテゴリIDの同一性を検証します。
-// 値が一致する場合、またはアドレスが同じ場合にtrueを返します。
 func (c *CategoryId) Equals(other *CategoryId) bool {
 	if other == nil {
 		return false
@@ -39,7 +37,6 @@ var getUUIDRegexp = sync.OnceValue(func() *regexp.Regexp {
 })
 
 // NewCategoryId はカテゴリIDを生成します。
-// 引数はUUID形式の文字列である必要があります（36文字）。
 func NewCategoryId(value string) (*CategoryId, error) {
 	// フィールドの長さ
 	const LENGTH int = 36

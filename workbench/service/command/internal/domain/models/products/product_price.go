@@ -7,7 +7,6 @@ import (
 )
 
 // ProductPrice は商品価格を表す値オブジェクトです。
-// 1円以上1,000,000円以下の価格を保持します。
 type ProductPrice struct {
 	value uint32 // 商品価格(単位: 円)
 }
@@ -18,7 +17,6 @@ func (p *ProductPrice) Value() uint32 {
 }
 
 // NewProductPrice は商品価格を生成します。
-// 1円以上1,000,000円以下の価格である必要があります。
 func NewProductPrice(value uint32) (*ProductPrice, error) {
 	const MIN_VALUE uint32 = 1       // 最小値(1円)
 	const MAX_VALUE uint32 = 1000000 // 最大値(1,000,000円)

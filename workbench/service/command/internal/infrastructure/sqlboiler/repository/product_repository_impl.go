@@ -8,6 +8,8 @@ import (
 	"log/slog"
 
 	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
@@ -20,14 +22,6 @@ type ProductRepositoryImpl struct {
 }
 
 // NewProductRepositoryImpl は新しいProductRepositoryImplインスタンスを生成します。
-// この関数は、商品の挿入、更新、削除後に実行されるフックを登録します。
-// フック関数はファクトリー関数により生成され、渡されたloggerをクロージャーに保持します。
-// 具象型を返すことで、呼び出し側が必要に応じてインターフェースとして扱えるようにします。
-//
-// 使用例:
-//
-//	repo := repository.NewProductRepositoryImpl(logger)
-//	var productRepo products.ProductRepository = repo  // インターフェースとして使用
 func NewProductRepositoryImpl(logger *slog.Logger) *ProductRepositoryImpl {
 	models.AddProductHook(boil.AfterInsertHook, productHookFactory(boil.AfterInsertHook, logger))
 	models.AddProductHook(boil.AfterUpdateHook, productHookFactory(boil.AfterUpdateHook, logger))
@@ -40,11 +34,11 @@ func NewProductRepositoryImpl(logger *slog.Logger) *ProductRepositoryImpl {
 // Parameters:
 //   - ctx: コンテキスト
 //   - tx: トランザクション
-//   - id: チェック対象の商品ID
+//   - id: 商品ID
 //
 // Returns:
-//   - bool: 商品が存在する場合はtrue、存在しない場合はfalse
-//   - error: データベースエラーが発生した場合
+//   - bool: 商品が存在する場合はtrue
+//   - error: データベースエラー
 func (r *ProductRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *products.ProductId) (bool, error) {
 	condition := models.ProductWhere.ObjID.EQ(id.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
@@ -55,16 +49,77 @@ func (r *ProductRepositoryImpl) ExistsById(ctx context.Context, tx *sql.Tx, id *
 	return exists, nil
 }
 
+// FindById は指定されたIDの商品を取得します。
+//
+// Parameters:
+//   - ctx: コンテキスト
+//   - tx: トランザクション
+//   - id: 商品ID
+//
+// Returns:
+//   - *products.Product: 見つかった商品エンティティ
+//   - error: 商品が存在しない場合やデータベースエラー
+func (r *ProductRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id *products.ProductId) (*products.Product, error) {
+	condition := models.ProductWhere.ObjID.EQ(id.Value())
+	model, err := models.Products(condition, qm.Load(models.ProductRels.Category)).One(ctx, tx)
+	if err != nil {
+		r.logger.ErrorContext(ctx, "Failed to find product by ID", slog.Any("error", err))
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("商品番号: %s は存在しないため、削除できませんでした。", id.Value()))
+		} else {
+			return nil, handler.DBErrHandler(err)
+		}
+	}
+	// model.R.Category でCategoryにアクセスできる
+	if model.R == nil || model.R.Category == nil {
+		return nil, errs.NewCRUDError("NOT_FOUND", "関連するカテゴリが見つかりません")
+	}
+	// Categoryエンティティを構築
+	categoryId, err := categories.NewCategoryId(model.R.Category.ObjID)
+	if err != nil {
+		return nil, err
+	}
+	categoryName, err := categories.NewCategoryName(model.R.Category.Name)
+	if err != nil {
+		return nil, err
+	}
+	category, err := categories.BuildCategory(categoryId, categoryName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Productエンティティを構築
+	productId, err := products.NewProductId(model.ObjID)
+	if err != nil {
+		return nil, err
+	}
+	productName, err := products.NewProductName(model.Name)
+	if err != nil {
+		return nil, err
+	}
+	productPrice, err := products.NewProductPrice(uint32(model.Price))
+	if err != nil {
+		return nil, err
+	}
+
+	product, err := products.BuildProduct(productId, productName, productPrice, category)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
+}
+
 // ExistsByName は指定された名前の商品が存在するかどうかをチェックします。
 //
 // Parameters:
 //   - ctx: コンテキスト
 //   - tx: トランザクション
-//   - name: チェックする商品名
+//   - name: 商品名
 //
 // Returns:
-//   - bool: 商品が存在する場合はtrue、存在しない場合はfalse
-//   - error: データベースエラーが発生した場合
+//   - bool: 商品が存在する場合はtrue
+//   - error: データベースエラー
 func (r *ProductRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, name *products.ProductName) (bool, error) {
 	condition := models.ProductWhere.Name.EQ(name.Value())
 	exists, err := models.Products(condition).Exists(ctx, tx)
@@ -77,16 +132,13 @@ func (r *ProductRepositoryImpl) ExistsByName(ctx context.Context, tx *sql.Tx, na
 
 // Create は新しい商品をデータベースに追加します。
 //
-// NOTE: boil.Infer() を使用することで、auto-incrementのIDは無視され、
-// DB側で自動採番された後、SQLBoiler側の構造体にセットされます。
-//
 // Parameters:
 //   - ctx: コンテキスト
 //   - tx: トランザクション
-//   - Product: 作成する商品
+//   - product: 作成する商品
 //
 // Returns:
-//   - error: データベースエラーが発生した場合
+//   - error: データベースエラー
 func (r *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product *products.Product) error {
 	newProduct := models.Product{
 		ObjID:      product.Id().Value(),
@@ -99,6 +151,7 @@ func (r *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product 
 		r.logger.ErrorContext(ctx, "Failed to create product", slog.Any("error", err))
 		return handler.DBErrHandler(err)
 	}
+
 	return nil
 }
 
@@ -107,11 +160,10 @@ func (r *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, product 
 // Parameters:
 //   - ctx: コンテキスト
 //   - tx: トランザクション
-//   - Product: 更新する商品情報
+//   - product: 更新する商品情報
 //
 // Returns:
-//   - error: 商品が存在しない場合はNOT_FOUNDエラー、
-//     データベースエラーが発生した場合はそのエラー
+//   - error: 商品が存在しない場合やデータベースエラー
 func (r *ProductRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, Product *products.Product) error {
 	condition := models.ProductWhere.ObjID.EQ(Product.Id().Value())
 	upModel, err := models.Products(condition).One(ctx, tx)
@@ -145,8 +197,7 @@ func (r *ProductRepositoryImpl) UpdateById(ctx context.Context, tx *sql.Tx, Prod
 //   - id: 削除する商品のID
 //
 // Returns:
-//   - error: 商品が存在しない場合はNOT_FOUNDエラー、
-//     データベースエラーが発生した場合はそのエラー
+//   - error: 商品が存在しない場合やデータベースエラー
 func (r *ProductRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id *products.ProductId) error {
 	condition := models.ProductWhere.ObjID.EQ(id.Value())
 	delModel, err := models.Products(condition).One(ctx, tx)
@@ -163,11 +214,10 @@ func (r *ProductRepositoryImpl) DeleteById(ctx context.Context, tx *sql.Tx, id *
 }
 
 // productHookFactory は指定されたフックタイプに応じた商品用フック関数を生成します。
-// loggerをクロージャーに保持し、各フック実行時に構造化ログを出力します。
 //
 // Parameters:
-//   - hookType: フックのタイプ（AfterInsertHook, AfterUpdateHook, AfterDeleteHook）
-//   - logger: 構造化ログ出力に使用するlogger
+//   - hookType: フックのタイプ
+//   - logger: ロガー
 //
 // Returns:
 //   - func: SQLBoilerのフック関数
@@ -210,3 +260,5 @@ func productHookFactory(hookType boil.HookPoint, logger *slog.Logger) func(ctx c
 		panic("Invalid hookType")
 	}
 }
+
+var _ products.ProductRepository = (*ProductRepositoryImpl)(nil)

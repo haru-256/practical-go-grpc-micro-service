@@ -81,8 +81,7 @@ func (x CRUD) Number() protoreflect.EnumNumber {
 type CreateCategoryRequest struct {
 	state           protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Crud CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
-	xxx_hidden_Id   string                 `protobuf:"bytes,2,opt,name=id,proto3"`
-	xxx_hidden_Name string                 `protobuf:"bytes,3,opt,name=name,proto3"`
+	xxx_hidden_Name *v1.CategoryName       `protobuf:"bytes,2,opt,name=name,proto3"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -119,39 +118,37 @@ func (x *CreateCategoryRequest) GetCrud() CRUD {
 	return CRUD_CRUD_UNSPECIFIED
 }
 
-func (x *CreateCategoryRequest) GetId() string {
-	if x != nil {
-		return x.xxx_hidden_Id
-	}
-	return ""
-}
-
-func (x *CreateCategoryRequest) GetName() string {
+func (x *CreateCategoryRequest) GetName() *v1.CategoryName {
 	if x != nil {
 		return x.xxx_hidden_Name
 	}
-	return ""
+	return nil
 }
 
 func (x *CreateCategoryRequest) SetCrud(v CRUD) {
 	x.xxx_hidden_Crud = v
 }
 
-func (x *CreateCategoryRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+func (x *CreateCategoryRequest) SetName(v *v1.CategoryName) {
+	x.xxx_hidden_Name = v
 }
 
-func (x *CreateCategoryRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+func (x *CreateCategoryRequest) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Name != nil
+}
+
+func (x *CreateCategoryRequest) ClearName() {
+	x.xxx_hidden_Name = nil
 }
 
 type CreateCategoryRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// FIXME: 消させをないかを確認する
 	Crud CRUD
-	Id   string
-	Name string
+	Name *v1.CategoryName
 }
 
 func (b0 CreateCategoryRequest_builder) Build() *CreateCategoryRequest {
@@ -159,7 +156,6 @@ func (b0 CreateCategoryRequest_builder) Build() *CreateCategoryRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Crud = b.Crud
-	x.xxx_hidden_Id = b.Id
 	x.xxx_hidden_Name = b.Name
 	return m0
 }
@@ -283,12 +279,11 @@ func (b0 CreateCategoryResponse_builder) Build() *CreateCategoryResponse {
 }
 
 type UpdateCategoryRequest struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Crud CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
-	xxx_hidden_Id   string                 `protobuf:"bytes,2,opt,name=id,proto3"`
-	xxx_hidden_Name string                 `protobuf:"bytes,3,opt,name=name,proto3"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state               protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Crud     CRUD                            `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
+	xxx_hidden_Category *UpdateCategoryRequest_Category `protobuf:"bytes,2,opt,name=category,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *UpdateCategoryRequest) Reset() {
@@ -323,38 +318,37 @@ func (x *UpdateCategoryRequest) GetCrud() CRUD {
 	return CRUD_CRUD_UNSPECIFIED
 }
 
-func (x *UpdateCategoryRequest) GetId() string {
+func (x *UpdateCategoryRequest) GetCategory() *UpdateCategoryRequest_Category {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.xxx_hidden_Category
 	}
-	return ""
-}
-
-func (x *UpdateCategoryRequest) GetName() string {
-	if x != nil {
-		return x.xxx_hidden_Name
-	}
-	return ""
+	return nil
 }
 
 func (x *UpdateCategoryRequest) SetCrud(v CRUD) {
 	x.xxx_hidden_Crud = v
 }
 
-func (x *UpdateCategoryRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+func (x *UpdateCategoryRequest) SetCategory(v *UpdateCategoryRequest_Category) {
+	x.xxx_hidden_Category = v
 }
 
-func (x *UpdateCategoryRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+func (x *UpdateCategoryRequest) HasCategory() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Category != nil
+}
+
+func (x *UpdateCategoryRequest) ClearCategory() {
+	x.xxx_hidden_Category = nil
 }
 
 type UpdateCategoryRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Crud CRUD
-	Id   string
-	Name string
+	Crud     CRUD
+	Category *UpdateCategoryRequest_Category
 }
 
 func (b0 UpdateCategoryRequest_builder) Build() *UpdateCategoryRequest {
@@ -362,8 +356,7 @@ func (b0 UpdateCategoryRequest_builder) Build() *UpdateCategoryRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Crud = b.Crud
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Category = b.Category
 	return m0
 }
 
@@ -486,11 +479,11 @@ func (b0 UpdateCategoryResponse_builder) Build() *UpdateCategoryResponse {
 }
 
 type DeleteCategoryRequest struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Crud CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
-	xxx_hidden_Id   string                 `protobuf:"bytes,2,opt,name=id,proto3"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Crud       CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
+	xxx_hidden_CategoryId *v1.CategoryId         `protobuf:"bytes,2,opt,name=category_id,json=categoryId,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *DeleteCategoryRequest) Reset() {
@@ -525,26 +518,37 @@ func (x *DeleteCategoryRequest) GetCrud() CRUD {
 	return CRUD_CRUD_UNSPECIFIED
 }
 
-func (x *DeleteCategoryRequest) GetId() string {
+func (x *DeleteCategoryRequest) GetCategoryId() *v1.CategoryId {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.xxx_hidden_CategoryId
 	}
-	return ""
+	return nil
 }
 
 func (x *DeleteCategoryRequest) SetCrud(v CRUD) {
 	x.xxx_hidden_Crud = v
 }
 
-func (x *DeleteCategoryRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+func (x *DeleteCategoryRequest) SetCategoryId(v *v1.CategoryId) {
+	x.xxx_hidden_CategoryId = v
+}
+
+func (x *DeleteCategoryRequest) HasCategoryId() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CategoryId != nil
+}
+
+func (x *DeleteCategoryRequest) ClearCategoryId() {
+	x.xxx_hidden_CategoryId = nil
 }
 
 type DeleteCategoryRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Crud CRUD
-	Id   string
+	Crud       CRUD
+	CategoryId *v1.CategoryId
 }
 
 func (b0 DeleteCategoryRequest_builder) Build() *DeleteCategoryRequest {
@@ -552,7 +556,7 @@ func (b0 DeleteCategoryRequest_builder) Build() *DeleteCategoryRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Crud = b.Crud
-	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_CategoryId = b.CategoryId
 	return m0
 }
 
@@ -676,14 +680,11 @@ func (b0 DeleteCategoryResponse_builder) Build() *DeleteCategoryResponse {
 
 // ProductService用のRequest/Response型
 type CreateProductRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Crud       CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
-	xxx_hidden_Id         string                 `protobuf:"bytes,2,opt,name=id,proto3"`
-	xxx_hidden_Name       string                 `protobuf:"bytes,3,opt,name=name,proto3"`
-	xxx_hidden_Price      int32                  `protobuf:"varint,4,opt,name=price,proto3"`
-	xxx_hidden_CategoryId string                 `protobuf:"bytes,5,opt,name=category_id,json=categoryId,proto3"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state              protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Crud    CRUD                          `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
+	xxx_hidden_Product *CreateProductRequest_Product `protobuf:"bytes,2,opt,name=product,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateProductRequest) Reset() {
@@ -718,62 +719,37 @@ func (x *CreateProductRequest) GetCrud() CRUD {
 	return CRUD_CRUD_UNSPECIFIED
 }
 
-func (x *CreateProductRequest) GetId() string {
+func (x *CreateProductRequest) GetProduct() *CreateProductRequest_Product {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.xxx_hidden_Product
 	}
-	return ""
-}
-
-func (x *CreateProductRequest) GetName() string {
-	if x != nil {
-		return x.xxx_hidden_Name
-	}
-	return ""
-}
-
-func (x *CreateProductRequest) GetPrice() int32 {
-	if x != nil {
-		return x.xxx_hidden_Price
-	}
-	return 0
-}
-
-func (x *CreateProductRequest) GetCategoryId() string {
-	if x != nil {
-		return x.xxx_hidden_CategoryId
-	}
-	return ""
+	return nil
 }
 
 func (x *CreateProductRequest) SetCrud(v CRUD) {
 	x.xxx_hidden_Crud = v
 }
 
-func (x *CreateProductRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+func (x *CreateProductRequest) SetProduct(v *CreateProductRequest_Product) {
+	x.xxx_hidden_Product = v
 }
 
-func (x *CreateProductRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+func (x *CreateProductRequest) HasProduct() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Product != nil
 }
 
-func (x *CreateProductRequest) SetPrice(v int32) {
-	x.xxx_hidden_Price = v
-}
-
-func (x *CreateProductRequest) SetCategoryId(v string) {
-	x.xxx_hidden_CategoryId = v
+func (x *CreateProductRequest) ClearProduct() {
+	x.xxx_hidden_Product = nil
 }
 
 type CreateProductRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Crud       CRUD
-	Id         string
-	Name       string
-	Price      int32
-	CategoryId string
+	Crud    CRUD
+	Product *CreateProductRequest_Product
 }
 
 func (b0 CreateProductRequest_builder) Build() *CreateProductRequest {
@@ -781,10 +757,7 @@ func (b0 CreateProductRequest_builder) Build() *CreateProductRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Crud = b.Crud
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Price = b.Price
-	x.xxx_hidden_CategoryId = b.CategoryId
+	x.xxx_hidden_Product = b.Product
 	return m0
 }
 
@@ -907,14 +880,11 @@ func (b0 CreateProductResponse_builder) Build() *CreateProductResponse {
 }
 
 type UpdateProductRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Crud       CRUD                   `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
-	xxx_hidden_Id         string                 `protobuf:"bytes,2,opt,name=id,proto3"`
-	xxx_hidden_Name       string                 `protobuf:"bytes,3,opt,name=name,proto3"`
-	xxx_hidden_Price      int32                  `protobuf:"varint,4,opt,name=price,proto3"`
-	xxx_hidden_CategoryId string                 `protobuf:"bytes,5,opt,name=category_id,json=categoryId,proto3"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state              protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Crud    CRUD                          `protobuf:"varint,1,opt,name=crud,proto3,enum=command.v1.CRUD"`
+	xxx_hidden_Product *UpdateProductRequest_Product `protobuf:"bytes,2,opt,name=product,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpdateProductRequest) Reset() {
@@ -949,62 +919,37 @@ func (x *UpdateProductRequest) GetCrud() CRUD {
 	return CRUD_CRUD_UNSPECIFIED
 }
 
-func (x *UpdateProductRequest) GetId() string {
+func (x *UpdateProductRequest) GetProduct() *UpdateProductRequest_Product {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.xxx_hidden_Product
 	}
-	return ""
-}
-
-func (x *UpdateProductRequest) GetName() string {
-	if x != nil {
-		return x.xxx_hidden_Name
-	}
-	return ""
-}
-
-func (x *UpdateProductRequest) GetPrice() int32 {
-	if x != nil {
-		return x.xxx_hidden_Price
-	}
-	return 0
-}
-
-func (x *UpdateProductRequest) GetCategoryId() string {
-	if x != nil {
-		return x.xxx_hidden_CategoryId
-	}
-	return ""
+	return nil
 }
 
 func (x *UpdateProductRequest) SetCrud(v CRUD) {
 	x.xxx_hidden_Crud = v
 }
 
-func (x *UpdateProductRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+func (x *UpdateProductRequest) SetProduct(v *UpdateProductRequest_Product) {
+	x.xxx_hidden_Product = v
 }
 
-func (x *UpdateProductRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+func (x *UpdateProductRequest) HasProduct() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Product != nil
 }
 
-func (x *UpdateProductRequest) SetPrice(v int32) {
-	x.xxx_hidden_Price = v
-}
-
-func (x *UpdateProductRequest) SetCategoryId(v string) {
-	x.xxx_hidden_CategoryId = v
+func (x *UpdateProductRequest) ClearProduct() {
+	x.xxx_hidden_Product = nil
 }
 
 type UpdateProductRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Crud       CRUD
-	Id         string
-	Name       string
-	Price      int32
-	CategoryId string
+	Crud    CRUD
+	Product *UpdateProductRequest_Product
 }
 
 func (b0 UpdateProductRequest_builder) Build() *UpdateProductRequest {
@@ -1012,10 +957,7 @@ func (b0 UpdateProductRequest_builder) Build() *UpdateProductRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Crud = b.Crud
-	x.xxx_hidden_Id = b.Id
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Price = b.Price
-	x.xxx_hidden_CategoryId = b.CategoryId
+	x.xxx_hidden_Product = b.Product
 	return m0
 }
 
@@ -1138,10 +1080,10 @@ func (b0 UpdateProductResponse_builder) Build() *UpdateProductResponse {
 }
 
 type DeleteProductRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id string                 `protobuf:"bytes,2,opt,name=id,proto3"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ProductId *v1.ProductId          `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *DeleteProductRequest) Reset() {
@@ -1169,28 +1111,39 @@ func (x *DeleteProductRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *DeleteProductRequest) GetId() string {
+func (x *DeleteProductRequest) GetProductId() *v1.ProductId {
 	if x != nil {
-		return x.xxx_hidden_Id
+		return x.xxx_hidden_ProductId
 	}
-	return ""
+	return nil
 }
 
-func (x *DeleteProductRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
+func (x *DeleteProductRequest) SetProductId(v *v1.ProductId) {
+	x.xxx_hidden_ProductId = v
+}
+
+func (x *DeleteProductRequest) HasProductId() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ProductId != nil
+}
+
+func (x *DeleteProductRequest) ClearProductId() {
+	x.xxx_hidden_ProductId = nil
 }
 
 type DeleteProductRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id string
+	ProductId *v1.ProductId
 }
 
 func (b0 DeleteProductRequest_builder) Build() *DeleteProductRequest {
 	m0 := &DeleteProductRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_ProductId = b.ProductId
 	return m0
 }
 
@@ -1312,63 +1265,514 @@ func (b0 DeleteProductResponse_builder) Build() *DeleteProductResponse {
 	return m0
 }
 
+type UpdateCategoryRequest_Category struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id   *v1.CategoryId         `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name *v1.CategoryName       `protobuf:"bytes,2,opt,name=name,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UpdateCategoryRequest_Category) Reset() {
+	*x = UpdateCategoryRequest_Category{}
+	mi := &file_command_v1_command_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateCategoryRequest_Category) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateCategoryRequest_Category) ProtoMessage() {}
+
+func (x *UpdateCategoryRequest_Category) ProtoReflect() protoreflect.Message {
+	mi := &file_command_v1_command_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateCategoryRequest_Category) GetId() *v1.CategoryId {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return nil
+}
+
+func (x *UpdateCategoryRequest_Category) GetName() *v1.CategoryName {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return nil
+}
+
+func (x *UpdateCategoryRequest_Category) SetId(v *v1.CategoryId) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *UpdateCategoryRequest_Category) SetName(v *v1.CategoryName) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *UpdateCategoryRequest_Category) HasId() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Id != nil
+}
+
+func (x *UpdateCategoryRequest_Category) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Name != nil
+}
+
+func (x *UpdateCategoryRequest_Category) ClearId() {
+	x.xxx_hidden_Id = nil
+}
+
+func (x *UpdateCategoryRequest_Category) ClearName() {
+	x.xxx_hidden_Name = nil
+}
+
+type UpdateCategoryRequest_Category_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id   *v1.CategoryId
+	Name *v1.CategoryName
+}
+
+func (b0 UpdateCategoryRequest_Category_builder) Build() *UpdateCategoryRequest_Category {
+	m0 := &UpdateCategoryRequest_Category{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+type CreateProductRequest_Product struct {
+	state               protoimpl.MessageState                 `protogen:"opaque.v1"`
+	xxx_hidden_Name     *v1.ProductName                        `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Price    *v1.ProductPrice                       `protobuf:"bytes,2,opt,name=price,proto3"`
+	xxx_hidden_Category *CreateProductRequest_Product_Category `protobuf:"bytes,3,opt,name=category,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *CreateProductRequest_Product) Reset() {
+	*x = CreateProductRequest_Product{}
+	mi := &file_command_v1_command_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProductRequest_Product) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProductRequest_Product) ProtoMessage() {}
+
+func (x *CreateProductRequest_Product) ProtoReflect() protoreflect.Message {
+	mi := &file_command_v1_command_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateProductRequest_Product) GetName() *v1.ProductName {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return nil
+}
+
+func (x *CreateProductRequest_Product) GetPrice() *v1.ProductPrice {
+	if x != nil {
+		return x.xxx_hidden_Price
+	}
+	return nil
+}
+
+func (x *CreateProductRequest_Product) GetCategory() *CreateProductRequest_Product_Category {
+	if x != nil {
+		return x.xxx_hidden_Category
+	}
+	return nil
+}
+
+func (x *CreateProductRequest_Product) SetName(v *v1.ProductName) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CreateProductRequest_Product) SetPrice(v *v1.ProductPrice) {
+	x.xxx_hidden_Price = v
+}
+
+func (x *CreateProductRequest_Product) SetCategory(v *CreateProductRequest_Product_Category) {
+	x.xxx_hidden_Category = v
+}
+
+func (x *CreateProductRequest_Product) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Name != nil
+}
+
+func (x *CreateProductRequest_Product) HasPrice() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Price != nil
+}
+
+func (x *CreateProductRequest_Product) HasCategory() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Category != nil
+}
+
+func (x *CreateProductRequest_Product) ClearName() {
+	x.xxx_hidden_Name = nil
+}
+
+func (x *CreateProductRequest_Product) ClearPrice() {
+	x.xxx_hidden_Price = nil
+}
+
+func (x *CreateProductRequest_Product) ClearCategory() {
+	x.xxx_hidden_Category = nil
+}
+
+type CreateProductRequest_Product_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name     *v1.ProductName
+	Price    *v1.ProductPrice
+	Category *CreateProductRequest_Product_Category
+}
+
+func (b0 CreateProductRequest_Product_builder) Build() *CreateProductRequest_Product {
+	m0 := &CreateProductRequest_Product{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Price = b.Price
+	x.xxx_hidden_Category = b.Category
+	return m0
+}
+
+type CreateProductRequest_Product_Category struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id   *v1.CategoryId         `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name *v1.CategoryName       `protobuf:"bytes,2,opt,name=name,proto3"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CreateProductRequest_Product_Category) Reset() {
+	*x = CreateProductRequest_Product_Category{}
+	mi := &file_command_v1_command_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProductRequest_Product_Category) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProductRequest_Product_Category) ProtoMessage() {}
+
+func (x *CreateProductRequest_Product_Category) ProtoReflect() protoreflect.Message {
+	mi := &file_command_v1_command_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateProductRequest_Product_Category) GetId() *v1.CategoryId {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return nil
+}
+
+func (x *CreateProductRequest_Product_Category) GetName() *v1.CategoryName {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return nil
+}
+
+func (x *CreateProductRequest_Product_Category) SetId(v *v1.CategoryId) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *CreateProductRequest_Product_Category) SetName(v *v1.CategoryName) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CreateProductRequest_Product_Category) HasId() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Id != nil
+}
+
+func (x *CreateProductRequest_Product_Category) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Name != nil
+}
+
+func (x *CreateProductRequest_Product_Category) ClearId() {
+	x.xxx_hidden_Id = nil
+}
+
+func (x *CreateProductRequest_Product_Category) ClearName() {
+	x.xxx_hidden_Name = nil
+}
+
+type CreateProductRequest_Product_Category_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id   *v1.CategoryId
+	Name *v1.CategoryName
+}
+
+func (b0 CreateProductRequest_Product_Category_builder) Build() *CreateProductRequest_Product_Category {
+	m0 := &CreateProductRequest_Product_Category{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
+type UpdateProductRequest_Product struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         *v1.ProductId          `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Name       *v1.ProductName        `protobuf:"bytes,2,opt,name=name,proto3"`
+	xxx_hidden_Price      *v1.ProductPrice       `protobuf:"bytes,3,opt,name=price,proto3"`
+	xxx_hidden_CategoryId *v1.CategoryId         `protobuf:"bytes,4,opt,name=category_id,json=categoryId,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *UpdateProductRequest_Product) Reset() {
+	*x = UpdateProductRequest_Product{}
+	mi := &file_command_v1_command_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProductRequest_Product) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProductRequest_Product) ProtoMessage() {}
+
+func (x *UpdateProductRequest_Product) ProtoReflect() protoreflect.Message {
+	mi := &file_command_v1_command_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *UpdateProductRequest_Product) GetId() *v1.ProductId {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return nil
+}
+
+func (x *UpdateProductRequest_Product) GetName() *v1.ProductName {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return nil
+}
+
+func (x *UpdateProductRequest_Product) GetPrice() *v1.ProductPrice {
+	if x != nil {
+		return x.xxx_hidden_Price
+	}
+	return nil
+}
+
+func (x *UpdateProductRequest_Product) GetCategoryId() *v1.CategoryId {
+	if x != nil {
+		return x.xxx_hidden_CategoryId
+	}
+	return nil
+}
+
+func (x *UpdateProductRequest_Product) SetId(v *v1.ProductId) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *UpdateProductRequest_Product) SetName(v *v1.ProductName) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *UpdateProductRequest_Product) SetPrice(v *v1.ProductPrice) {
+	x.xxx_hidden_Price = v
+}
+
+func (x *UpdateProductRequest_Product) SetCategoryId(v *v1.CategoryId) {
+	x.xxx_hidden_CategoryId = v
+}
+
+func (x *UpdateProductRequest_Product) HasId() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Id != nil
+}
+
+func (x *UpdateProductRequest_Product) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Name != nil
+}
+
+func (x *UpdateProductRequest_Product) HasPrice() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Price != nil
+}
+
+func (x *UpdateProductRequest_Product) HasCategoryId() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CategoryId != nil
+}
+
+func (x *UpdateProductRequest_Product) ClearId() {
+	x.xxx_hidden_Id = nil
+}
+
+func (x *UpdateProductRequest_Product) ClearName() {
+	x.xxx_hidden_Name = nil
+}
+
+func (x *UpdateProductRequest_Product) ClearPrice() {
+	x.xxx_hidden_Price = nil
+}
+
+func (x *UpdateProductRequest_Product) ClearCategoryId() {
+	x.xxx_hidden_CategoryId = nil
+}
+
+type UpdateProductRequest_Product_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         *v1.ProductId
+	Name       *v1.ProductName
+	Price      *v1.ProductPrice
+	CategoryId *v1.CategoryId
+}
+
+func (b0 UpdateProductRequest_Product_builder) Build() *UpdateProductRequest_Product {
+	m0 := &UpdateProductRequest_Product{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Price = b.Price
+	x.xxx_hidden_CategoryId = b.CategoryId
+	return m0
+}
+
 var File_command_v1_command_proto protoreflect.FileDescriptor
 
 const file_command_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"\x18command/v1/command.proto\x12\n" +
-	"command.v1\x1a\x1bbuf/validate/validate.proto\x1a\x15common/v1/error.proto\x1a\x16common/v1/models.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x93\x01\n" +
+	"command.v1\x1a\x1bbuf/validate/validate.proto\x1a\x15common/v1/error.proto\x1a\x16common/v1/models.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"t\n" +
 	"\x15CreateCategoryRequest\x12.\n" +
 	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x01R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1d\n" +
-	"\x04name\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18dR\x04name\"\xb3\x01\n" +
+	"\x04name\x18\x02 \x01(\v2\x17.common.v1.CategoryNameR\x04name\"\xb3\x01\n" +
 	"\x16CreateCategoryResponse\x12/\n" +
 	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\x93\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xef\x01\n" +
 	"\x15UpdateCategoryRequest\x12.\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x02R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1d\n" +
-	"\x04name\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18dR\x04name\"\xb3\x01\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x02R\x04crud\x12F\n" +
+	"\bcategory\x18\x02 \x01(\v2*.command.v1.UpdateCategoryRequest.CategoryR\bcategory\x1a^\n" +
+	"\bCategory\x12%\n" +
+	"\x02id\x18\x01 \x01(\v2\x15.common.v1.CategoryIdR\x02id\x12+\n" +
+	"\x04name\x18\x02 \x01(\v2\x17.common.v1.CategoryNameR\x04name\"\xb3\x01\n" +
 	"\x16UpdateCategoryResponse\x12/\n" +
 	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"t\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\x7f\n" +
 	"\x15DeleteCategoryRequest\x12.\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x03R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\"\xb3\x01\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x03R\x04crud\x126\n" +
+	"\vcategory_id\x18\x02 \x01(\v2\x15.common.v1.CategoryIdR\n" +
+	"categoryId\"\xb3\x01\n" +
 	"\x16DeleteCategoryResponse\x12/\n" +
 	"\bcategory\x18\x01 \x01(\v2\x13.common.v1.CategoryR\bcategory\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xf6\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xa0\x03\n" +
 	"\x14CreateProductRequest\x12.\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x01R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1e\n" +
-	"\x04name\x18\x03 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xc8\x01R\x04name\x12#\n" +
-	"\x05price\x18\x04 \x01(\x05B\r\xbaH\n" +
-	"\x1a\b\x18\xff\x93\xeb\xdc\x03 \x00R\x05price\x12<\n" +
-	"\vcategory_id\x18\x05 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\n" +
-	"categoryId\"\xaf\x01\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x01R\x04crud\x12B\n" +
+	"\aproduct\x18\x02 \x01(\v2(.command.v1.CreateProductRequest.ProductR\aproduct\x1a\x93\x02\n" +
+	"\aProduct\x12*\n" +
+	"\x04name\x18\x01 \x01(\v2\x16.common.v1.ProductNameR\x04name\x12-\n" +
+	"\x05price\x18\x02 \x01(\v2\x17.common.v1.ProductPriceR\x05price\x12M\n" +
+	"\bcategory\x18\x03 \x01(\v21.command.v1.CreateProductRequest.Product.CategoryR\bcategory\x1a^\n" +
+	"\bCategory\x12%\n" +
+	"\x02id\x18\x01 \x01(\v2\x15.common.v1.CategoryIdR\x02id\x12+\n" +
+	"\x04name\x18\x02 \x01(\v2\x17.common.v1.CategoryNameR\x04name\"\xaf\x01\n" +
 	"\x15CreateProductResponse\x12,\n" +
 	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xf6\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"\xcf\x02\n" +
 	"\x14UpdateProductRequest\x12.\n" +
-	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x02R\x04crud\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\x12\x1e\n" +
-	"\x04name\x18\x03 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xc8\x01R\x04name\x12#\n" +
-	"\x05price\x18\x04 \x01(\x05B\r\xbaH\n" +
-	"\x1a\b\x18\xff\x93\xeb\xdc\x03 \x00R\x05price\x12<\n" +
-	"\vcategory_id\x18\x05 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\n" +
+	"\x04crud\x18\x01 \x01(\x0e2\x10.command.v1.CRUDB\b\xbaH\x05\x82\x01\x02\b\x02R\x04crud\x12B\n" +
+	"\aproduct\x18\x02 \x01(\v2(.command.v1.UpdateProductRequest.ProductR\aproduct\x1a\xc2\x01\n" +
+	"\aProduct\x12$\n" +
+	"\x02id\x18\x01 \x01(\v2\x14.common.v1.ProductIdR\x02id\x12*\n" +
+	"\x04name\x18\x02 \x01(\v2\x16.common.v1.ProductNameR\x04name\x12-\n" +
+	"\x05price\x18\x03 \x01(\v2\x17.common.v1.ProductPriceR\x05price\x126\n" +
+	"\vcategory_id\x18\x04 \x01(\v2\x15.common.v1.CategoryIdR\n" +
 	"categoryId\"\xaf\x01\n" +
 	"\x15UpdateProductResponse\x12,\n" +
 	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"C\n" +
-	"\x14DeleteProductRequest\x12+\n" +
-	"\x02id\x18\x02 \x01(\tB\x1b\xbaH\x18r\x16\x10\x01\x1822\x10^[a-zA-Z0-9_-]+$R\x02id\"\xaf\x01\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xb2\x01\x00R\ttimestamp\"K\n" +
+	"\x14DeleteProductRequest\x123\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\v2\x14.common.v1.ProductIdR\tproductId\"\xaf\x01\n" +
 	"\x15DeleteProductResponse\x12,\n" +
 	"\aproduct\x18\x01 \x01(\v2\x12.common.v1.ProductR\aproduct\x12&\n" +
 	"\x05error\x18\x02 \x01(\v2\x10.common.v1.ErrorR\x05error\x12@\n" +
@@ -1391,67 +1795,93 @@ const file_command_v1_command_proto_rawDesc = "" +
 	"Command\\V1\xe2\x02\x16Command\\V1\\GPBMetadata\xea\x02\vCommand::V1b\x06proto3"
 
 var file_command_v1_command_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_command_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_command_v1_command_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_command_v1_command_proto_goTypes = []any{
-	(CRUD)(0),                      // 0: command.v1.CRUD
-	(*CreateCategoryRequest)(nil),  // 1: command.v1.CreateCategoryRequest
-	(*CreateCategoryResponse)(nil), // 2: command.v1.CreateCategoryResponse
-	(*UpdateCategoryRequest)(nil),  // 3: command.v1.UpdateCategoryRequest
-	(*UpdateCategoryResponse)(nil), // 4: command.v1.UpdateCategoryResponse
-	(*DeleteCategoryRequest)(nil),  // 5: command.v1.DeleteCategoryRequest
-	(*DeleteCategoryResponse)(nil), // 6: command.v1.DeleteCategoryResponse
-	(*CreateProductRequest)(nil),   // 7: command.v1.CreateProductRequest
-	(*CreateProductResponse)(nil),  // 8: command.v1.CreateProductResponse
-	(*UpdateProductRequest)(nil),   // 9: command.v1.UpdateProductRequest
-	(*UpdateProductResponse)(nil),  // 10: command.v1.UpdateProductResponse
-	(*DeleteProductRequest)(nil),   // 11: command.v1.DeleteProductRequest
-	(*DeleteProductResponse)(nil),  // 12: command.v1.DeleteProductResponse
-	(*v1.Category)(nil),            // 13: common.v1.Category
-	(*v1.Error)(nil),               // 14: common.v1.Error
-	(*timestamppb.Timestamp)(nil),  // 15: google.protobuf.Timestamp
-	(*v1.Product)(nil),             // 16: common.v1.Product
+	(CRUD)(0),                                     // 0: command.v1.CRUD
+	(*CreateCategoryRequest)(nil),                 // 1: command.v1.CreateCategoryRequest
+	(*CreateCategoryResponse)(nil),                // 2: command.v1.CreateCategoryResponse
+	(*UpdateCategoryRequest)(nil),                 // 3: command.v1.UpdateCategoryRequest
+	(*UpdateCategoryResponse)(nil),                // 4: command.v1.UpdateCategoryResponse
+	(*DeleteCategoryRequest)(nil),                 // 5: command.v1.DeleteCategoryRequest
+	(*DeleteCategoryResponse)(nil),                // 6: command.v1.DeleteCategoryResponse
+	(*CreateProductRequest)(nil),                  // 7: command.v1.CreateProductRequest
+	(*CreateProductResponse)(nil),                 // 8: command.v1.CreateProductResponse
+	(*UpdateProductRequest)(nil),                  // 9: command.v1.UpdateProductRequest
+	(*UpdateProductResponse)(nil),                 // 10: command.v1.UpdateProductResponse
+	(*DeleteProductRequest)(nil),                  // 11: command.v1.DeleteProductRequest
+	(*DeleteProductResponse)(nil),                 // 12: command.v1.DeleteProductResponse
+	(*UpdateCategoryRequest_Category)(nil),        // 13: command.v1.UpdateCategoryRequest.Category
+	(*CreateProductRequest_Product)(nil),          // 14: command.v1.CreateProductRequest.Product
+	(*CreateProductRequest_Product_Category)(nil), // 15: command.v1.CreateProductRequest.Product.Category
+	(*UpdateProductRequest_Product)(nil),          // 16: command.v1.UpdateProductRequest.Product
+	(*v1.CategoryName)(nil),                       // 17: common.v1.CategoryName
+	(*v1.Category)(nil),                           // 18: common.v1.Category
+	(*v1.Error)(nil),                              // 19: common.v1.Error
+	(*timestamppb.Timestamp)(nil),                 // 20: google.protobuf.Timestamp
+	(*v1.CategoryId)(nil),                         // 21: common.v1.CategoryId
+	(*v1.Product)(nil),                            // 22: common.v1.Product
+	(*v1.ProductId)(nil),                          // 23: common.v1.ProductId
+	(*v1.ProductName)(nil),                        // 24: common.v1.ProductName
+	(*v1.ProductPrice)(nil),                       // 25: common.v1.ProductPrice
 }
 var file_command_v1_command_proto_depIdxs = []int32{
 	0,  // 0: command.v1.CreateCategoryRequest.crud:type_name -> command.v1.CRUD
-	13, // 1: command.v1.CreateCategoryResponse.category:type_name -> common.v1.Category
-	14, // 2: command.v1.CreateCategoryResponse.error:type_name -> common.v1.Error
-	15, // 3: command.v1.CreateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 4: command.v1.UpdateCategoryRequest.crud:type_name -> command.v1.CRUD
-	13, // 5: command.v1.UpdateCategoryResponse.category:type_name -> common.v1.Category
-	14, // 6: command.v1.UpdateCategoryResponse.error:type_name -> common.v1.Error
-	15, // 7: command.v1.UpdateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 8: command.v1.DeleteCategoryRequest.crud:type_name -> command.v1.CRUD
-	13, // 9: command.v1.DeleteCategoryResponse.category:type_name -> common.v1.Category
-	14, // 10: command.v1.DeleteCategoryResponse.error:type_name -> common.v1.Error
-	15, // 11: command.v1.DeleteCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 12: command.v1.CreateProductRequest.crud:type_name -> command.v1.CRUD
-	16, // 13: command.v1.CreateProductResponse.product:type_name -> common.v1.Product
-	14, // 14: command.v1.CreateProductResponse.error:type_name -> common.v1.Error
-	15, // 15: command.v1.CreateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
-	0,  // 16: command.v1.UpdateProductRequest.crud:type_name -> command.v1.CRUD
-	16, // 17: command.v1.UpdateProductResponse.product:type_name -> common.v1.Product
-	14, // 18: command.v1.UpdateProductResponse.error:type_name -> common.v1.Error
-	15, // 19: command.v1.UpdateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
-	16, // 20: command.v1.DeleteProductResponse.product:type_name -> common.v1.Product
-	14, // 21: command.v1.DeleteProductResponse.error:type_name -> common.v1.Error
-	15, // 22: command.v1.DeleteProductResponse.timestamp:type_name -> google.protobuf.Timestamp
-	1,  // 23: command.v1.CategoryService.CreateCategory:input_type -> command.v1.CreateCategoryRequest
-	3,  // 24: command.v1.CategoryService.UpdateCategory:input_type -> command.v1.UpdateCategoryRequest
-	5,  // 25: command.v1.CategoryService.DeleteCategory:input_type -> command.v1.DeleteCategoryRequest
-	7,  // 26: command.v1.ProductService.CreateProduct:input_type -> command.v1.CreateProductRequest
-	9,  // 27: command.v1.ProductService.UpdateProduct:input_type -> command.v1.UpdateProductRequest
-	11, // 28: command.v1.ProductService.DeleteProduct:input_type -> command.v1.DeleteProductRequest
-	2,  // 29: command.v1.CategoryService.CreateCategory:output_type -> command.v1.CreateCategoryResponse
-	4,  // 30: command.v1.CategoryService.UpdateCategory:output_type -> command.v1.UpdateCategoryResponse
-	6,  // 31: command.v1.CategoryService.DeleteCategory:output_type -> command.v1.DeleteCategoryResponse
-	8,  // 32: command.v1.ProductService.CreateProduct:output_type -> command.v1.CreateProductResponse
-	10, // 33: command.v1.ProductService.UpdateProduct:output_type -> command.v1.UpdateProductResponse
-	12, // 34: command.v1.ProductService.DeleteProduct:output_type -> command.v1.DeleteProductResponse
-	29, // [29:35] is the sub-list for method output_type
-	23, // [23:29] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	17, // 1: command.v1.CreateCategoryRequest.name:type_name -> common.v1.CategoryName
+	18, // 2: command.v1.CreateCategoryResponse.category:type_name -> common.v1.Category
+	19, // 3: command.v1.CreateCategoryResponse.error:type_name -> common.v1.Error
+	20, // 4: command.v1.CreateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 5: command.v1.UpdateCategoryRequest.crud:type_name -> command.v1.CRUD
+	13, // 6: command.v1.UpdateCategoryRequest.category:type_name -> command.v1.UpdateCategoryRequest.Category
+	18, // 7: command.v1.UpdateCategoryResponse.category:type_name -> common.v1.Category
+	19, // 8: command.v1.UpdateCategoryResponse.error:type_name -> common.v1.Error
+	20, // 9: command.v1.UpdateCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 10: command.v1.DeleteCategoryRequest.crud:type_name -> command.v1.CRUD
+	21, // 11: command.v1.DeleteCategoryRequest.category_id:type_name -> common.v1.CategoryId
+	18, // 12: command.v1.DeleteCategoryResponse.category:type_name -> common.v1.Category
+	19, // 13: command.v1.DeleteCategoryResponse.error:type_name -> common.v1.Error
+	20, // 14: command.v1.DeleteCategoryResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 15: command.v1.CreateProductRequest.crud:type_name -> command.v1.CRUD
+	14, // 16: command.v1.CreateProductRequest.product:type_name -> command.v1.CreateProductRequest.Product
+	22, // 17: command.v1.CreateProductResponse.product:type_name -> common.v1.Product
+	19, // 18: command.v1.CreateProductResponse.error:type_name -> common.v1.Error
+	20, // 19: command.v1.CreateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 20: command.v1.UpdateProductRequest.crud:type_name -> command.v1.CRUD
+	16, // 21: command.v1.UpdateProductRequest.product:type_name -> command.v1.UpdateProductRequest.Product
+	22, // 22: command.v1.UpdateProductResponse.product:type_name -> common.v1.Product
+	19, // 23: command.v1.UpdateProductResponse.error:type_name -> common.v1.Error
+	20, // 24: command.v1.UpdateProductResponse.timestamp:type_name -> google.protobuf.Timestamp
+	23, // 25: command.v1.DeleteProductRequest.product_id:type_name -> common.v1.ProductId
+	22, // 26: command.v1.DeleteProductResponse.product:type_name -> common.v1.Product
+	19, // 27: command.v1.DeleteProductResponse.error:type_name -> common.v1.Error
+	20, // 28: command.v1.DeleteProductResponse.timestamp:type_name -> google.protobuf.Timestamp
+	21, // 29: command.v1.UpdateCategoryRequest.Category.id:type_name -> common.v1.CategoryId
+	17, // 30: command.v1.UpdateCategoryRequest.Category.name:type_name -> common.v1.CategoryName
+	24, // 31: command.v1.CreateProductRequest.Product.name:type_name -> common.v1.ProductName
+	25, // 32: command.v1.CreateProductRequest.Product.price:type_name -> common.v1.ProductPrice
+	15, // 33: command.v1.CreateProductRequest.Product.category:type_name -> command.v1.CreateProductRequest.Product.Category
+	21, // 34: command.v1.CreateProductRequest.Product.Category.id:type_name -> common.v1.CategoryId
+	17, // 35: command.v1.CreateProductRequest.Product.Category.name:type_name -> common.v1.CategoryName
+	23, // 36: command.v1.UpdateProductRequest.Product.id:type_name -> common.v1.ProductId
+	24, // 37: command.v1.UpdateProductRequest.Product.name:type_name -> common.v1.ProductName
+	25, // 38: command.v1.UpdateProductRequest.Product.price:type_name -> common.v1.ProductPrice
+	21, // 39: command.v1.UpdateProductRequest.Product.category_id:type_name -> common.v1.CategoryId
+	1,  // 40: command.v1.CategoryService.CreateCategory:input_type -> command.v1.CreateCategoryRequest
+	3,  // 41: command.v1.CategoryService.UpdateCategory:input_type -> command.v1.UpdateCategoryRequest
+	5,  // 42: command.v1.CategoryService.DeleteCategory:input_type -> command.v1.DeleteCategoryRequest
+	7,  // 43: command.v1.ProductService.CreateProduct:input_type -> command.v1.CreateProductRequest
+	9,  // 44: command.v1.ProductService.UpdateProduct:input_type -> command.v1.UpdateProductRequest
+	11, // 45: command.v1.ProductService.DeleteProduct:input_type -> command.v1.DeleteProductRequest
+	2,  // 46: command.v1.CategoryService.CreateCategory:output_type -> command.v1.CreateCategoryResponse
+	4,  // 47: command.v1.CategoryService.UpdateCategory:output_type -> command.v1.UpdateCategoryResponse
+	6,  // 48: command.v1.CategoryService.DeleteCategory:output_type -> command.v1.DeleteCategoryResponse
+	8,  // 49: command.v1.ProductService.CreateProduct:output_type -> command.v1.CreateProductResponse
+	10, // 50: command.v1.ProductService.UpdateProduct:output_type -> command.v1.UpdateProductResponse
+	12, // 51: command.v1.ProductService.DeleteProduct:output_type -> command.v1.DeleteProductResponse
+	46, // [46:52] is the sub-list for method output_type
+	40, // [40:46] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_command_v1_command_proto_init() }
@@ -1465,7 +1895,7 @@ func file_command_v1_command_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_command_v1_command_proto_rawDesc), len(file_command_v1_command_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

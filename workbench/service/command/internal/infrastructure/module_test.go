@@ -1,6 +1,6 @@
 //go:build integration || !ci
 
-package sqlboiler
+package infrastructure_test
 
 import (
 	"database/sql"
@@ -10,6 +10,7 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/fx"
@@ -22,7 +23,7 @@ func TestSqlboiler(t *testing.T) {
 
 var _ = Describe("Sqlboiler Module", func() {
 	configOption := fx.Supply(
-		fx.Annotate("../../../", fx.ResultTags(`name:"configPath"`)),
+		fx.Annotate("../../", fx.ResultTags(`name:"configPath"`)),
 		fx.Annotate("config", fx.ResultTags(`name:"configName"`)),
 	)
 
@@ -36,7 +37,7 @@ var _ = Describe("Sqlboiler Module", func() {
 
 			app := fx.New(
 				configOption,
-				Module,
+				infrastructure.Module,
 				fx.Populate(&db, &logger, &categoryRepo, &productRepo, &tm),
 				fx.NopLogger, // テスト時はログを抑制
 			)
@@ -53,7 +54,7 @@ var _ = Describe("Sqlboiler Module", func() {
 
 			app := fx.New(
 				configOption,
-				Module,
+				infrastructure.Module,
 				fx.Populate(&db, &logger, &categoryRepo, &productRepo, &tm),
 				fx.NopLogger,
 			)
@@ -71,7 +72,7 @@ var _ = Describe("Sqlboiler Module", func() {
 
 			app := fx.New(
 				configOption,
-				Module,
+				infrastructure.Module,
 				fx.Populate(&db),
 				fx.NopLogger,
 			)

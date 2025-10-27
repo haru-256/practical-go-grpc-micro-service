@@ -85,6 +85,33 @@ var _ = Describe("categoryRepositoryImpl構造体", Ordered, Label("CategoryRepo
 		})
 	})
 
+	Context("FindByIdの動作確認", func() {
+		It("既存のカテゴリを取得できること", func() {
+			// 既存のカテゴリID（文房具）
+			id, idErr := categories.NewCategoryId("b1524011-b6af-417e-8bf2-f449dd58b5c0")
+			Expect(idErr).NotTo(HaveOccurred(), "テスト用カテゴリIDの生成に失敗しました。")
+
+			category, findErr := rep.FindById(ctx, tx, id)
+			Expect(findErr).NotTo(HaveOccurred(), "カテゴリの取得に失敗しました。")
+			Expect(category).NotTo(BeNil())
+			Expect(category.Id().Value()).To(Equal("b1524011-b6af-417e-8bf2-f449dd58b5c0"))
+			Expect(category.Name().Value()).To(Equal("文房具"))
+		})
+
+		It("存在しないカテゴリIDで取得しようとするとエラーになること", func() {
+			// 存在しないカテゴリID
+			id, idErr := categories.NewCategoryId("00000000-0000-0000-0000-000000000000")
+			Expect(idErr).NotTo(HaveOccurred(), "テスト用カテゴリIDの生成に失敗しました。")
+
+			category, findErr := rep.FindById(ctx, tx, id)
+			Expect(findErr).To(HaveOccurred(), "存在しないカテゴリを取得できてしまいました。")
+			Expect(category).To(BeNil())
+			crudErr, ok := findErr.(*errs.CRUDError)
+			Expect(ok).To(BeTrue(), "返されたエラーがCRUDErrorではありません")
+			Expect(crudErr.Code).To(Equal("NOT_FOUND"))
+		})
+	})
+
 	Context("DeleteByIdの動作確認", func() {
 		It("既存のカテゴリを削除できること", func() {
 			// まず新しいカテゴリを作成
@@ -246,6 +273,37 @@ var _ = Describe("productRepositoryImpl構造体", Ordered, Label("ProductReposi
 			Expect(ok).To(BeTrue())
 			Expect(crudErr.Code).To(Equal("DB_UNIQUE_CONSTRAINT_VIOLATION"))
 			Expect(crudErr.Message).To(ContainSubstring("一意制約違反です。"))
+		})
+	})
+
+	Context("FindByIdの動作確認", func() {
+		It("既存の商品を取得できること", func() {
+			// 既存の商品ID（水性ボールペン(黒)）
+			id, idErr := products.NewProductId("ac413f22-0cf1-490a-9635-7e9ca810e544")
+			Expect(idErr).NotTo(HaveOccurred(), "テスト用商品IDの生成に失敗しました。")
+
+			product, findErr := rep.FindById(ctx, tx, id)
+			Expect(findErr).NotTo(HaveOccurred(), "商品の取得に失敗しました。")
+			Expect(product).NotTo(BeNil())
+			Expect(product.Id().Value()).To(Equal("ac413f22-0cf1-490a-9635-7e9ca810e544"))
+			Expect(product.Name().Value()).To(Equal("水性ボールペン(黒)"))
+			Expect(product.Price().Value()).To(Equal(uint32(120)))
+			// Category情報も確認
+			Expect(product.Category()).NotTo(BeNil())
+			Expect(product.Category().Name().Value()).To(Equal("文房具"))
+		})
+
+		It("存在しない商品IDで取得しようとするとエラーになること", func() {
+			// 存在しない商品ID
+			id, idErr := products.NewProductId("00000000-0000-0000-0000-000000000000")
+			Expect(idErr).NotTo(HaveOccurred(), "テスト用商品IDの生成に失敗しました。")
+
+			product, findErr := rep.FindById(ctx, tx, id)
+			Expect(findErr).To(HaveOccurred(), "存在しない商品を取得できてしまいました。")
+			Expect(product).To(BeNil())
+			crudErr, ok := findErr.(*errs.CRUDError)
+			Expect(ok).To(BeTrue(), "返されたエラーがCRUDErrorではありません")
+			Expect(crudErr.Code).To(Equal("NOT_FOUND"))
 		})
 	})
 

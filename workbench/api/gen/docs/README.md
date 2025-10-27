@@ -8,20 +8,29 @@
   
 - [common/v1/models.proto](#common_v1_models-proto)
     - [Category](#common-v1-Category)
+    - [CategoryId](#common-v1-CategoryId)
+    - [CategoryName](#common-v1-CategoryName)
     - [Product](#common-v1-Product)
+    - [ProductId](#common-v1-ProductId)
+    - [ProductName](#common-v1-ProductName)
+    - [ProductPrice](#common-v1-ProductPrice)
   
 - [command/v1/command.proto](#command_v1_command-proto)
     - [CreateCategoryRequest](#command-v1-CreateCategoryRequest)
     - [CreateCategoryResponse](#command-v1-CreateCategoryResponse)
     - [CreateProductRequest](#command-v1-CreateProductRequest)
+    - [CreateProductRequest.Product](#command-v1-CreateProductRequest-Product)
+    - [CreateProductRequest.Product.Category](#command-v1-CreateProductRequest-Product-Category)
     - [CreateProductResponse](#command-v1-CreateProductResponse)
     - [DeleteCategoryRequest](#command-v1-DeleteCategoryRequest)
     - [DeleteCategoryResponse](#command-v1-DeleteCategoryResponse)
     - [DeleteProductRequest](#command-v1-DeleteProductRequest)
     - [DeleteProductResponse](#command-v1-DeleteProductResponse)
     - [UpdateCategoryRequest](#command-v1-UpdateCategoryRequest)
+    - [UpdateCategoryRequest.Category](#command-v1-UpdateCategoryRequest-Category)
     - [UpdateCategoryResponse](#command-v1-UpdateCategoryResponse)
     - [UpdateProductRequest](#command-v1-UpdateProductRequest)
+    - [UpdateProductRequest.Product](#command-v1-UpdateProductRequest-Product)
     - [UpdateProductResponse](#command-v1-UpdateProductResponse)
   
     - [CRUD](#command-v1-CRUD)
@@ -92,7 +101,7 @@ edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 <a name="common-v1-Category"></a>
 
 ### Category
-商品カテゴリ型の定義
+商品カテゴリ型の定義, レスポンス用でありvalidationは緩い
 
 
 | Field | Type | Label | Description |
@@ -105,10 +114,40 @@ edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 
 
 
+<a name="common-v1-CategoryId"></a>
+
+### CategoryId
+商品カテゴリID型（削除リクエストなどで使用）
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ、1-50文字） |
+
+
+
+
+
+
+<a name="common-v1-CategoryName"></a>
+
+### CategoryName
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [string](#string) |  | 商品カテゴリ名（1-100文字） |
+
+
+
+
+
+
 <a name="common-v1-Product"></a>
 
 ### Product
-商品型の定義
+商品型の定義, レスポンス用でありvalidationは緩い
 
 
 | Field | Type | Label | Description |
@@ -119,6 +158,51 @@ edition = &#34;2023&#34;; // TODO: pluginが対応したら有効化する
 | category | [Category](#common-v1-Category) | optional | Category category = 4 [features.field_presence = EXPLICIT]; // edition用
 
 商品カテゴリ |
+
+
+
+
+
+
+<a name="common-v1-ProductId"></a>
+
+### ProductId
+商品ID型（削除リクエストなどで使用）
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [string](#string) |  | 商品番号（英数字、アンダースコア、ハイフンのみ、1-50文字） |
+
+
+
+
+
+
+<a name="common-v1-ProductName"></a>
+
+### ProductName
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [string](#string) |  | 商品名（1-200文字） |
+
+
+
+
+
+
+<a name="common-v1-ProductPrice"></a>
+
+### ProductPrice
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| value | [int32](#int32) |  | 商品単価（1以上の整数） |
 
 
 
@@ -149,11 +233,8 @@ CategoryService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| crud | [CRUD](#command-v1-CRUD) |  | FIXME: 消させをないかを確認する
-
-更新の種類 |
-| id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
-| name | [string](#string) |  | 商品カテゴリ名（1-100文字） |
+| crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
+| name | [common.v1.CategoryName](#common-v1-CategoryName) |  | カテゴリ名 |
 
 
 
@@ -186,10 +267,40 @@ ProductService用のRequest/Response型
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | crud | [CRUD](#command-v1-CRUD) |  | 更新の種類（CRUD_INSERT, CRUD_UPDATE, CRUD_DELETE） |
-| id | [string](#string) |  | 商品番号（英数字、アンダースコア、ハイフンのみ） |
-| name | [string](#string) |  | 商品名（1-200文字） |
-| price | [int32](#int32) |  | 単価（1円以上、999,999,999円以下） |
-| category_id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
+| product | [CreateProductRequest.Product](#command-v1-CreateProductRequest-Product) |  | 商品情報 |
+
+
+
+
+
+
+<a name="command-v1-CreateProductRequest-Product"></a>
+
+### CreateProductRequest.Product
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [common.v1.ProductName](#common-v1-ProductName) |  | 商品名 |
+| price | [common.v1.ProductPrice](#common-v1-ProductPrice) |  | 商品単価 |
+| category | [CreateProductRequest.Product.Category](#command-v1-CreateProductRequest-Product-Category) |  | 商品カテゴリ情報 |
+
+
+
+
+
+
+<a name="command-v1-CreateProductRequest-Product-Category"></a>
+
+### CreateProductRequest.Product.Category
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [common.v1.CategoryId](#common-v1-CategoryId) |  | 商品カテゴリ番号 |
+| name | [common.v1.CategoryName](#common-v1-CategoryName) |  | 商品カテゴリ名 |
 
 
 
@@ -222,7 +333,7 @@ ProductService用のRequest/Response型
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
-| id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
+| category_id | [common.v1.CategoryId](#common-v1-CategoryId) |  | 商品カテゴリ番号 |
 
 
 
@@ -254,7 +365,7 @@ ProductService用のRequest/Response型
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | 商品番号（英数字、アンダースコア、ハイフンのみ） |
+| product_id | [common.v1.ProductId](#common-v1-ProductId) |  | 商品番号 |
 
 
 
@@ -287,8 +398,23 @@ ProductService用のRequest/Response型
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
-| id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
-| name | [string](#string) |  | 商品カテゴリ名（1-100文字） |
+| category | [UpdateCategoryRequest.Category](#command-v1-UpdateCategoryRequest-Category) |  | カテゴリ情報 |
+
+
+
+
+
+
+<a name="command-v1-UpdateCategoryRequest-Category"></a>
+
+### UpdateCategoryRequest.Category
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [common.v1.CategoryId](#common-v1-CategoryId) |  | 商品カテゴリ番号 |
+| name | [common.v1.CategoryName](#common-v1-CategoryName) |  | 商品カテゴリ名 |
 
 
 
@@ -321,10 +447,25 @@ ProductService用のRequest/Response型
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | crud | [CRUD](#command-v1-CRUD) |  | 更新の種類 |
-| id | [string](#string) |  | 商品番号（英数字、アンダースコア、ハイフンのみ） |
-| name | [string](#string) |  | 商品名（1-200文字） |
-| price | [int32](#int32) |  | 単価（1円以上、999,999,999円以下） |
-| category_id | [string](#string) |  | 商品カテゴリ番号（英数字、アンダースコア、ハイフンのみ） |
+| product | [UpdateProductRequest.Product](#command-v1-UpdateProductRequest-Product) |  | 商品情報 |
+
+
+
+
+
+
+<a name="command-v1-UpdateProductRequest-Product"></a>
+
+### UpdateProductRequest.Product
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [common.v1.ProductId](#common-v1-ProductId) |  | 商品番号 |
+| name | [common.v1.ProductName](#common-v1-ProductName) |  | 商品名 |
+| price | [common.v1.ProductPrice](#common-v1-ProductPrice) |  | 商品単価 |
+| category_id | [common.v1.CategoryId](#common-v1-CategoryId) |  | 商品カテゴリid |
 
 
 

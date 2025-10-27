@@ -3,46 +3,43 @@ package service
 import (
 	"context"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 )
 
 // CategoryService はカテゴリに関するアプリケーションサービスのインターフェースです。
-// カテゴリの追加、更新、削除といったビジネスロジックを提供し、
-// トランザクション管理とドメインルールの適用を担います。
+//
+//go:generate go tool mockgen -source=$GOFILE -destination=./mock_category.go -package=service
 type CategoryService interface {
 	// Add は新しいカテゴリを追加します。
-	// カテゴリ名の重複をチェックし、既に存在する場合はApplicationErrorを返します。
 	//
 	// Parameters:
 	//   - ctx: コンテキスト
-	//   - category: 追加するカテゴリ情報
+	//   - categoryDTO: 追加するカテゴリ情報
 	//
 	// Returns:
-	//   - error: カテゴリ名が既に存在する場合はApplicationError (コード: CATEGORY_ALREADY_EXISTS)、
-	//     データベースエラーが発生した場合はCRUDError
-	Add(ctx context.Context, category *categories.Category) error
+	//   - *dto.CategoryDTO: 作成されたカテゴリ
+	//   - error: エラー
+	Add(ctx context.Context, categoryDTO *dto.CreateCategoryDTO) (*dto.CategoryDTO, error)
 
 	// Update は既存のカテゴリ情報を更新します。
-	// リポジトリ層でカテゴリの存在確認を行い、存在しない場合はCRUDErrorを返します。
 	//
 	// Parameters:
 	//   - ctx: コンテキスト
-	//   - category: 更新するカテゴリ情報
+	//   - categoryDTO: 更新するカテゴリ情報
 	//
 	// Returns:
-	//   - error: カテゴリが存在しない場合はCRUDError (コード: NOT_FOUND)、
-	//     データベースエラーが発生した場合はCRUDError
-	Update(ctx context.Context, category *categories.Category) error
+	//   - *dto.CategoryDTO: 更新されたカテゴリ
+	//   - error: エラー
+	Update(ctx context.Context, categoryDTO *dto.UpdateCategoryDTO) (*dto.CategoryDTO, error)
 
 	// Delete は指定されたカテゴリを削除します。
-	// リポジトリ層でカテゴリの存在確認を行い、存在しない場合はCRUDErrorを返します。
 	//
 	// Parameters:
 	//   - ctx: コンテキスト
-	//   - category: 削除するカテゴリ情報
+	//   - categoryDTO: 削除するカテゴリ情報
 	//
 	// Returns:
-	//   - error: カテゴリが存在しない場合はCRUDError (コード: NOT_FOUND)、
-	//     データベースエラーが発生した場合はCRUDError
-	Delete(ctx context.Context, category *categories.Category) error
+	//   - *dto.CategoryDTO: 削除されたカテゴリ
+	//   - error: エラー
+	Delete(ctx context.Context, categoryDTO *dto.DeleteCategoryDTO) (*dto.CategoryDTO, error)
 }
