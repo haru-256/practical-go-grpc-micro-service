@@ -1,47 +1,9 @@
 package dto
 
 import (
-	"fmt"
-
-	pb "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 )
-
-// CRUDOperation はDTO変換時のCRUD操作種別を表します。
-// この型はprotobufとの変換にのみ使用されます。
-type CRUDOperation int
-
-const (
-	CRUDInsert CRUDOperation = iota
-	CRUDUpdate
-	CRUDDelete
-)
-
-// ToCRUDOperation はprotobufのCRUD型をDTOのCRUDOperation型に変換します。
-//
-// Parameters:
-//   - pbCRUD: protobufのCRUD操作種別
-//
-// Returns:
-//   - CRUDOperation: DTOのCRUD操作種別
-//   - error: 不正なCRUD操作の場合はエラー
-func ToCRUDOperation(pbCRUD pb.CRUD) (CRUDOperation, error) {
-	switch pbCRUD {
-	case pb.CRUD_CRUD_INSERT:
-		return CRUDInsert, nil
-	case pb.CRUD_CRUD_UPDATE:
-		return CRUDUpdate, nil
-	case pb.CRUD_CRUD_DELETE:
-		return CRUDDelete, nil
-	default:
-		return 0, &errs.ApplicationError{
-			Code:    "INVALID_CRUD_OPERATION",
-			Message: fmt.Sprintf("不正なCRUD操作: %v", pbCRUD),
-		}
-	}
-}
 
 // CategoryDTO はカテゴリデータのDTOです。
 type CategoryDTO struct {
