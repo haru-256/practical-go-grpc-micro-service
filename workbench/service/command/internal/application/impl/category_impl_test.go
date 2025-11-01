@@ -11,6 +11,8 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	mock_repository "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/repository"
+	mock_service "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/service"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -19,8 +21,8 @@ import (
 var _ = Describe("CategoryService", Label("UnitTests"), func() {
 	var (
 		ctrl         *gomock.Controller
-		mockRepo     *categories.MockCategoryRepository
-		mockTm       *service.MockTransactionManager
+		mockRepo     *mock_repository.MockCategoryRepository
+		mockTm       *mock_service.MockTransactionManager
 		cs           service.CategoryService
 		ctx          context.Context
 		mockTx       *sql.Tx
@@ -29,8 +31,8 @@ var _ = Describe("CategoryService", Label("UnitTests"), func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockRepo = categories.NewMockCategoryRepository(ctrl)
-		mockTm = service.NewMockTransactionManager(ctrl)
+		mockRepo = mock_repository.NewMockCategoryRepository(ctrl)
+		mockTm = mock_service.NewMockTransactionManager(ctrl)
 		// テストではログ出力を破棄するloggerを使用
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		cs = NewCategoryServiceImpl(logger, mockRepo, mockTm)

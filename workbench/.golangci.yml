@@ -19,6 +19,13 @@ linters:
       - api/ # 生成コードを除外
       - db/
       - service/command/internal/infrastructure/sqlboiler/models
+      - service/command/internal/mock/
+    rules:
+      # テストコード内のフィールドアライメント警告を無視
+      - path: _test\.go$
+        linters:
+          - govet
+        text: "fieldalignment: struct with" # 警告メッセージでマッチ
 
   settings:
     govet:
@@ -32,12 +39,6 @@ linters:
       min-complexity: 30
     misspell:
       locale: US
-
-  # exclusions:
-  #   rules:
-  #     - path: _test\.go
-  #       linters:
-  #         - govet
 
 formatters:
   enable:

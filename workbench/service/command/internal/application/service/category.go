@@ -8,7 +8,7 @@ import (
 
 // CategoryService はカテゴリに関するアプリケーションサービスのインターフェースです。
 //
-//go:generate go tool mockgen -source=$GOFILE -destination=./mock_category.go -package=service
+//go:generate go tool mockgen -source=$GOFILE -destination=../../mock/service/category_service_mock.go -package=mock_service
 type CategoryService interface {
 	// Add は新しいカテゴリを追加します。
 	//

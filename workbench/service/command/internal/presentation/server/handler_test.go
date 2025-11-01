@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
+	mock_service "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/presentation/server"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/testhelpers"
 	. "github.com/onsi/ginkgo/v2"
@@ -19,14 +19,14 @@ import (
 var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() {
 	var (
 		ctrl                *gomock.Controller
-		mockCategoryService *service.MockCategoryService
+		mockCategoryService *mock_service.MockCategoryService
 		csh                 *server.CategoryServiceHandlerImpl
 		ctx                 context.Context
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockCategoryService = service.NewMockCategoryService(ctrl)
+		mockCategoryService = mock_service.NewMockCategoryService(ctrl)
 		// テストではログ出力を破棄するloggerを使用
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		var err error
@@ -267,14 +267,14 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 	var (
 		ctrl               *gomock.Controller
-		mockProductService *service.MockProductService
+		mockProductService *mock_service.MockProductService
 		psh                *server.ProductServiceHandlerImpl
 		ctx                context.Context
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockProductService = service.NewMockProductService(ctrl)
+		mockProductService = mock_service.NewMockProductService(ctrl)
 		// テストではログ出力を破棄するloggerを使用
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		var err error

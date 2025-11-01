@@ -7,7 +7,7 @@ import (
 
 // ProductRepository は商品エンティティの永続化を担うリポジトリインターフェースです。
 //
-//go:generate go tool mockgen -source=$GOFILE -destination=./mock_product_repository.go -package=products
+//go:generate go tool mockgen -source=$GOFILE -destination=../../../mock/repository/product_repository_mock.go -package=mock_repository
 type ProductRepository interface {
 	// ExistsById は指定された商品IDが存在するかチェックします。
 	//

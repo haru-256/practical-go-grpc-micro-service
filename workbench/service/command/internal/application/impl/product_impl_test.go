@@ -12,6 +12,8 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	mock_repository "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/repository"
+	mock_service "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/service"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -20,9 +22,9 @@ import (
 var _ = Describe("ProductService", Label("UnitTests"), func() {
 	var (
 		ctrl             *gomock.Controller
-		mockProductRepo  *products.MockProductRepository
-		mockCategoryRepo *categories.MockCategoryRepository
-		mockTm           *service.MockTransactionManager
+		mockProductRepo  *mock_repository.MockProductRepository
+		mockCategoryRepo *mock_repository.MockCategoryRepository
+		mockTm           *mock_service.MockTransactionManager
 		ps               service.ProductService
 		ctx              context.Context
 		mockTx           *sql.Tx
@@ -31,9 +33,9 @@ var _ = Describe("ProductService", Label("UnitTests"), func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockProductRepo = products.NewMockProductRepository(ctrl)
-		mockCategoryRepo = categories.NewMockCategoryRepository(ctrl)
-		mockTm = service.NewMockTransactionManager(ctrl)
+		mockProductRepo = mock_repository.NewMockProductRepository(ctrl)
+		mockCategoryRepo = mock_repository.NewMockCategoryRepository(ctrl)
+		mockTm = mock_service.NewMockTransactionManager(ctrl)
 		// テストではログ出力を破棄するloggerを使用
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		ps = NewProductServiceImpl(logger, mockProductRepo, mockCategoryRepo, mockTm)
