@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 )
 
 // ProductName は商品名を表す値オブジェクトです。

@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 )
 
 // DBErrHandler はデータベースアクセスエラーを適切なドメインエラーに変換します。

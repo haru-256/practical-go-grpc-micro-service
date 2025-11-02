@@ -2,17 +2,14 @@ package infrastructure
 
 import (
 	"context"
-	"database/sql"
 	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/logger"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/config"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/repository"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/repository"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/config"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
 	"go.uber.org/fx"
+	"gorm.io/gorm"
 )
 
 // Module はSQLBoilerを使用したインフラストラクチャ層のFxモジュールです。
@@ -30,20 +27,16 @@ var Module = fx.Module(
 			config.NewViper,
 			fx.ParamTags(`name:"configPath"`, `name:"configName"`),
 		),
-		handler.NewDBConfig,
-		handler.NewDatabase,
+		db.NewDBConfig,
+		db.NewDatabase,
 		logger.NewLogger,
 		fx.Annotate(
-			repository.NewCategoryRepositoryImpl,
-			fx.As(new(categories.CategoryRepository)),
+			db.NewCategoryRepositoryImpl,
+			fx.As(new(repository.CategoryRepository)),
 		),
 		fx.Annotate(
-			repository.NewProductRepositoryImpl,
-			fx.As(new(products.ProductRepository)),
-		),
-		fx.Annotate(
-			repository.NewTransactionManagerImpl,
-			fx.As(new(service.TransactionManager)),
+			db.NewProductRepositoryImpl,
+			fx.As(new(repository.ProductRepository)),
 		),
 	),
 	fx.Invoke(registerLifecycleHooks),
@@ -57,12 +50,22 @@ var Module = fx.Module(
 // Parameters:
 //   - lc: Fxライフサイクル
 //   - db: データベース接続
-func registerLifecycleHooks(lc fx.Lifecycle, db *sql.DB, logger *slog.Logger) {
+func registerLifecycleHooks(lc fx.Lifecycle, db *gorm.DB, logger *slog.Logger) {
 	lc.Append(fx.Hook{
 		// OnStartはNewDatabaseで接続確認済みなので不要
 		OnStop: func(ctx context.Context) error {
 			logger.InfoContext(ctx, "Closing database connection...")
-			return db.Close()
+			conn, err := db.DB()
+			if err != nil {
+				logger.ErrorContext(ctx, "Failed to get database connection", "error", err)
+				return err
+			}
+			err = conn.Close()
+			if err != nil {
+				logger.ErrorContext(ctx, "Failed to close database connection", "error", err)
+				return err
+			}
+			return nil
 		},
 	})
 }

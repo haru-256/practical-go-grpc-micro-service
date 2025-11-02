@@ -3,7 +3,7 @@ package products
 import (
 	"fmt"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 )
 
 // ProductPrice は商品価格を表す値オブジェクトです。

@@ -1,0 +1,27 @@
+env = "dev"
+
+[log]
+level = "info"
+format = "json"
+
+[server]
+host = "localhost"
+port = 8083
+
+[mysql] # sqlboiler用のDB設定
+dbname = "sample_db" # データベース名
+# host = "query_db" # ホスト名
+host = "localhost" # ホスト名
+port = 3307 # ポート番号
+user = "root" # ユーザー名
+pass = "password" # パスワード
+sslmode = "false" # SSLモード
+whitelist = [ # アクセスするデータベースオブジェクト
+  "product",  # productテーブル
+  "category", # categoryテーブル
+]
+
+max_idle_conns = 10         # 最大アイドル接続数
+max_open_conns = 100        # 最大オープン接続数
+conn_max_lifetime = "1800s" # 接続の最大寿命（秒）
+conn_max_idle_time = "500s" # アイドル接続のタイムアウト（秒）

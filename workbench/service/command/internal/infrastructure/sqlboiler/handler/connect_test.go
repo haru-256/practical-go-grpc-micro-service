@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/config"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/config"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
