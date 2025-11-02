@@ -7,11 +7,11 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 	mock_repository "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/repository"
 	mock_service "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/service"
 	. "github.com/onsi/ginkgo/v2"

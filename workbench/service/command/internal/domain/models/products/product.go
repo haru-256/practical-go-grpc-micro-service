@@ -2,8 +2,8 @@ package products
 
 import (
 	"github.com/google/uuid"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 )
 
 // Product は商品エンティティを表すドメインオブジェクトです。

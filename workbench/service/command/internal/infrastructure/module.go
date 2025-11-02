@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/pkg/logger"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/log"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/repository"
 	"go.uber.org/fx"
@@ -24,12 +24,15 @@ import (
 //   - トランザクションマネージャーの実装（NewTransactionManagerImpl → service.TransactionManager）
 //   - アプリケーション停止時のDB接続クローズ処理
 var Module = fx.Module(
-	"sqlboiler",
-	config.Module,
+	"infrastructure",
 	fx.Provide(
+		fx.Annotate(
+			config.NewViper,
+			fx.ParamTags(`name:"configPath"`, `name:"configName"`),
+		),
 		handler.NewDBConfig,
 		handler.NewDatabase,
-		logger.NewLogger,
+		log.NewLogger,
 		fx.Annotate(
 			repository.NewCategoryRepositoryImpl,
 			fx.As(new(categories.CategoryRepository)),

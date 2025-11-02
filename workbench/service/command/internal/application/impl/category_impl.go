@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"log/slog"
 
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 )
 
 // CategoryServiceImpl はカテゴリサービスの実装です。

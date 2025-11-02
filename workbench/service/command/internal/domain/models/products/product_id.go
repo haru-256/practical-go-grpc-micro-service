@@ -6,7 +6,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 )
 
 // ProductId は商品IDを表す値オブジェクトです。

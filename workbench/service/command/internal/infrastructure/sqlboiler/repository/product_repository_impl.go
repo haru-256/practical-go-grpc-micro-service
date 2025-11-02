@@ -9,9 +9,9 @@ import (
 
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/models"
 )

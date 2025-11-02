@@ -1,11 +1,12 @@
 package utils
 
 import (
-	"os"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
 func TestUtils(t *testing.T) {
@@ -13,161 +14,134 @@ func TestUtils(t *testing.T) {
 	RunSpecs(t, "Utils Suite")
 }
 
-// ヘルパー関数: 文字列のポインタを返す
-func stringPtr(s string) *string {
-	return &s
-}
+var _ = Describe("GetKey", func() {
+	var (
+		v    *viper.Viper
+		errs []error
+	)
 
-var _ = Describe("GetEnv", func() {
+	BeforeEach(func() {
+		v = viper.New()
+		errs = []error{}
+	})
+
 	Describe("String型", func() {
-		DescribeTable("環境変数のパース",
-			func(envKey string, envValue *string, defaultValue string, expected string) {
-				if envValue != nil {
-					Expect(os.Setenv(envKey, *envValue)).To(Succeed())
-					DeferCleanup(func() {
-						Expect(os.Unsetenv(envKey)).To(Succeed())
-					})
-				}
+		Context("キーが設定されている場合", func() {
+			BeforeEach(func() {
+				v.Set("test.string", "test_value")
+			})
 
-				result, err := GetEnv(envKey, defaultValue)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(expected))
-			},
-			Entry("環境変数が設定されている場合、環境変数の値を返す",
-				"TEST_STRING_VAR", stringPtr("test_value"), "default", "test_value"),
-			Entry("環境変数が設定されていない場合、デフォルト値を返す",
-				"TEST_STRING_VAR_NOT_SET", nil, "default_value", "default_value"),
-			Entry("空文字列が設定されている場合、空文字列を返す",
-				"TEST_STRING_EMPTY", stringPtr(""), "default", ""),
-		)
+			It("設定値を返す", func() {
+				result := GetKey[string](v, "test.string", &errs)
+				Expect(result).To(Equal("test_value"))
+				Expect(errs).To(BeEmpty())
+			})
+		})
+
+		Context("キーが設定されていない場合", func() {
+			It("ゼロ値を返し、エラーを記録する", func() {
+				result := GetKey[string](v, "test.not_set", &errs)
+				Expect(result).To(Equal(""))
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(ContainSubstring("config key 'test.not_set' is not set"))
+			})
+		})
 	})
 
 	Describe("Int型", func() {
-		DescribeTable("環境変数のパース",
-			func(envKey string, envValue *string, defaultValue int, expected int) {
-				if envValue != nil {
-					Expect(os.Setenv(envKey, *envValue)).To(Succeed())
-					DeferCleanup(func() {
-						Expect(os.Unsetenv(envKey)).To(Succeed())
-					})
-				}
-
-				result, err := GetEnv(envKey, defaultValue)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(expected))
-			},
-			Entry("環境変数が設定されている場合、環境変数の値を返す",
-				"TEST_INT_VAR", stringPtr("42"), 0, 42),
-			Entry("環境変数が設定されていない場合、デフォルト値を返す",
-				"TEST_INT_VAR_NOT_SET", nil, 100, 100),
-			Entry("負の数が設定されている場合、負の数を返す",
-				"TEST_INT_NEGATIVE", stringPtr("-10"), 0, -10),
-		)
-
-		Context("不正な値が設定されている場合", func() {
-			const key = "TEST_INT_INVALID"
-
+		Context("キーが設定されている場合", func() {
 			BeforeEach(func() {
-				Expect(os.Setenv(key, "invalid")).To(Succeed())
+				v.Set("test.int", 42)
 			})
 
-			AfterEach(func() {
-				Expect(os.Unsetenv(key)).To(Succeed())
+			It("設定値を返す", func() {
+				result := GetKey[int](v, "test.int", &errs)
+				Expect(result).To(Equal(42))
+				Expect(errs).To(BeEmpty())
 			})
+		})
 
-			It("エラーを返す", func() {
-				result, err := GetEnv(key, 0)
-				Expect(err).To(HaveOccurred())
-				Expect(result).To(Equal(0)) // デフォルト値を返す
+		Context("キーが設定されていない場合", func() {
+			It("ゼロ値を返し、エラーを記録する", func() {
+				result := GetKey[int](v, "test.not_set", &errs)
+				Expect(result).To(Equal(0))
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(ContainSubstring("config key 'test.not_set' is not set"))
 			})
 		})
 	})
 
 	Describe("Bool型", func() {
-		DescribeTable("環境変数のパース",
-			func(envKey string, envValue *string, defaultValue bool, expected bool) {
-				if envValue != nil {
-					Expect(os.Setenv(envKey, *envValue)).To(Succeed())
-					DeferCleanup(func() {
-						Expect(os.Unsetenv(envKey)).To(Succeed())
-					})
-				}
-
-				result, err := GetEnv(envKey, defaultValue)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(expected))
-			},
-			Entry("trueが設定されている場合、trueを返す",
-				"TEST_BOOL_TRUE", stringPtr("true"), false, true),
-			Entry("falseが設定されている場合、falseを返す",
-				"TEST_BOOL_FALSE", stringPtr("false"), true, false),
-			Entry("1が設定されている場合、trueを返す",
-				"TEST_BOOL_ONE", stringPtr("1"), false, true),
-			Entry("0が設定されている場合、falseを返す",
-				"TEST_BOOL_ZERO", stringPtr("0"), true, false),
-			Entry("環境変数が設定されていない場合、デフォルト値を返す",
-				"TEST_BOOL_VAR_NOT_SET", nil, true, true),
-		)
-
-		Context("不正な値が設定されている場合", func() {
-			const key = "TEST_BOOL_INVALID"
-
+		Context("キーが設定されている場合", func() {
 			BeforeEach(func() {
-				Expect(os.Setenv(key, "invalid")).To(Succeed())
+				v.Set("test.bool", true)
 			})
 
-			AfterEach(func() {
-				Expect(os.Unsetenv(key)).To(Succeed())
+			It("設定値を返す", func() {
+				result := GetKey[bool](v, "test.bool", &errs)
+				Expect(result).To(Equal(true))
+				Expect(errs).To(BeEmpty())
 			})
+		})
 
-			It("エラーを返す", func() {
-				result, err := GetEnv(key, false)
-				Expect(err).To(HaveOccurred())
-				Expect(result).To(Equal(false)) // デフォルト値を返す
+		Context("キーが設定されていない場合", func() {
+			It("ゼロ値を返し、エラーを記録する", func() {
+				result := GetKey[bool](v, "test.not_set", &errs)
+				Expect(result).To(Equal(false))
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(ContainSubstring("config key 'test.not_set' is not set"))
 			})
 		})
 	})
 
-	Describe("Float64型", func() {
-		DescribeTable("環境変数のパース",
-			func(envKey string, envValue *string, defaultValue float64, expected float64) {
-				if envValue != nil {
-					Expect(os.Setenv(envKey, *envValue)).To(Succeed())
-					DeferCleanup(func() {
-						Expect(os.Unsetenv(envKey)).To(Succeed())
-					})
-				}
-
-				result, err := GetEnv(envKey, defaultValue)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(result).To(Equal(expected))
-			},
-			Entry("環境変数が設定されている場合、環境変数の値を返す",
-				"TEST_FLOAT_VAR", stringPtr("3.14"), 0.0, 3.14),
-			Entry("環境変数が設定されていない場合、デフォルト値を返す",
-				"TEST_FLOAT_VAR_NOT_SET", nil, 2.71, 2.71),
-			Entry("負の数が設定されている場合、負の数を返す",
-				"TEST_FLOAT_NEGATIVE", stringPtr("-1.5"), 0.0, -1.5),
-			Entry("整数が設定されている場合、整数を浮動小数点数として返す",
-				"TEST_FLOAT_INTEGER", stringPtr("42"), 0.0, 42.0),
-		)
-
-		Context("不正な値が設定されている場合", func() {
-			const key = "TEST_FLOAT_INVALID"
-
+	Describe("time.Duration型", func() {
+		Context("キーが設定されている場合", func() {
 			BeforeEach(func() {
-				Expect(os.Setenv(key, "invalid")).To(Succeed())
+				v.Set("test.duration", "30m")
 			})
 
-			AfterEach(func() {
-				Expect(os.Unsetenv(key)).To(Succeed())
+			It("設定値を返す", func() {
+				result := GetKey[time.Duration](v, "test.duration", &errs)
+				Expect(result).To(Equal(30 * time.Minute))
+				Expect(errs).To(BeEmpty())
+			})
+		})
+
+		Context("キーが設定されていない場合", func() {
+			It("ゼロ値を返し、エラーを記録する", func() {
+				result := GetKey[time.Duration](v, "test.not_set", &errs)
+				Expect(result).To(Equal(time.Duration(0)))
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(ContainSubstring("config key 'test.not_set' is not set"))
+			})
+		})
+	})
+
+	Describe("サポートされていない型", func() {
+		Context("float64型を指定した場合", func() {
+			BeforeEach(func() {
+				v.Set("test.float", 3.14)
 			})
 
-			It("エラーを返す", func() {
-				result, err := GetEnv(key, 0.0)
-				Expect(err).To(HaveOccurred())
-				Expect(result).To(Equal(0.0)) // デフォルト値を返す
+			It("ゼロ値を返し、エラーを記録する", func() {
+				result := GetKey[float64](v, "test.float", &errs)
+				Expect(result).To(Equal(0.0))
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(ContainSubstring("unsupported type for key 'test.float'"))
 			})
+		})
+	})
+
+	Describe("複数のエラーが蓄積される", func() {
+		It("複数のキーでエラーが発生した場合、すべてのエラーが記録される", func() {
+			GetKey[string](v, "test.not_set1", &errs)
+			GetKey[int](v, "test.not_set2", &errs)
+			GetKey[bool](v, "test.not_set3", &errs)
+
+			Expect(errs).To(HaveLen(3))
+			Expect(errs[0].Error()).To(ContainSubstring("config key 'test.not_set1' is not set"))
+			Expect(errs[1].Error()).To(ContainSubstring("config key 'test.not_set2' is not set"))
+			Expect(errs[2].Error()).To(ContainSubstring("config key 'test.not_set3' is not set"))
 		})
 	})
 })

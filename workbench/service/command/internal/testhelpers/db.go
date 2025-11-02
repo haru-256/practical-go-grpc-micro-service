@@ -5,9 +5,9 @@ import (
 	"database/sql"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/infrastructure/sqlboiler/handler"
 )
 

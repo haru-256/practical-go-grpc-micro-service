@@ -2,7 +2,7 @@ package categories
 
 import (
 	"github.com/google/uuid"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/errs"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 )
 
 // Category はカテゴリエンティティを表すドメインオブジェクトです。

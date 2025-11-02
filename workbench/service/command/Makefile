@@ -1,12 +1,20 @@
 .DEFAULT_GOAL := help
 
+.PHONY: lint
+lint:  ## Lint go files
+	$(MAKE) -C ../../ lint
+
+.PHONY: fmt
+fmt:  ## Format go files
+	$(MAKE) -C ../../ fmt
+
 .PHONY: ginkgo
 ginkgo: ## Run tests
-	go tool ginkgo run -p --race ./...
+	go tool ginkgo run --race ./...
 
 .PHONY: ginkgo-detail
 ginkgo-detail: ## Run tests with detailed output
-	go tool ginkgo run -p --race -v ./...
+	go tool ginkgo run --race -v ./...
 
 .PHONY: install-tools
 install-tools: ## Install tools

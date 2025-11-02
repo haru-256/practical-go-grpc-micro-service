@@ -27,7 +27,7 @@ import (
 )
 
 // Viperの設定からロガーを作成
-log, err := logger.NewLogger(config)
+log, err := log.NewLogger(config)
 if err != nil {
     // エラーハンドリング
 }

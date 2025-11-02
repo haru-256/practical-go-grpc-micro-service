@@ -2,11 +2,17 @@ package config
 
 import (
 	"os"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+func TestConfig(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "config packageのテスト")
+}
 
 // testEnvVars はテストで使用される環境変数のリストです。
 var testEnvVars = []string{
