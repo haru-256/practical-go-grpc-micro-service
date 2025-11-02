@@ -109,10 +109,9 @@ func NewDatabase(config *DBConfig, logger *slog.Logger) (*gorm.DB, error) {
 func DBErrHandler(ctx context.Context, err error, logger *slog.Logger) error {
 	var opErr *net.OpError
 	var driverErr *mysql_go.MySQLError
-	if errors.As(err, &opErr) { // 接続タイムアウトやネットワーク関連の問題で接続が確立できない場合
-		// TODO: slogに変更する
-		logger.ErrorContext(ctx, opErr.Error())
-		return errs.NewInternalErrorWithCause("DB_CONNECTION_ERROR", opErr.Error(), opErr)
+if errors.As(err, &opErr) { // 接続タイムアウトやネットワーク関連の問題で接続が確立できない場合
+	logger.ErrorContext(ctx, "DB connection error", "error", opErr)
+	return errs.NewInternalErrorWithCause("DB_CONNECTION_ERROR", opErr.Error(), opErr)
 	} else if errors.As(err, &driverErr) { // MySQLドライバエラーの場合
 		logger.WarnContext(ctx, "MySQL driver error", slog.Int("code", int(driverErr.Number)), slog.String("message", driverErr.Message))
 		return errs.NewInternalErrorWithCause("DB_DRIVER_ERROR", driverErr.Message, driverErr)
