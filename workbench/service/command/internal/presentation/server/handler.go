@@ -85,7 +85,7 @@ func (s *CategoryServiceHandlerImpl) CreateCategory(ctx context.Context, req *co
 	// validationエラーはクライアント側の問題なのでInfoログとする
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.InfoContext(ctx, "Request validation failed", "error", err)
+s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 
