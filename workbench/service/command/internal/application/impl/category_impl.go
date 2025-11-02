@@ -2,6 +2,7 @@ package impl
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
@@ -49,24 +50,34 @@ func NewCategoryServiceImpl(logger *slog.Logger, repo categories.CategoryReposit
 // Returns:
 //   - *dto.CategoryDTO: 作成されたカテゴリのDTO
 //   - error: カテゴリ名の重複や、その他の永続化に関するエラー
-func (s *CategoryServiceImpl) Add(ctx context.Context, categoryDTO *dto.CreateCategoryDTO) (*dto.CategoryDTO, error) {
-	category, err := dto.CategoryFromCreateDTO(categoryDTO)
+func (s *CategoryServiceImpl) Add(ctx context.Context, categoryDTO *dto.CreateCategoryDTO) (result *dto.CategoryDTO, err error) {
+	var (
+		category *categories.Category
+		tx       *sql.Tx
+		exists   bool
+	)
+
+	category, err = dto.CategoryFromCreateDTO(categoryDTO)
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := s.tm.Begin(ctx)
+	tx, err = s.tm.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
-		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+		completeErr := s.tm.Complete(ctx, tx, err)
+		if err == nil {
+			err = completeErr
+		}
+		if completeErr != nil {
 			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
-	exists, err := s.repo.ExistsByName(ctx, tx, category.Name())
+	exists, err = s.repo.ExistsByName(ctx, tx, category.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -92,18 +103,27 @@ func (s *CategoryServiceImpl) Add(ctx context.Context, categoryDTO *dto.CreateCa
 // Returns:
 //   - *dto.CategoryDTO: 更新されたカテゴリのDTO
 //   - error: 指定したIDのカテゴリが存在しない場合や、その他の永続化に関するエラー
-func (s *CategoryServiceImpl) Update(ctx context.Context, categoryDTO *dto.UpdateCategoryDTO) (*dto.CategoryDTO, error) {
-	category, err := dto.CategoryFromUpdateDTO(categoryDTO)
+func (s *CategoryServiceImpl) Update(ctx context.Context, categoryDTO *dto.UpdateCategoryDTO) (result *dto.CategoryDTO, err error) {
+	var (
+		category *categories.Category
+		tx       *sql.Tx
+	)
+
+	category, err = dto.CategoryFromUpdateDTO(categoryDTO)
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := s.tm.Begin(ctx)
+	tx, err = s.tm.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+		completeErr := s.tm.Complete(ctx, tx, err)
+		if err == nil {
+			err = completeErr
+		}
+		if completeErr != nil {
 			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
@@ -124,23 +144,33 @@ func (s *CategoryServiceImpl) Update(ctx context.Context, categoryDTO *dto.Updat
 // Returns:
 //   - *dto.CategoryDTO: 削除されたカテゴリのDTO
 //   - error: 指定したIDのカテゴリが存在しない場合や、その他の永続化に関するエラー
-func (s *CategoryServiceImpl) Delete(ctx context.Context, categoryDTO *dto.DeleteCategoryDTO) (*dto.CategoryDTO, error) {
-	categoryID, err := dto.CategoryIdFromDeleteDTO(categoryDTO)
+func (s *CategoryServiceImpl) Delete(ctx context.Context, categoryDTO *dto.DeleteCategoryDTO) (result *dto.CategoryDTO, err error) {
+	var (
+		categoryID *categories.CategoryId
+		tx         *sql.Tx
+		category   *categories.Category
+	)
+
+	categoryID, err = dto.CategoryIdFromDeleteDTO(categoryDTO)
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := s.tm.Begin(ctx)
+	tx, err = s.tm.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		if completeErr := s.tm.Complete(ctx, tx, err); completeErr != nil {
+		completeErr := s.tm.Complete(ctx, tx, err)
+		if err == nil {
+			err = completeErr
+		}
+		if completeErr != nil {
 			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
 		}
 	}()
 
-	category, err := s.repo.FindById(ctx, tx, categoryID)
+	category, err = s.repo.FindById(ctx, tx, categoryID)
 	if err != nil {
 		return nil, err
 	}
