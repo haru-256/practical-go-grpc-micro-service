@@ -213,6 +213,35 @@ var _ = Describe("ProductService", Label("UnitTests"), func() {
 				Expect(err).To(Equal(createErr))
 			})
 		})
+
+		Context("when commit fails", func() {
+			It("should return the commit error", func() {
+				// Arrange
+				createDTO := &dto.CreateProductDTO{
+					Name: "TestProduct",
+					Category: &dto.CategoryDTO{
+						Id:   testProduct.Category().Id().Value(),
+						Name: testProduct.Category().Name().Value(),
+					},
+					Price: 1000,
+				}
+				commitErr := fmt.Errorf("commit failed")
+				gomock.InOrder(
+					mockTm.EXPECT().Begin(ctx).Return(mockTx, nil),
+					mockProductRepo.EXPECT().ExistsByName(ctx, mockTx, testProduct.Name()).Return(false, nil),
+					mockProductRepo.EXPECT().Create(ctx, mockTx, gomock.Any()).Return(nil),
+					mockTm.EXPECT().Complete(ctx, mockTx, nil).Return(commitErr),
+				)
+
+				// Act
+				result, err := ps.Add(ctx, createDTO)
+
+				// Assert
+				Expect(err).To(HaveOccurred())
+				Expect(result).To(BeNil())
+				Expect(err).To(Equal(commitErr))
+			})
+		})
 	})
 
 	Describe("Update", func() {

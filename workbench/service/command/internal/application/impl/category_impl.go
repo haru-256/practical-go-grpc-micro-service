@@ -68,13 +68,7 @@ func (s *CategoryServiceImpl) Add(ctx context.Context, categoryDTO *dto.CreateCa
 	}
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
-		completeErr := s.tm.Complete(ctx, tx, err)
-		if err == nil {
-			err = completeErr
-		}
-		if completeErr != nil {
-			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
-		}
+		handleTransactionComplete(ctx, s.tm, tx, &err, &result, s.logger)
 	}()
 
 	exists, err = s.repo.ExistsByName(ctx, tx, category.Name())
@@ -91,7 +85,8 @@ func (s *CategoryServiceImpl) Add(ctx context.Context, categoryDTO *dto.CreateCa
 		return nil, err
 	}
 
-	return dto.NewCategoryDTOFromEntity(category), nil
+	result = dto.NewCategoryDTOFromEntity(category)
+	return result, nil
 }
 
 // Update は既存のカテゴリ情報を更新します。
@@ -119,20 +114,15 @@ func (s *CategoryServiceImpl) Update(ctx context.Context, categoryDTO *dto.Updat
 		return nil, err
 	}
 	defer func() {
-		completeErr := s.tm.Complete(ctx, tx, err)
-		if err == nil {
-			err = completeErr
-		}
-		if completeErr != nil {
-			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
-		}
+		handleTransactionComplete(ctx, s.tm, tx, &err, &result, s.logger)
 	}()
 
 	if err = s.repo.UpdateById(ctx, tx, category); err != nil {
 		return nil, err
 	}
 
-	return dto.NewCategoryDTOFromEntity(category), nil
+	result = dto.NewCategoryDTOFromEntity(category)
+	return result, nil
 }
 
 // Delete は指定されたカテゴリを削除します。
@@ -161,13 +151,7 @@ func (s *CategoryServiceImpl) Delete(ctx context.Context, categoryDTO *dto.Delet
 		return nil, err
 	}
 	defer func() {
-		completeErr := s.tm.Complete(ctx, tx, err)
-		if err == nil {
-			err = completeErr
-		}
-		if completeErr != nil {
-			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
-		}
+		handleTransactionComplete(ctx, s.tm, tx, &err, &result, s.logger)
 	}()
 
 	category, err = s.repo.FindById(ctx, tx, categoryID)
@@ -179,7 +163,8 @@ func (s *CategoryServiceImpl) Delete(ctx context.Context, categoryDTO *dto.Delet
 		return nil, err
 	}
 
-	return dto.NewCategoryDTOFromEntity(category), nil
+	result = dto.NewCategoryDTOFromEntity(category)
+	return result, nil
 }
 
 var _ service.CategoryService = (*CategoryServiceImpl)(nil)
