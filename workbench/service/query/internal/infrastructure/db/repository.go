@@ -2,7 +2,9 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/models"
@@ -16,17 +18,18 @@ const (
 )
 
 type ProductRepositoryImpl struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *slog.Logger
 }
 
-func NewProductRepositoryImpl(db *gorm.DB) *ProductRepositoryImpl {
-	return &ProductRepositoryImpl{db: db}
+func NewProductRepositoryImpl(db *gorm.DB, logger *slog.Logger) *ProductRepositoryImpl {
+	return &ProductRepositoryImpl{db: db, logger: logger}
 }
 
 func (r *ProductRepositoryImpl) List(ctx context.Context) ([]*models.Product, error) {
 	products := []*Product{}
 	if result := r.db.WithContext(ctx).Preload("Category").Find(&products); result.Error != nil {
-		return nil, DBErrHandler(result.Error)
+		return nil, DBErrHandler(ctx, result.Error, r.logger)
 	}
 
 	return toProductModels(products), nil
@@ -34,12 +37,11 @@ func (r *ProductRepositoryImpl) List(ctx context.Context) ([]*models.Product, er
 
 func (r *ProductRepositoryImpl) FindById(ctx context.Context, id string) (*models.Product, error) {
 	product := &Product{}
-	if result := r.db.WithContext(ctx).Preload("Category").Where(fmt.Sprintf("%s = ?", PRODUCT_ID_COLUMN), id).Find(product); result.Error != nil {
-		return nil, DBErrHandler(result.Error)
-	}
-
-	if product.ObjId == "" {
-		return nil, errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("商品ID: %s が見つかりませんでした", id))
+	if result := r.db.WithContext(ctx).Preload("Category").Where(fmt.Sprintf("%s = ?", PRODUCT_ID_COLUMN), id).First(product); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("商品ID: %s が見つかりませんでした", id))
+		}
+		return nil, DBErrHandler(ctx, result.Error, r.logger)
 	}
 
 	return toProductModel(product), nil
@@ -53,7 +55,7 @@ func (r *ProductRepositoryImpl) FindByNameLike(ctx context.Context, keyword stri
 	products := []*Product{}
 	likePattern := "%" + keyword + "%"
 	if result := r.db.WithContext(ctx).Preload("Category").Where(fmt.Sprintf("%s LIKE ?", PRODUCT_NAME_COLUMN), likePattern).Find(&products); result.Error != nil {
-		return nil, DBErrHandler(result.Error)
+		return nil, DBErrHandler(ctx, result.Error, r.logger)
 	}
 
 	return toProductModels(products), nil
@@ -74,7 +76,8 @@ func toProductModel(product *Product) *models.Product {
 var _ repository.ProductRepository = (*ProductRepositoryImpl)(nil)
 
 type CategoryRepositoryImpl struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *slog.Logger
 }
 
 // NewCategoryRepositoryImpl はCategoryRepositoryImplを生成します。
@@ -84,8 +87,8 @@ type CategoryRepositoryImpl struct {
 //
 // Returns:
 //   - *CategoryRepositoryImpl: CategoryRepositoryImplポインタ
-func NewCategoryRepositoryImpl(db *gorm.DB) *CategoryRepositoryImpl {
-	return &CategoryRepositoryImpl{db: db}
+func NewCategoryRepositoryImpl(db *gorm.DB, logger *slog.Logger) *CategoryRepositoryImpl {
+	return &CategoryRepositoryImpl{db: db, logger: logger}
 }
 
 // List はすべてのカテゴリを取得します。
@@ -99,7 +102,7 @@ func NewCategoryRepositoryImpl(db *gorm.DB) *CategoryRepositoryImpl {
 func (r *CategoryRepositoryImpl) List(ctx context.Context) ([]*models.Category, error) {
 	categories := []*Category{}
 	if result := r.db.WithContext(ctx).Find(&categories); result.Error != nil {
-		return nil, DBErrHandler(result.Error)
+		return nil, DBErrHandler(ctx, result.Error, r.logger)
 	}
 
 	return toCategoryModels(categories), nil
@@ -116,12 +119,11 @@ func (r *CategoryRepositoryImpl) List(ctx context.Context) ([]*models.Category, 
 //   - error: エラー
 func (r *CategoryRepositoryImpl) FindById(ctx context.Context, id string) (*models.Category, error) {
 	category := &Category{}
-	if result := r.db.WithContext(ctx).Where("obj_id = ?", id).Find(category); result.Error != nil {
-		return nil, DBErrHandler(result.Error)
-	}
-
-	if category.ObjId == "" {
-		return nil, errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリID: %s が見つかりませんでした", id))
+	if result := r.db.WithContext(ctx).Where("obj_id = ?", id).First(category); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, errs.NewCRUDError("NOT_FOUND", fmt.Sprintf("カテゴリID: %s が見つかりませんでした", id))
+		}
+		return nil, DBErrHandler(ctx, result.Error, r.logger)
 	}
 
 	return toCategoryModel(category), nil

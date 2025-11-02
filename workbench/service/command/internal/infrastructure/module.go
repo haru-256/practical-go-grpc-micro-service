@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/pkg/logger"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/log"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/categories"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/domain/models/products"
@@ -32,7 +32,7 @@ var Module = fx.Module(
 		),
 		handler.NewDBConfig,
 		handler.NewDatabase,
-		logger.NewLogger,
+		log.NewLogger,
 		fx.Annotate(
 			repository.NewCategoryRepositoryImpl,
 			fx.As(new(categories.CategoryRepository)),

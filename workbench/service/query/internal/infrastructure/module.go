@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/haru-256/practical-go-grpc-micro-service/pkg/logger"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/log"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/repository"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
@@ -29,7 +29,7 @@ var Module = fx.Module(
 		),
 		db.NewDBConfig,
 		db.NewDatabase,
-		logger.NewLogger,
+		log.NewLogger,
 		fx.Annotate(
 			db.NewCategoryRepositoryImpl,
 			fx.As(new(repository.CategoryRepository)),

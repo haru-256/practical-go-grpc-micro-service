@@ -1,3 +1,5 @@
+//go:build integration || !ci
+
 package db_test
 
 import (
@@ -6,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
+	"github.com/haru-256/practical-go-grpc-micro-service/pkg/log"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/models"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
@@ -16,7 +19,7 @@ import (
 
 var (
 	testDBConn   *gorm.DB
-	repo         *db.ProductRepositoryImpl
+	productRepo  *db.ProductRepositoryImpl
 	categoryRepo *db.CategoryRepositoryImpl
 )
 
@@ -29,14 +32,18 @@ func setupDB() error {
 	if err != nil {
 		return err
 	}
+	logger, err := log.NewLogger(v)
+	if err != nil {
+		return err
+	}
 	// データベース接続の初期化
-	testDBConn, err = db.NewDatabase(dbConfig)
+	testDBConn, err = db.NewDatabase(dbConfig, logger)
 	if err != nil {
 		return err
 	}
 	// リポジトリの初期化
-	repo = db.NewProductRepositoryImpl(testDBConn)
-	categoryRepo = db.NewCategoryRepositoryImpl(testDBConn)
+	productRepo = db.NewProductRepositoryImpl(testDBConn, logger)
+	categoryRepo = db.NewCategoryRepositoryImpl(testDBConn, logger)
 	return nil
 }
 
@@ -95,7 +102,7 @@ func TestProductRepositoryImpl_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			products, err := repo.List(ctx)
+			products, err := productRepo.List(ctx)
 			tt.assertions(t, products, err)
 		})
 	}
@@ -134,7 +141,7 @@ func TestProductRepositoryImpl_FindById(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			product, err := repo.FindById(ctx, tt.productId)
+			product, err := productRepo.FindById(ctx, tt.productId)
 			tt.assertions(t, product, err)
 		})
 	}
@@ -186,7 +193,7 @@ func TestProductRepositoryImpl_FindByNameLike(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			products, err := repo.FindByNameLike(ctx, tt.keyword)
+			products, err := productRepo.FindByNameLike(ctx, tt.keyword)
 			tt.assertions(t, products, err)
 		})
 	}

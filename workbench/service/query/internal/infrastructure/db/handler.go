@@ -1,9 +1,10 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gorm_logger "gorm.io/gorm/logger"
 )
 
 type DBConfig struct {
@@ -51,17 +52,18 @@ func NewDBConfig(v *viper.Viper) (*DBConfig, error) {
 	return cfg, nil
 }
 
-func NewDatabase(config *DBConfig) (*gorm.DB, error) {
+func NewDatabase(config *DBConfig, logger *slog.Logger) (*gorm.DB, error) {
+	ctx := context.Background()
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.User, config.Pass, config.Host, config.Port, config.DBName)
 	conn, err := gorm.Open(mysql.Open(connectStr), &gorm.Config{})
 	if err != nil {
-		return nil, DBErrHandler(err)
+		return nil, DBErrHandler(ctx, err, logger)
 	}
 	if db, err := conn.DB(); err != nil {
-		return nil, DBErrHandler(err)
+		return nil, DBErrHandler(ctx, err, logger)
 	} else {
 		if err := db.Ping(); err != nil {
-			return nil, DBErrHandler(err)
+			return nil, DBErrHandler(ctx, err, logger)
 		}
 		// 接続プールの設定
 		db.SetMaxIdleConns(config.MaxIdleConns)       // 最大アイドル接続数
@@ -71,16 +73,16 @@ func NewDatabase(config *DBConfig) (*gorm.DB, error) {
 
 		// 生成されたSQLをログに出力する設定
 		// 0: Silent, 1: Error, 2: Warn, 3: Info
-		var loggerLevel logger.LogLevel
+		var loggerLevel gorm_logger.LogLevel
 		switch strings.ToLower(config.LogLevel) {
 		case "debug":
-			loggerLevel = logger.Info
+			loggerLevel = gorm_logger.Info
 		case "info":
-			loggerLevel = logger.Info
+			loggerLevel = gorm_logger.Info
 		case "warn":
-			loggerLevel = logger.Warn
+			loggerLevel = gorm_logger.Warn
 		case "error":
-			loggerLevel = logger.Error
+			loggerLevel = gorm_logger.Error
 		default:
 			return nil, errs.NewInternalErrorWithCause("INVALID_LOG_LEVEL", fmt.Sprintf("不正なログレベルです: %s", config.LogLevel), nil)
 		}
@@ -104,18 +106,18 @@ func NewDatabase(config *DBConfig) (*gorm.DB, error) {
 //
 // Returns:
 //   - error: ドメイン層のエラー型に変換されたエラー
-func DBErrHandler(err error) error {
+func DBErrHandler(ctx context.Context, err error, logger *slog.Logger) error {
 	var opErr *net.OpError
 	var driverErr *mysql_go.MySQLError
 	if errors.As(err, &opErr) { // 接続タイムアウトやネットワーク関連の問題で接続が確立できない場合
 		// TODO: slogに変更する
-		log.Println(err.Error())
+		logger.ErrorContext(ctx, opErr.Error())
 		return errs.NewInternalErrorWithCause("DB_CONNECTION_ERROR", opErr.Error(), opErr)
 	} else if errors.As(err, &driverErr) { // MySQLドライバエラーの場合
-		log.Printf("Code:%d Message:%s", driverErr.Number, driverErr.Message)
+		logger.WarnContext(ctx, "MySQL driver error", slog.Int("code", int(driverErr.Number)), slog.String("message", driverErr.Message))
 		return errs.NewInternalErrorWithCause("DB_DRIVER_ERROR", driverErr.Message, driverErr)
 	} else { // その他のエラー
-		log.Println(err.Error())
+		logger.ErrorContext(ctx, err.Error())
 		return errs.NewInternalErrorWithCause("UNKNOWN_ERROR", err.Error(), err)
 	}
 }

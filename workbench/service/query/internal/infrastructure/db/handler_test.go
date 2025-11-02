@@ -1,7 +1,11 @@
+//go:build integration || !ci
+
 package db_test
 
 import (
 	"errors"
+	"io"
+	"log/slog"
 	"net"
 	"testing"
 	"time"
@@ -13,6 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func TestNewDBConfig(t *testing.T) {
 	t.Parallel()
@@ -157,7 +163,7 @@ func TestNewDatabase(t *testing.T) {
 			t.Parallel()
 
 			cfg := tt.setupFunc()
-			conn, err := db.NewDatabase(cfg)
+			conn, err := db.NewDatabase(cfg, logger)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -210,7 +216,7 @@ func TestDBErrHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := db.DBErrHandler(tt.inputErr)
+			err := db.DBErrHandler(t.Context(), tt.inputErr, logger)
 			tt.assertions(t, err)
 		})
 	}
