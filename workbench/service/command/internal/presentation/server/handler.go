@@ -21,7 +21,7 @@ var globalValidator protovalidate.Validator
 func init() {
 	v, err := protovalidate.New()
 	if err != nil {
-		slog.Error("Failed to create global validator", "error", err)
+		slog.Error("Failed to create global validator", slog.Any("error", err))
 		os.Exit(1)
 	}
 	globalValidator = v
@@ -82,9 +82,10 @@ func NewCategoryServiceHandlerImpl(logger *slog.Logger, cs service.CategoryServi
 //   - *connect.Response[cmd.CreateCategoryResponse]: 作成されたカテゴリ情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *CategoryServiceHandlerImpl) CreateCategory(ctx context.Context, req *connect.Request[cmd.CreateCategoryRequest]) (*connect.Response[cmd.CreateCategoryResponse], error) {
+	// validationエラーはクライアント側の問題なのでInfoログとする
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.Error("Request validation failed", "error", err)
+		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 
@@ -116,7 +117,7 @@ func (s *CategoryServiceHandlerImpl) CreateCategory(ctx context.Context, req *co
 func (s *CategoryServiceHandlerImpl) UpdateCategory(ctx context.Context, req *connect.Request[cmd.UpdateCategoryRequest]) (*connect.Response[cmd.UpdateCategoryResponse], error) {
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.Error("Request validation failed", "error", err)
+		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 
@@ -149,7 +150,7 @@ func (s *CategoryServiceHandlerImpl) UpdateCategory(ctx context.Context, req *co
 func (s *CategoryServiceHandlerImpl) DeleteCategory(ctx context.Context, req *connect.Request[cmd.DeleteCategoryRequest]) (*connect.Response[cmd.DeleteCategoryResponse], error) {
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.Error("Request validation failed", "error", err)
+		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 
@@ -207,7 +208,7 @@ func NewProductServiceHandlerImpl(logger *slog.Logger, ps service.ProductService
 func (s *ProductServiceHandlerImpl) CreateProduct(ctx context.Context, req *connect.Request[cmd.CreateProductRequest]) (*connect.Response[cmd.CreateProductResponse], error) {
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.Error("Request validation failed", "error", err)
+		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 
@@ -244,7 +245,7 @@ func (s *ProductServiceHandlerImpl) CreateProduct(ctx context.Context, req *conn
 func (s *ProductServiceHandlerImpl) UpdateProduct(ctx context.Context, req *connect.Request[cmd.UpdateProductRequest]) (*connect.Response[cmd.UpdateProductResponse], error) {
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.Error("Request validation failed", "error", err)
+		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 
@@ -279,7 +280,7 @@ func (s *ProductServiceHandlerImpl) UpdateProduct(ctx context.Context, req *conn
 func (s *ProductServiceHandlerImpl) DeleteProduct(ctx context.Context, req *connect.Request[cmd.DeleteProductRequest]) (*connect.Response[cmd.DeleteProductResponse], error) {
 	// TODO: Interceptorで共通化する
 	if err := s.validator.Validate(req.Msg); err != nil {
-		slog.Error("Request validation failed", "error", err)
+		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
 	}
 

@@ -8,7 +8,7 @@ import (
 
 // ProductService は商品に関するアプリケーションサービスのインターフェースです。
 //
-//go:generate go tool mockgen -source=$GOFILE -destination=./mock_product.go -package=service
+//go:generate go tool mockgen -source=$GOFILE -destination=../../mock/service/product_service_mock.go -package=mock_service
 type ProductService interface {
 	// Add は新しい商品を追加します。
 	//

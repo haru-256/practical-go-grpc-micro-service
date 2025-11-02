@@ -68,13 +68,7 @@ func (s *ProductServiceImpl) Add(ctx context.Context, productDTO *dto.CreateProd
 	}
 	// NOTE: defer内でerrを評価するため、クロージャで囲む。defer時点のerrを参照させるため。
 	defer func() {
-		completeErr := s.tm.Complete(ctx, tx, err)
-		if err == nil {
-			err = completeErr
-		}
-		if completeErr != nil {
-			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
-		}
+		handleTransactionComplete(ctx, s.tm, tx, &err, &result, s.logger)
 	}()
 
 	// categoryが既に存在するかチェック
@@ -93,7 +87,8 @@ func (s *ProductServiceImpl) Add(ctx context.Context, productDTO *dto.CreateProd
 		return nil, err
 	}
 
-	return dto.NewProductDTOFromEntity(product), nil
+	result = dto.NewProductDTOFromEntity(product)
+	return result, nil
 }
 
 // Update は既存の商品情報を更新します。
@@ -119,13 +114,7 @@ func (s *ProductServiceImpl) Update(ctx context.Context, productDTO *dto.UpdateP
 		return nil, err
 	}
 	defer func() {
-		completeErr := s.tm.Complete(ctx, tx, err)
-		if err == nil {
-			err = completeErr
-		}
-		if completeErr != nil {
-			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
-		}
+		handleTransactionComplete(ctx, s.tm, tx, &err, &result, s.logger)
 	}()
 
 	// カテゴリ名をrepositoryから取得
@@ -148,7 +137,8 @@ func (s *ProductServiceImpl) Update(ctx context.Context, productDTO *dto.UpdateP
 		return nil, err
 	}
 
-	return dto.NewProductDTOFromEntity(product), nil
+	result = dto.NewProductDTOFromEntity(product)
+	return result, nil
 }
 
 // Delete は指定された商品を削除します。
@@ -176,13 +166,7 @@ func (s *ProductServiceImpl) Delete(ctx context.Context, productDTO *dto.DeleteP
 		return nil, err
 	}
 	defer func() {
-		completeErr := s.tm.Complete(ctx, tx, err)
-		if err == nil {
-			err = completeErr
-		}
-		if completeErr != nil {
-			s.logger.ErrorContext(ctx, "トランザクションの完了に失敗しました", slog.Any("error", completeErr))
-		}
+		handleTransactionComplete(ctx, s.tm, tx, &err, &result, s.logger)
 	}()
 
 	product, err = s.productRepo.FindById(ctx, tx, productID)
@@ -194,7 +178,8 @@ func (s *ProductServiceImpl) Delete(ctx context.Context, productDTO *dto.DeleteP
 		return nil, err
 	}
 
-	return dto.NewProductDTOFromEntity(product), nil
+	result = dto.NewProductDTOFromEntity(product)
+	return result, nil
 }
 
 var _ service.ProductService = (*ProductServiceImpl)(nil)

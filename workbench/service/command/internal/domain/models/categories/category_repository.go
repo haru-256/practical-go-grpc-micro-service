@@ -8,7 +8,7 @@ import (
 // CategoryRepository はカテゴリエンティティの永続化を担うリポジトリインターフェースです。
 // データベースへのカテゴリデータのCRUD操作を提供します。
 //
-//go:generate go tool mockgen -source=$GOFILE -destination=./mock_category_repository.go -package=categories
+//go:generate go tool mockgen -source=$GOFILE -destination=../../../mock/repository/category_repository_mock.go -package=mock_repository
 type CategoryRepository interface {
 	// ExistsByName は指定されたカテゴリ名が既に存在するかをチェックします。
 	//
