@@ -18,6 +18,7 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+// DBConfig はデータベース接続の設定を保持します。
 type DBConfig struct {
 	DBName          string        //	データベース名
 	Host            string        //	ホスト名
@@ -31,6 +32,14 @@ type DBConfig struct {
 	LogLevel        string        // ログレベル
 }
 
+// NewDBConfig はViperから設定を読み込みDBConfigを生成します。
+//
+// Parameters:
+//   - v: Viperインスタンス
+//
+// Returns:
+//   - *DBConfig: データベース設定
+//   - error: 設定の読み込みに失敗した場合のエラー
 func NewDBConfig(v *viper.Viper) (*DBConfig, error) {
 	var configErrors []error
 	cfg := &DBConfig{
@@ -52,6 +61,15 @@ func NewDBConfig(v *viper.Viper) (*DBConfig, error) {
 	return cfg, nil
 }
 
+// NewDatabase はデータベース接続を確立しGORM DBインスタンスを返します。
+//
+// Parameters:
+//   - config: データベース設定
+//   - logger: ロガー
+//
+// Returns:
+//   - *gorm.DB: GORM DBインスタンス
+//   - error: 接続に失敗した場合のエラー
 func NewDatabase(config *DBConfig, logger *slog.Logger) (*gorm.DB, error) {
 	ctx := context.Background()
 	connectStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.User, config.Pass, config.Host, config.Port, config.DBName)
@@ -94,15 +112,10 @@ func NewDatabase(config *DBConfig, logger *slog.Logger) (*gorm.DB, error) {
 
 // DBErrHandler はデータベースアクセスエラーを適切なドメインエラーに変換します。
 //
-// この関数は以下のエラータイプを処理します:
-//   - *net.OpError: ネットワーク接続エラー（接続タイムアウト等）
-//   - *mysql.MySQLError: MySQLドライバ固有のエラー
-//   - 1062: 一意制約違反
-//   - その他: ドライバエラー
-//   - その他: 不明なエラー
-//
 // Parameters:
+//   - ctx: コンテキスト
 //   - err: データベース操作から返されたエラー
+//   - logger: ロガー
 //
 // Returns:
 //   - error: ドメイン層のエラー型に変換されたエラー

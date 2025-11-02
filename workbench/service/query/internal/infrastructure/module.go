@@ -12,14 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Module はSQLBoilerを使用したインフラストラクチャ層のFxモジュールです。
-// このモジュールは以下を提供します:
-//   - データベース設定の読み込み（NewDBConfig）
-//   - データベース接続の確立（NewDatabase）
-//   - カテゴリリポジトリの実装（NewCategoryRepositoryImpl → categories.CategoryRepository）
-//   - 商品リポジトリの実装（NewProductRepositoryImpl → products.ProductRepository）
-//   - トランザクションマネージャーの実装（NewTransactionManagerImpl → service.TransactionManager）
-//   - アプリケーション停止時のDB接続クローズ処理
+// Module はインフラストラクチャ層のFxモジュールです。
+// 設定読み込み、データベース接続、リポジトリ実装、ロガーを提供します。
 var Module = fx.Module(
 	"infrastructure",
 	fx.Provide(
@@ -43,13 +37,11 @@ var Module = fx.Module(
 )
 
 // registerLifecycleHooks はアプリケーションライフサイクルフックを登録します。
-// OnStopフックでデータベース接続のクローズ処理を実行します。
-//
-// Note: OnStartフックは不要です。NewDatabase関数で既に接続確認が完了しています。
 //
 // Parameters:
 //   - lc: Fxライフサイクル
 //   - db: データベース接続
+//   - logger: ロガー
 func registerLifecycleHooks(lc fx.Lifecycle, db *gorm.DB, logger *slog.Logger) {
 	lc.Append(fx.Hook{
 		// OnStartはNewDatabaseで接続確認済みなので不要
