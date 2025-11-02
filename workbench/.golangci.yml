@@ -31,7 +31,7 @@ linters:
     govet:
       enable-all: true
       disable:
-        - fieldalignment
+        - fieldalignment # 可読性を優先するため無効化
       settings:
         shadow:
           strict: true
