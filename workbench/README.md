@@ -15,8 +15,8 @@
 
 - **商品管理**: 商品のCRUD操作とカテゴリ管理
 - **Command Service**: 書き込み専用サービス（作成、更新、削除）
-- **Query Service**: 読み取り専用サービス（一覧、検索、ストリーミング）
-- **スキーマバリデーション**: buf/validateによるフィールドレベル検証
+- **Query Service**: 読み取り専用サービス（一覧取得、詳細取得、キーワード検索）
+- **スキーマバリデーション**: protovalidateによるフィールドレベル検証
 
 ## 📁 ディレクトリ構成
 
@@ -156,10 +156,34 @@ go mod tidy
 
 ```bash
 # コマンドサービス（ポート8080）
-go run service/command/main.go
+cd service/command
+go run cmd/server/main.go
 
 # クエリサービス（ポート8081）
-go run service/query/main.go
+cd service/query
+go run cmd/server/main.go
+```
+
+### テストの実行
+
+```bash
+# すべてのテストを実行
+make test
+
+# Command Serviceのテスト
+cd service/command
+make test
+
+# Query Serviceのテスト
+cd service/query
+make test
+
+# 統合テストを含む（データベースが必要）
+cd service/command
+go test -tags=integration ./...
+
+cd service/query
+go test -tags=integration ./...
 ```
 
 ## 🛠️ 開発ワークフロー
@@ -179,12 +203,24 @@ go run service/query/main.go
 
 ## 📚 学習リソース
 
+### サービスドキュメント
+
+- **[Command Service](./service/command/README.md)** - 書き込み専用サービスの実装詳細
+- **[Query Service](./service/query/README.md)** - 読み取り専用サービスの実装詳細
+
+### その他のドキュメント
+
 - **[API仕様書](./api/README.md)** - 詳細なAPI仕様とサンプル
 - **[データベース設計](./db/README.md)** - DB設計とCQRS実装
-- **公式ドキュメント**:
-  - [gRPC Go](https://grpc.io/docs/languages/go/)
-  - [Protocol Buffers](https://protobuf.dev/)
-  - [buf](https://buf.build/docs/)
+- **[プロジェクトスタイルガイド](../.gemini/styleguide.md)** - コーディング規約と設計原則
+
+### 公式ドキュメント
+
+- [gRPC Go](https://grpc.io/docs/languages/go/)
+- [Protocol Buffers](https://protobuf.dev/)
+- [buf](https://buf.build/docs/)
+- [Connect RPC](https://connectrpc.com/)
+- [Uber Fx](https://uber-go.github.io/fx/)
 
 ## 🤝 コントリビューション
 
