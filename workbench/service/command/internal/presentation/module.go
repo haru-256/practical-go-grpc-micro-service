@@ -59,7 +59,7 @@ func registerLifecycleHooks(lc fx.Lifecycle, srv *server.CommandServer, logger *
 			}
 			// サーバーを別のゴルーチンで起動
 			go func() {
-				logger.Info("Starting Query gRPC server", slog.String("addr", srv.Server.Addr))
+                                logger.Info("Starting Command gRPC server", slog.String("addr", srv.Server.Addr))
 				if serveErr := srv.Server.Serve(ln); serveErr != nil && serveErr != http.ErrServerClosed {
 					logger.Error("Server failed to start", slog.Any("error", serveErr))
 				}
