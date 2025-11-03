@@ -3,6 +3,7 @@ package presentation
 import (
 	"context"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 
@@ -44,10 +45,15 @@ var Module = fx.Module(
 func registerLifecycleHooks(lc fx.Lifecycle, srv *server.QueryServer, logger *slog.Logger) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			// port競合によるエラーになる問題の対策のため、ListenAndServeではなく、ListenしてServeする
+			ln, err := net.Listen("tcp", srv.Server.Addr)
+			if err != nil {
+				return err
+			}
 			// サーバーを別のゴルーチンで起動
 			go func() {
 				logger.Info("Starting Query gRPC server", slog.String("addr", srv.Server.Addr))
-				if serveErr := srv.Server.ListenAndServe(); serveErr != nil && serveErr != http.ErrServerClosed {
+				if serveErr := srv.Server.Serve(ln); serveErr != nil && serveErr != http.ErrServerClosed {
 					logger.Error("Server failed to start", slog.Any("error", serveErr))
 				}
 			}()
