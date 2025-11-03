@@ -260,15 +260,14 @@ func toCategoriesProto(categories []*models.Category) []*common.Category {
 // Returns:
 //   - *common.Product: protobufのProduct
 func toProductProto(product *models.Product) *common.Product {
-	c := &common.Category{}
-	c.SetId(product.Category().Id())
-	c.SetName(product.Category().Name())
-	p := &common.Product{}
-	p.SetId(product.Id())
-	p.SetName(product.Name())
-	p.SetPrice(int32(product.Price()))
-	p.SetCategory(c)
-	return p
+        p := &common.Product{}
+        p.SetId(product.Id())
+        p.SetName(product.Name())
+        p.SetPrice(int32(product.Price()))
+        if product.Category() != nil {
+                p.SetCategory(toCategoryProto(product.Category()))
+        }
+        return p
 }
 
 // toProductsProto はドメインモデルのProductスライスをprotobufのProductスライスに変換します。
