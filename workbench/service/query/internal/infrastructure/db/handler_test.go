@@ -4,8 +4,6 @@ package db_test
 
 import (
 	"errors"
-	"io"
-	"log/slog"
 	"net"
 	"testing"
 	"time"
@@ -13,12 +11,11 @@ import (
 	mysql_go "github.com/go-sql-driver/mysql"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/testhelpers"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func TestNewDBConfig(t *testing.T) {
 	t.Parallel()
@@ -163,7 +160,7 @@ func TestNewDatabase(t *testing.T) {
 			t.Parallel()
 
 			cfg := tt.setupFunc()
-			conn, err := db.NewDatabase(cfg, logger)
+			conn, err := db.NewDatabase(cfg, testhelpers.TestLogger)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -216,7 +213,7 @@ func TestDBErrHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := db.DBErrHandler(t.Context(), tt.inputErr, logger)
+			err := db.DBErrHandler(t.Context(), tt.inputErr, testhelpers.TestLogger)
 			tt.assertions(t, err)
 		})
 	}

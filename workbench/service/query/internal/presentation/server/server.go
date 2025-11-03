@@ -8,18 +8,18 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
-	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
+	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
 
-// CommandServer はgRPCコマンドサービスのHTTPサーバーをラップする構造体です。
-type CommandServer struct {
+// QueryServer はgRPCクエリサービスのHTTPサーバーをラップする構造体です。
+type QueryServer struct {
 	Server *http.Server
 }
 
-// NewCommandServer はCommandServerの新しいインスタンスを作成します。
+// NewQueryServer はQueryServerの新しいインスタンスを作成します。
 //
 // Parameters:
 //   - addr: サーバーがリッスンするアドレス (例: ":8080", "localhost:8080")
@@ -27,24 +27,24 @@ type CommandServer struct {
 //   - csh: カテゴリサービスのgRPCハンドラ実装
 //
 // Returns:
-//   - *CommandServer: 初期化されたCommandServerインスタンス
+//   - *QueryServer: 初期化されたQueryServerインスタンス
 //   - error: 初期化中にエラーが発生した場合のエラー (現在は常にnil)
-func NewCommandServer(viper *viper.Viper, logger *slog.Logger, csh cmdconnect.CategoryServiceHandler, psh cmdconnect.ProductServiceHandler) (*CommandServer, error) {
+func NewQueryServer(viper *viper.Viper, logger *slog.Logger, csh queryconnect.CategoryServiceHandler, psh queryconnect.ProductServiceHandler) (*QueryServer, error) {
 	serverLogger := NewServerLogger(logger)
 	interceptors := connect.WithInterceptors(serverLogger.NewUnaryInterceptor())
 
 	mux := http.NewServeMux()
 
 	// パスとハンドラを登録
-	path, handler := cmdconnect.NewCategoryServiceHandler(csh, interceptors)
+	path, handler := queryconnect.NewCategoryServiceHandler(csh, interceptors)
 	mux.Handle(path, handler)
-	path, handler = cmdconnect.NewProductServiceHandler(psh, interceptors)
+	path, handler = queryconnect.NewProductServiceHandler(psh, interceptors)
 	mux.Handle(path, handler)
 
 	// reflection
 	reflector := grpcreflect.NewStaticReflector(
-		cmdconnect.CategoryServiceName,
-		cmdconnect.ProductServiceName,
+		queryconnect.CategoryServiceName,
+		queryconnect.ProductServiceName,
 	)
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
@@ -55,5 +55,5 @@ func NewCommandServer(viper *viper.Viper, logger *slog.Logger, csh cmdconnect.Ca
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	return &CommandServer{Server: server}, nil
+	return &QueryServer{Server: server}, nil
 }

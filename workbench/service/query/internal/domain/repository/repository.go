@@ -1,3 +1,5 @@
+//go:generate go tool mockgen -source=$GOFILE -destination=../../mock/repository/repository_mock.go -package=mock_repository
+
 package repository
 
 import (
@@ -6,6 +8,7 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/models"
 )
 
+// ProductRepository は商品リポジトリのインターフェースです。
 type ProductRepository interface {
 	// List はすべての商品を取得します。
 	//
@@ -40,6 +43,7 @@ type ProductRepository interface {
 	FindByNameLike(ctx context.Context, keyword string) ([]*models.Product, error)
 }
 
+// CategoryRepository はカテゴリリポジトリのインターフェースです。
 type CategoryRepository interface {
 	// List はすべてのカテゴリを取得します。
 	//
