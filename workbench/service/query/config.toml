@@ -6,7 +6,7 @@ format = "json"
 
 [server]
 host = "localhost"
-port = 8083
+port = 8085
 
 [mysql] # sqlboiler用のDB設定
 dbname = "sample_db" # データベース名

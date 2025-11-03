@@ -24,6 +24,31 @@ test-all: ## Run all tests (integration tests included)
 generate-mocks: ## Generate mocks
 	go generate ./...
 
+.PHONY: list-methods
+list-methods: ## Run buf curl commands
+	buf curl http://localhost:8085 --list-methods  --http2-prior-knowledge
+
+.PHONY: curl-list-valid
+curl-list-valid: ## Run buf curl commands
+	buf curl --protocol grpc --http2-prior-knowledge \
+		--schema ../../api \
+		--data '{}' \
+		http://localhost:8085/query.v1.CategoryService/ListCategories
+
+.PHONY: curl-get-invalid
+curl-get-invalid: ## Run buf curl commands
+	buf curl --protocol grpc --http2-prior-knowledge \
+		--schema ../../api \
+		--data '{"id": "hoge"}' \
+		http://localhost:8085/query.v1.CategoryService/GetCategoryById
+
+.PHONY: curl-search-valid
+curl-search-valid: ## Run buf curl commands
+	buf curl --protocol grpc --http2-prior-knowledge \
+		--schema ../../api \
+		--data '{"keyword": "ペン"}' \
+		http://localhost:8085/query.v1.ProductService/SearchProductsByKeyword
+
 .PHONY: help
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
