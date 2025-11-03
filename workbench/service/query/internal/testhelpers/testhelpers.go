@@ -52,6 +52,9 @@ func SetupDB(configPath, configName string) (*gorm.DB, error) {
 // Returns:
 //   - error: エラー
 func TeardownDB(dbConn *gorm.DB) error {
+	if dbConn == nil {
+		return nil
+	}
 	sqlDB, err := dbConn.DB()
 	if err != nil {
 		return err
