@@ -26,16 +26,16 @@ func TestMain(m *testing.M) {
 	configPath := "../../../"
 	configName := "config"
 	var err error
-	testDBConn, err = testhelpers.SetupDB(configPath, configName)
-	// テスト用データベースのクリーンアップ
-	defer func() {
-		if err = testhelpers.TeardownDB(testDBConn); err != nil {
-			panic(err)
-		}
-	}()
-	if err != nil {
-		panic(err)
-	}
+        testDBConn, err = testhelpers.SetupDB(configPath, configName)
+        if err != nil {
+                panic(err)
+        }
+        // テスト用データベースのクリーンアップ
+        defer func() {
+                if err := testhelpers.TeardownDB(testDBConn); err != nil {
+                        panic(err)
+                }
+        }()
 
 	// テストの実行
 	code := m.Run()
