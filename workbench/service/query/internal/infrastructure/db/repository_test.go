@@ -8,73 +8,43 @@ import (
 	"testing"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
-	"github.com/haru-256/practical-go-grpc-micro-service/pkg/log"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/models"
-	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
 var (
-	testDBConn   *gorm.DB
-	productRepo  *db.ProductRepositoryImpl
-	categoryRepo *db.CategoryRepositoryImpl
+	testDBConn *gorm.DB
 )
-
-func setupDB() error {
-	// テスト用のデータベース接続設定
-	configPath := "../../../"
-	configName := "config"
-	v := config.NewViper(configPath, configName)
-	dbConfig, err := db.NewDBConfig(v)
-	if err != nil {
-		return err
-	}
-	logger, err := log.NewLogger(v)
-	if err != nil {
-		return err
-	}
-	// データベース接続の初期化
-	testDBConn, err = db.NewDatabase(dbConfig, logger)
-	if err != nil {
-		return err
-	}
-	// リポジトリの初期化
-	productRepo = db.NewProductRepositoryImpl(testDBConn, logger)
-	categoryRepo = db.NewCategoryRepositoryImpl(testDBConn, logger)
-	return nil
-}
-
-func teardownDB() error {
-	sqlDB, err := testDBConn.DB()
-	if err != nil {
-		return err
-	}
-	err = sqlDB.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func TestMain(m *testing.M) {
 	// テスト用データベースのセットアップ
-	if err := setupDB(); err != nil {
+	configPath := "../../../"
+	configName := "config"
+	var err error
+	testDBConn, err = testhelpers.SetupDB(configPath, configName)
+	// テスト用データベースのクリーンアップ
+	defer func() {
+		if err := testhelpers.TeardownDB(testDBConn); err != nil {
+			panic(err)
+		}
+	}()
+	if err != nil {
 		panic(err)
 	}
+
 	// テストの実行
 	code := m.Run()
-	// テスト用データベースのクリーンアップ
-	if err := teardownDB(); err != nil {
-		panic(err)
-	}
 
 	os.Exit(code)
 }
 
 func TestProductRepositoryImpl_List(t *testing.T) {
+	productRepo := db.NewProductRepositoryImpl(testDBConn, testhelpers.TestLogger)
+
 	tests := []struct {
 		name       string
 		assertions func(t *testing.T, products interface{}, err error)
@@ -109,6 +79,8 @@ func TestProductRepositoryImpl_List(t *testing.T) {
 }
 
 func TestProductRepositoryImpl_FindById(t *testing.T) {
+	repo := db.NewProductRepositoryImpl(testDBConn, testhelpers.TestLogger)
+
 	tests := []struct {
 		name       string
 		productId  string
@@ -141,13 +113,15 @@ func TestProductRepositoryImpl_FindById(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			product, err := productRepo.FindById(ctx, tt.productId)
+			product, err := repo.FindById(ctx, tt.productId)
 			tt.assertions(t, product, err)
 		})
 	}
 }
 
 func TestProductRepositoryImpl_FindByNameLike(t *testing.T) {
+	repo := db.NewProductRepositoryImpl(testDBConn, testhelpers.TestLogger)
+
 	tests := []struct {
 		name       string
 		keyword    string
@@ -193,13 +167,15 @@ func TestProductRepositoryImpl_FindByNameLike(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			products, err := productRepo.FindByNameLike(ctx, tt.keyword)
+			products, err := repo.FindByNameLike(ctx, tt.keyword)
 			tt.assertions(t, products, err)
 		})
 	}
 }
 
 func TestCategoryRepositoryImpl_List(t *testing.T) {
+	repo := db.NewCategoryRepositoryImpl(testDBConn, testhelpers.TestLogger)
+
 	tests := []struct {
 		name       string
 		assertions func(t *testing.T, categories interface{}, err error)
@@ -223,13 +199,15 @@ func TestCategoryRepositoryImpl_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			categories, err := categoryRepo.List(ctx)
+			categories, err := repo.List(ctx)
 			tt.assertions(t, categories, err)
 		})
 	}
 }
 
 func TestCategoryRepositoryImpl_FindById(t *testing.T) {
+	repo := db.NewCategoryRepositoryImpl(testDBConn, testhelpers.TestLogger)
+
 	tests := []struct {
 		name       string
 		categoryId string
@@ -262,7 +240,7 @@ func TestCategoryRepositoryImpl_FindById(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			category, err := categoryRepo.FindById(ctx, tt.categoryId)
+			category, err := repo.FindById(ctx, tt.categoryId)
 			tt.assertions(t, category, err)
 		})
 	}
