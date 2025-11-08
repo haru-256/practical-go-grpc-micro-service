@@ -16,6 +16,7 @@
 - **商品管理**: 商品のCRUD操作とカテゴリ管理
 - **Command Service**: 書き込み専用サービス（作成、更新、削除）
 - **Query Service**: 読み取り専用サービス（一覧取得、詳細取得、キーワード検索）
+- **Client Service**: REST APIを提供するフロントエンドサービス（Swagger UI付き）
 - **スキーマバリデーション**: protovalidateによるフィールドレベル検証
 
 ## 📁 ディレクトリ構成
@@ -27,9 +28,9 @@ workbench/
 │   └── gen/                      # 自動生成コード
 │
 ├── service/                      # マイクロサービス実装
-│   ├── client/                   # クライアント実装例
-│   ├── command/                  # コマンドサービス
-│   └── query/                    # クエリサービス
+│   ├── client/                   # REST APIクライアント（Swagger UI付き）
+│   ├── command/                  # コマンドサービス（書き込み専用）
+│   └── query/                    # クエリサービス（読み取り専用）
 │
 ├── db/                           # データベース関連
 │   ├── command/                  # コマンド用データベース
@@ -46,48 +47,54 @@ workbench/
 ```mermaid
 graph TB
     subgraph "Client Applications"
-        Web[Web Application]
-        Mobile[Mobile App]
+        Browser[Browser]
         CLI[CLI Tool]
+    end
+    
+    subgraph "REST API Layer"
+        Client[Client Service<br/>REST API + Swagger<br/>:8080]
     end
     
     subgraph "gRPC Services"
         subgraph "Command Side (書き込み)"
-            CS[Command Service<br/>:8080]
+            CS[Command Service<br/>gRPC<br/>:50051]
             CDB[(Command DB<br/>Write Optimized)]
         end
         
         subgraph "Query Side (読み取り)"
-            QS[Query Service<br/>:8081]
+            QS[Query Service<br/>gRPC<br/>:50052]
             QDB[(Query DB<br/>Read Optimized)]
         end
     end
     
-    Web --> CS
-    Web --> QS
-    Mobile --> CS
-    Mobile --> QS
-    CLI --> CS
-    CLI --> QS
+    Browser -->|HTTP/REST| Client
+    CLI -->|HTTP/REST| Client
+    
+    Client -->|Connect RPC| CS
+    Client -->|Connect RPC| QS
     
     CS --> CDB
     QS --> QDB
-    CDB -.->|Data Sync| QDB
+    CDB -.->|Replication| QDB
     
+    classDef clientService fill:#f9f,stroke:#333,stroke-width:2px
     classDef commandService fill:#fff3e0
     classDef queryService fill:#e1f5fe
     classDef database fill:#e8f5e8
     classDef client fill:#f3e5f5
     
+    class Client clientService
     class CS commandService
     class QS queryService
     class CDB,QDB database
-    class Web,Mobile,CLI client
+    class Browser,CLI client
 ```
 
 ### 特徴
 
+- **3層アーキテクチャ**: Client Service（REST） → Command/Query Service（gRPC） → Database
 - **責務の分離**: 読み取りと書き込みを独立したサービスに分離
+- **REST + gRPC**: クライアント向けREST API、サービス間通信はgRPC
 - **スケーラビリティ**: 各サービスを独立してスケール可能
 - **データベース最適化**: 用途に応じたデータベース設計
 - **型安全性**: Protocol Buffersによる厳密な型定義
@@ -155,13 +162,20 @@ go mod tidy
 ### サービスの起動
 
 ```bash
-# コマンドサービス（ポート8080）
+# コマンドサービス（ポート50051）
 cd service/command
 go run cmd/server/main.go
 
-# クエリサービス（ポート8081）
+# クエリサービス（ポート50052）
 cd service/query
 go run cmd/server/main.go
+
+# クライアントサービス（ポート8080）- Command/Queryサービスが必要
+cd service/client
+go run cmd/server/main.go
+
+# Swagger UIでAPIを確認
+open http://localhost:8080/swagger/index.html
 ```
 
 ### テストの実行
@@ -177,6 +191,10 @@ make test
 # Query Serviceのテスト
 cd service/query
 make test
+
+# Client Serviceのテスト
+cd service/client
+go test ./...
 
 # 統合テストを含む（データベースが必要）
 cd service/command
@@ -205,6 +223,7 @@ go test -tags=integration ./...
 
 ### サービスドキュメント
 
+- **[Client Service](./service/client/README.md)** - REST APIサービスの実装詳細（Swagger付き）
 - **[Command Service](./service/command/README.md)** - 書き込み専用サービスの実装詳細
 - **[Query Service](./service/query/README.md)** - 読み取り専用サービスの実装詳細
 

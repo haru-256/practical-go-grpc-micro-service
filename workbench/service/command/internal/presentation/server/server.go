@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
 	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
 	"github.com/spf13/viper"
@@ -41,6 +42,13 @@ func NewCommandServer(viper *viper.Viper, logger *slog.Logger, csh cmdconnect.Ca
 	path, handler = cmdconnect.NewProductServiceHandler(psh, interceptors)
 	mux.Handle(path, handler)
 
+	// ヘルスチェックハンドラの登録
+	// 標準的なパス: /grpc.health.v1.Health/Check が自動で作られる
+	checker := grpchealth.NewStaticChecker(
+		"", // 空文字を登録するとサーバー全体のヘルスチェックになる
+	)
+	mux.Handle(grpchealth.NewHandler(checker))
+
 	// reflection
 	reflector := grpcreflect.NewStaticReflector(
 		cmdconnect.CategoryServiceName,
@@ -54,6 +62,8 @@ func NewCommandServer(viper *viper.Viper, logger *slog.Logger, csh cmdconnect.Ca
 		Handler:      h2c.NewHandler(mux, &http2.Server{}),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
+		// HTTP Keep-Aliveのタイムアウト設定
+		IdleTimeout: 120 * time.Second,
 	}
 	return &CommandServer{Server: server}, nil
 }

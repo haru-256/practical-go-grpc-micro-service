@@ -53,6 +53,7 @@ services:
       - ./query/my.cnf:/etc/mysql/conf.d/my.cnf
       - ./query/sql:/docker-entrypoint-initdb.d
       - ./query/ddl:/etc/ddl
+      - ./query/scripts:/etc/scripts
       - ./logs/query:/var/log/mysql
     networks:
       - net
