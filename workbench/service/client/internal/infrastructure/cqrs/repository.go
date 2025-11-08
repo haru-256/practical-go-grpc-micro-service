@@ -28,7 +28,7 @@ type CQRSRepositoryImpl struct {
 //
 // Returns:
 //   - repository.CQRSRepository: CQRSRepositoryの実装
-func NewCQRSRepositoryImpl(commandServiceClient *CommandServiceClient, queryServiceClient *QueryServiceClient, logger *slog.Logger) repository.CQRSRepository {
+func NewCQRSRepositoryImpl(commandServiceClient *CommandServiceClient, queryServiceClient *QueryServiceClient, logger *slog.Logger) *CQRSRepositoryImpl {
 	return &CQRSRepositoryImpl{
 		logger:               logger,
 		commandServiceClient: commandServiceClient,
