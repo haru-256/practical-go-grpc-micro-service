@@ -490,6 +490,10 @@ const docTemplate = `{
     "definitions": {
         "github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category": {
             "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
             "properties": {
                 "id": {
                     "description": "カテゴリID",
@@ -497,7 +501,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "カテゴリ名",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 1
                 }
             }
         },
@@ -556,14 +562,18 @@ const docTemplate = `{
         "github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateProductRequest": {
             "type": "object",
             "required": [
-                "category_id",
+                "category",
                 "name",
                 "price"
             ],
             "properties": {
-                "category_id": {
-                    "description": "カテゴリID",
-                    "type": "string"
+                "category": {
+                    "description": "カテゴリ情報",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category"
+                        }
+                    ]
                 },
                 "name": {
                     "description": "商品名",
@@ -671,14 +681,18 @@ const docTemplate = `{
         "github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateProductRequest": {
             "type": "object",
             "required": [
-                "category_id",
+                "category",
                 "name",
                 "price"
             ],
             "properties": {
-                "category_id": {
-                    "description": "カテゴリID",
-                    "type": "string"
+                "category": {
+                    "description": "カテゴリ情報",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category"
+                        }
+                    ]
                 },
                 "name": {
                     "description": "商品名",

@@ -255,8 +255,9 @@ func (h *CQRSServiceHandler) CreateProduct(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	category := models.NewCategory(req.CategoryId, "")
+	category := models.NewCategory(req.Category.Id, req.Category.Name)
 
+	// FIXME: category nameは不要なはずなのに要求している
 	product, err := h.repo.CreateProduct(c.Request().Context(), req.Name, req.Price, category)
 	if err != nil {
 		h.logger.Error("Failed to create product", "error", err)
@@ -307,7 +308,8 @@ func (h *CQRSServiceHandler) UpdateProduct(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	category := models.NewCategory(req.CategoryId, "")
+	// FIXME: category nameは不要なはずなのに要求している
+	category := models.NewCategory(req.Category.Id, req.Category.Name)
 	product := models.NewProduct(id, req.Name, req.Price, category)
 
 	updated, err := h.repo.UpdateProduct(c.Request().Context(), product)

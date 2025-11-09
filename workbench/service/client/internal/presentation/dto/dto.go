@@ -2,8 +2,8 @@ package dto
 
 // Category はカテゴリ情報を表すDTO
 type Category struct {
-	Id   string `json:"id"`   // カテゴリID
-	Name string `json:"name"` // カテゴリ名
+	Id   string `json:"id" validate:"required,uuid4"`          // カテゴリID
+	Name string `json:"name" validate:"required,min=1,max=20"` // カテゴリ名
 }
 
 // CreateCategoryRequest はカテゴリ作成リクエスト
@@ -46,9 +46,9 @@ type Product struct {
 
 // CreateProductRequest は商品作成リクエスト
 type CreateProductRequest struct {
-	Name       string `json:"name" validate:"required,min=1,max=100"` // 商品名
-	Price      uint32 `json:"price" validate:"required,min=1"`        // 価格
-	CategoryId string `json:"category_id" validate:"required,uuid4"`  // カテゴリID
+	Name     string    `json:"name" validate:"required,min=1,max=100"` // 商品名
+	Price    uint32    `json:"price" validate:"required,min=1"`        // 価格
+	Category *Category `json:"category" validate:"required"`           // カテゴリ情報
 }
 
 // CreateProductResponse は商品作成レスポンス
@@ -58,9 +58,9 @@ type CreateProductResponse struct {
 
 // UpdateProductRequest は商品更新リクエスト
 type UpdateProductRequest struct {
-	Name       string `json:"name" validate:"required,min=1,max=100"` // 商品名
-	Price      uint32 `json:"price" validate:"required,min=1"`        // 価格
-	CategoryId string `json:"category_id" validate:"required,uuid4"`  // カテゴリID
+	Name     string    `json:"name" validate:"required,min=1,max=100"` // 商品名
+	Price    uint32    `json:"price" validate:"required,min=1"`        // 価格
+	Category *Category `json:"category" validate:"required"`           // カテゴリ情報
 }
 
 // UpdateProductResponse は商品更新レスポンス

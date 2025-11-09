@@ -3,6 +3,7 @@ package cqrs
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -103,9 +104,37 @@ func NewClient(cfg *CQRSServiceConfig) *http.Client {
 // Parameters:
 //   - lc: fxライフサイクル
 //   - client: HTTPクライアント
+//   - cmdClient: Commandサービスクライアント
+//   - queryClient: Queryサービスクライアント
 //   - logger: ロガー
-func RegisterLifecycleHooks(lc fx.Lifecycle, client *http.Client, logger *slog.Logger) {
+func RegisterLifecycleHooks(
+	lc fx.Lifecycle,
+	client *http.Client,
+	cmdClient *CommandServiceClient,
+	queryClient *QueryServiceClient,
+	logger *slog.Logger,
+) {
 	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			logger.InfoContext(ctx, "Checking backend service connections...")
+
+			// Command Serviceへの接続確認
+			if err := cmdClient.HealthCheck(ctx); err != nil {
+				logger.ErrorContext(ctx, "Failed to connect to Command Service", "error", err)
+				return fmt.Errorf("command service health check failed: %w", err)
+			}
+			logger.InfoContext(ctx, "Command Service connection OK")
+
+			// Query Serviceへの接続確認
+			if err := queryClient.HealthCheck(ctx); err != nil {
+				logger.ErrorContext(ctx, "Failed to connect to Query Service", "error", err)
+				return fmt.Errorf("query service health check failed: %w", err)
+			}
+			logger.InfoContext(ctx, "Query Service connection OK")
+
+			logger.InfoContext(ctx, "All backend service connections verified")
+			return nil
+		},
 		OnStop: func(ctx context.Context) error {
 			// アイドル接続をクローズ
 			if t, ok := client.Transport.(*http.Transport); ok {

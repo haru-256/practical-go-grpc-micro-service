@@ -8,6 +8,7 @@ import (
 func main() {
 	app := fx.New(
 		fx.Supply(
+			// NOTE: バイナリを実行する位置からの相対パスで指定する
 			fx.Annotate("./", fx.ResultTags(`name:"configPath"`)),
 			fx.Annotate("config", fx.ResultTags(`name:"configName"`)),
 		),

@@ -1,0 +1,198 @@
+name: cqrs
+services:
+  # API Gateway Service
+  client_service:
+    container_name: client_service
+    build:
+      context: .
+      dockerfile: ./service/client/Dockerfile
+    restart: always
+    environment:
+      SERVER_PORT: 80
+      CQRS_COMMAND_SERVICE_URL: http://command_service:80
+      CQRS_QUERY_SERVICE_URL: http://query_service:80
+    depends_on:
+      command_service:
+        condition: service_healthy
+      query_service:
+        condition: service_healthy
+    volumes:
+      # ベースの設定ファイルをマウント
+      - ./service/client/config.toml:/config.toml
+    ports:
+      - "8090:80"
+    networks:
+      - cqrs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Backend Service
+  command_service:
+    container_name: command_service
+    build:
+      context: .
+      dockerfile: ./service/command/Dockerfile
+    restart: always
+    environment:
+      DB_HOST: command_db # viperで上書きさせる
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_DBNAME: sample_db
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 80
+    depends_on:
+      command_db:
+        condition: service_healthy
+    volumes:
+      # ベースの設定ファイルをマウント
+      - ./service/command/config.toml:/config.toml
+    ports:
+      - "8083:80"
+    networks:
+      - cqrs
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  query_service:
+    container_name: query_service
+    build:
+      context: .
+      dockerfile: ./service/query/Dockerfile
+    restart: always
+    environment:
+      DB_HOST: query_db # viperで上書きさせる
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_DBNAME: sample_db
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 80
+    depends_on:
+      query_db:
+        condition: service_healthy
+    volumes:
+      # ベースの設定ファイルをマウント
+      - ./service/query/config.toml:/config.toml
+    ports:
+      - "8085:80"
+    networks:
+      - cqrs
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Database
+  command_db:
+    container_name: command_db
+    image: mysql:8.0
+    restart: always
+    command: mysqld
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: sample_db
+      TZ: Asia/Tokyo
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    volumes:
+      - db-command:/var/lib/mysql
+      - ./db/command/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db/logs/command:/var/log/mysql
+      - ./db/command/init:/docker-entrypoint-initdb.d # 初期化用SQL配置場所
+      - ./db/command/ddl:/etc/ddl # DDLを実行するSQL配置場所
+      - ./db/command/dump:/etc/dump # データダンプ保存場所
+      - ./db/command/scripts:/etc/scripts # スクリプト保存場所
+    networks:
+      - cqrs
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-u",
+          "root",
+          "--password=${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  query_db:
+    container_name: query_db
+    image: mysql:8.0
+    restart: always
+    depends_on:
+      - command_db
+    command: mysqld --report-host=query_db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: sample_db
+      TZ: "Asia/Tokyo"
+    ports:
+      - 3307:3306
+    volumes:
+      - db-query:/var/lib/mysql
+      - ./db/query/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db/logs/query:/var/log/mysql
+      - ./db/query/init:/docker-entrypoint-initdb.d # 初期化用SQL配置場所
+      - ./db/query/ddl:/etc/ddl # DDLを実行するSQL配置場所
+      - ./db/query/dump:/etc/dump # データダンプ保存場所
+      - ./db/query/scripts:/etc/scripts # スクリプト保存場所
+    networks:
+      - cqrs
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-u",
+          "root",
+          "--password=${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  db_admin:
+    container_name: db_admin
+    image: phpmyadmin/phpmyadmin
+    platform: linux/amd64
+    restart: always
+    depends_on:
+      command_db:
+        condition: service_healthy
+      query_db:
+        condition: service_healthy
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=command_db,query_db
+      - PMA_USER=root
+      - PMA_PASSWORD=password
+    ports:
+      - "3100:80"
+    networks:
+      - cqrs
+
+networks:
+  cqrs:
+
+volumes:
+  db-command:
+  db-query:

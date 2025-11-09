@@ -29,13 +29,21 @@ test-all: ## Run all tests including DB tests
 install-tools: ## Install tools
 	mise install
 
-.PHONY: run-servers
-run-servers: ## Run all servers
-	$(MAKE) -C db up
-	# FIXME: 以下はgo runで動かしているので、ハングアップする。docker-compose化して動かす
-	$(MAKE) -C service/command run-servers
-	$(MAKE) -C service/query run-servers
-	$(MAKE) -C service/client run-servers
+.PHONY: build-all
+build-all: ## Build all services
+	docker compose build
+
+.PHONY: up
+up: ## up all
+	docker compose up -d
+
+.PHONY: up-with-build
+up-with-build: ## up all
+	docker compose up -d --build
+
+.PHONY: down
+down: ## down all
+	docker compose down
 
 .PHONY: act
 act: ## Run act for CI locally
