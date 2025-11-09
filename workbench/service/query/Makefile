@@ -49,6 +49,10 @@ curl-search-valid: ## Run buf curl commands
 		--data '{"keyword": "ペン"}' \
 		http://localhost:8085/query.v1.ProductService/SearchProductsByKeyword
 
+.PHONY: run-server
+run-server: ## Run query service server
+	go run ./cmd/server/main.go
+
 .PHONY: help
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

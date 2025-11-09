@@ -15,10 +15,11 @@ services:
     volumes:
       - db-command:/var/lib/mysql
       - ./command/my.cnf:/etc/mysql/conf.d/my.cnf
-      - ./command/sql:/docker-entrypoint-initdb.d
-      - ./command/ddl:/etc/ddl
       - ./logs/command:/var/log/mysql
-      - ./command/scripts:/etc/scripts
+      - ./command/init:/docker-entrypoint-initdb.d # 初期化用SQL配置場所
+      - ./query/ddl:/etc/ddl # DDLを実行するSQL配置場所
+      - ./command/dump:/etc/dump # データダンプ保存場所
+      - ./command/scripts:/etc/scripts # スクリプト保存場所
     networks:
       - net
     healthcheck:
@@ -51,9 +52,11 @@ services:
     volumes:
       - db-query:/var/lib/mysql
       - ./query/my.cnf:/etc/mysql/conf.d/my.cnf
-      - ./query/sql:/docker-entrypoint-initdb.d
-      - ./query/ddl:/etc/ddl
       - ./logs/query:/var/log/mysql
+      - ./query/init:/docker-entrypoint-initdb.d # 初期化用SQL配置場所
+      - ./query/ddl:/etc/ddl # DDLを実行するSQL配置場所
+      - ./query/dump:/etc/dump # データダンプ保存場所
+      - ./query/scripts:/etc/scripts # スクリプト保存場所
     networks:
       - net
     healthcheck:

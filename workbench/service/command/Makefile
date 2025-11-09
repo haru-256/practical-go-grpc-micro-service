@@ -47,6 +47,10 @@ curl-create-invalid: ## Run buf curl commands
 		--data '{"crud": 4, "name": {"value": "test"}}' \
 		http://localhost:8083/command.v1.CategoryService/CreateCategory
 
+.PHONY: run-server
+run-server: ## Run command service server
+	go run ./cmd/server/main.go
+
 .PHONY: help
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

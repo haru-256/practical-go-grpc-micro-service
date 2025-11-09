@@ -328,3 +328,264 @@ flowchart TD
 
 1. ポートが正しく開放されているか確認
 2. Docker Composeのhealthcheckが通っているか確認
+
+## レプリケーション復旧フロー
+
+レプリケーションが破綻した場合の復旧手順を説明します。
+
+### レプリケーション破綻の症状
+
+以下のような症状が見られた場合、レプリケーションが破綻している可能性があります：
+
+- Command DBでデータを作成してもQuery DBに反映されない
+- `make check-replication`で`Replica_IO_Running: No`または`Replica_SQL_Running: No`と表示される
+- エラー1236: バイナリログがパージされている
+- エラー3546: GTID_PURGEDとGTID_EXECUTEDの重複
+
+### 復旧フロー図
+
+```mermaid
+flowchart TD
+    Start([レプリケーション破綻を検知]) --> Check[make check-replication<br/>ステータス確認]
+    
+    Check --> Decision{エラーの種類}
+    
+    Decision -->|エラー1236<br/>バイナリログパージ| Flow1[完全復旧フロー]
+    Decision -->|エラー3546<br/>GTID重複| Flow2[GTID リセットフロー]
+    Decision -->|接続エラー| Flow3[接続設定確認]
+    
+    Flow1 --> Step1[1. make down<br/>環境停止]
+    Step1 --> Step2[2. make up<br/>環境起動]
+    Step2 --> Wait1[待機: 10秒<br/>DBの起動を待つ]
+    Wait1 --> Step3[3. make reset-replication<br/>レプリケーションリセット]
+    Step3 --> Step4[4. make dump<br/>Command DBをダンプ]
+    Step4 --> Step5[5. make restore<br/>Query DBにリストア]
+    Step5 --> Step6[6. make start-replication<br/>レプリケーション開始]
+    Step6 --> Wait2[待機: 2秒<br/>レプリケーション開始を待つ]
+    Wait2 --> Verify1[7. make check-replication<br/>ステータス確認]
+    
+    Flow2 --> Reset1[1. make reset-replication<br/>GTIDとレプリカ設定をリセット]
+    Reset1 --> Reset2[2. make dump<br/>最新ダンプ取得]
+    Reset2 --> Reset3[3. make restore<br/>クリーンな状態でリストア]
+    Reset3 --> Reset4[4. make start-replication<br/>レプリケーション再開]
+    Reset4 --> Verify2[5. make check-replication<br/>ステータス確認]
+    
+    Flow3 --> Conn1[1. Command DB接続確認<br/>docker compose ps]
+    Conn1 --> Conn2[2. レプリケーションユーザー確認]
+    Conn2 --> Conn3[3. ネットワーク設定確認]
+    Conn3 --> Verify3[4. make start-replication<br/>再試行]
+    
+    Verify1 --> Final{両方のスレッドが<br/>Yesか？}
+    Verify2 --> Final
+    Verify3 --> Final
+    
+    Final -->|Yes| Success([復旧完了])
+    Final -->|No| Logs[ログ確認<br/>./logs/query/mysqld.log]
+    Logs --> Manual[手動調査<br/>・SHOW REPLICA STATUS<br/>・エラーメッセージ確認]
+    Manual --> Flow1
+    
+    %% スタイル設定
+    classDef startEnd fill:#e1f5fe
+    classDef process fill:#f3e5f5
+    classDef decision fill:#fff3e0
+    classDef error fill:#ffebee
+    classDef success fill:#e8f5e8
+    classDef wait fill:#e0f2f1
+    
+    class Start,Success startEnd
+    class Step1,Step2,Step3,Step4,Step5,Step6,Reset1,Reset2,Reset3,Reset4,Conn1,Conn2,Conn3,Verify1,Verify2,Verify3 process
+    class Check,Decision,Final decision
+    class Flow1,Flow2,Flow3,Logs,Manual error
+    class Wait1,Wait2 wait
+```
+
+### 詳細な復旧手順
+
+#### 1. 完全復旧フロー（推奨）
+
+最も確実な方法です。環境を完全にリセットしてレプリケーションを再構築します。
+
+```bash
+# 1. 環境を停止
+make down
+
+# 2. 環境を起動
+make up
+
+# 3. データベースの起動を待つ（10秒程度）
+sleep 10
+
+# 4. レプリケーションをリセット
+make reset-replication
+
+# 5. Command DBから最新データをダンプ
+make dump
+
+# 6. Query DBにリストアしてGTIDを設定
+make restore
+
+# 7. レプリケーションを開始
+make start-replication
+
+# 8. レプリケーション開始を待つ（2秒程度）
+sleep 2
+
+# 9. ステータス確認
+make check-replication
+```
+
+**確認ポイント:**
+
+- `Replica_IO_Running: Yes`
+- `Replica_SQL_Running: Yes`
+- `Seconds_Behind_Source: 0`
+
+#### 2. クイック復旧フロー
+
+環境を停止せずに復旧を試みる方法です。
+
+```bash
+# 1. レプリケーションをリセット
+make reset-replication
+
+# 2. 最新のダンプを取得
+make dump
+
+# 3. リストア
+make restore
+
+# 4. レプリケーション開始
+make start-replication
+
+# 5. 確認
+make check-replication
+```
+
+#### 3. GTID問題の個別対応
+
+GTID関連のエラーが出た場合の手順です。
+
+```bash
+# Query DBでGTIDをリセット
+docker compose exec query_db mysql -uroot -ppassword <<EOF
+STOP REPLICA;
+RESET REPLICA ALL;
+RESET MASTER;
+EOF
+
+# 最新のダンプを取得してリストア
+make dump
+make restore
+make start-replication
+```
+
+### 復旧後の確認事項
+
+#### 1. レプリケーションステータスの確認
+
+```bash
+make check-replication
+```
+
+以下の値が正常であることを確認：
+
+- `Replica_IO_Running: Yes` - IOスレッドが動作中
+- `Replica_SQL_Running: Yes` - SQLスレッドが動作中
+- `Seconds_Behind_Source: 0` - 遅延なし
+- `Last_IO_Error: (空)` - IOエラーなし
+- `Last_SQL_Error: (空)` - SQLエラーなし
+
+#### 2. データ同期の確認
+
+```bash
+# Command DBでテストデータを作成
+docker compose exec command_db mysql -uroot -ppassword sample_db <<EOF
+INSERT INTO categories (category_name) VALUES ('Test復旧確認');
+EOF
+
+# 少し待つ（レプリケーション遅延を考慮）
+sleep 1
+
+# Query DBで確認
+docker compose exec query_db mysql -uroot -ppassword sample_db <<EOF
+SELECT * FROM categories WHERE category_name = 'Test復旧確認';
+EOF
+```
+
+データが表示されれば、レプリケーションは正常に動作しています。
+
+### よくあるエラーと対処法
+
+#### エラー 1236: バイナリログがパージされた
+
+**原因:** Command DBのバイナリログが削除され、Query DBが必要とするトランザクションが失われた
+
+**対処法:** 完全復旧フローを実行
+
+#### エラー 3546: GTID_PURGEDとGTID_EXECUTEDの重複
+
+**原因:** Query DBに既にトランザクション履歴があり、GTIDが重複している
+
+**対処法:**
+
+```bash
+make reset-replication  # GTIDをクリア
+make dump
+make restore
+make start-replication
+```
+
+#### 接続エラー: Can't connect to source
+
+**原因:** ネットワーク問題またはレプリケーションユーザーの権限不足
+
+**対処法:**
+
+```bash
+# レプリケーションユーザーを確認
+docker compose exec command_db mysql -uroot -ppassword <<EOF
+SELECT user, host FROM mysql.user WHERE user='repl';
+SHOW GRANTS FOR 'repl'@'%';
+EOF
+
+# 必要に応じてユーザーを再作成
+docker compose exec command_db mysql -uroot -ppassword <<EOF
+DROP USER IF EXISTS 'repl'@'%';
+CREATE USER 'repl'@'%' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+FLUSH PRIVILEGES;
+EOF
+```
+
+### 予防措置
+
+レプリケーション破綻を予防するための推奨設定：
+
+#### 1. バイナリログ保持期間の延長
+
+`workbench/db/command/my.cnf`に追加：
+
+```ini
+[mysqld]
+# バイナリログを7日間保持
+binlog_expire_logs_seconds = 604800
+```
+
+#### 2. 定期的なヘルスチェック
+
+```bash
+# cronで定期実行（例: 毎時）
+0 * * * * cd /path/to/workbench/db && make check-replication
+```
+
+#### 3. 自動復旧スクリプト
+
+重大なエラー検知時に自動復旧を試みるスクリプトを作成することもできます。
+
+### 緊急時の連絡先
+
+レプリケーション破綻時のエスカレーションフロー：
+
+1. まず完全復旧フローを試す
+2. 復旧しない場合はログを確認
+3. それでも解決しない場合はチームリーダーに相談

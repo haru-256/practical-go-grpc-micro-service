@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
 	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
 	"github.com/spf13/viper"
@@ -41,6 +42,14 @@ func NewQueryServer(viper *viper.Viper, logger *slog.Logger, csh queryconnect.Ca
 	path, handler = queryconnect.NewProductServiceHandler(psh, interceptors)
 	mux.Handle(path, handler)
 
+	// ヘルスチェックハンドラの登録
+	// 標準的なパス: /grpc.health.v1.Health/Check が自動で作られる
+	checker := grpchealth.NewStaticChecker(
+		queryconnect.CategoryServiceName, // カテゴリサービスを登録
+		queryconnect.ProductServiceName,  // プロダクトサービスを登録
+	)
+	mux.Handle(grpchealth.NewHandler(checker))
+
 	// reflection
 	reflector := grpcreflect.NewStaticReflector(
 		queryconnect.CategoryServiceName,
@@ -54,6 +63,8 @@ func NewQueryServer(viper *viper.Viper, logger *slog.Logger, csh queryconnect.Ca
 		Handler:      h2c.NewHandler(mux, &http2.Server{}),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
+		// HTTP Keep-Aliveのタイムアウト設定
+		IdleTimeout: 120 * time.Second,
 	}
 	return &QueryServer{Server: server}, nil
 }

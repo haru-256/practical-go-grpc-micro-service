@@ -1,0 +1,465 @@
+basePath: /
+definitions:
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category:
+    properties:
+      id:
+        description: カテゴリID
+        type: string
+      name:
+        description: カテゴリ名
+        type: string
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CategoryByIdResponse:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        description: カテゴリ情報
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CategoryListResponse:
+    properties:
+      categories:
+        description: カテゴリ一覧
+        items:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        type: array
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateCategoryRequest:
+    properties:
+      name:
+        description: カテゴリ名
+        maxLength: 20
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateCategoryResponse:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        description: 作成されたカテゴリ情報
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateProductRequest:
+    properties:
+      category_id:
+        description: カテゴリID
+        type: string
+      name:
+        description: 商品名
+        maxLength: 100
+        minLength: 1
+        type: string
+      price:
+        description: 価格
+        minimum: 1
+        type: integer
+    required:
+    - category_id
+    - name
+    - price
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateProductResponse:
+    properties:
+      product:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product'
+        description: 作成された商品情報
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        description: カテゴリ情報
+      id:
+        description: 商品ID
+        type: string
+      name:
+        description: 商品名
+        type: string
+      price:
+        description: 価格
+        type: integer
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductByIdResponse:
+    properties:
+      product:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product'
+        description: 商品情報
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductListResponse:
+    properties:
+      products:
+        description: 商品一覧
+        items:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product'
+        type: array
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateCategoryRequest:
+    properties:
+      name:
+        description: カテゴリ名
+        maxLength: 20
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateCategoryResponse:
+    properties:
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        description: 更新されたカテゴリ情報
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateProductRequest:
+    properties:
+      category_id:
+        description: カテゴリID
+        type: string
+      name:
+        description: 商品名
+        maxLength: 100
+        minLength: 1
+        type: string
+      price:
+        description: 価格
+        minimum: 1
+        type: integer
+    required:
+    - category_id
+    - name
+    - price
+    type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateProductResponse:
+    properties:
+      product:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product'
+        description: 更新された商品情報
+    type: object
+info:
+  contact: {}
+  description: CQRS Client Service API
+  title: Client Service API
+  version: "1.0"
+paths:
+  /categories:
+    get:
+      description: カテゴリの一覧を取得します。
+      operationId: list-categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CategoryListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: カテゴリ一覧取得
+      tags:
+      - Category
+    post:
+      consumes:
+      - application/json
+      description: カテゴリを登録します。
+      operationId: create-category
+      parameters:
+      - description: カテゴリ情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateCategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: カテゴリ登録
+      tags:
+      - Category
+  /categories/{id}:
+    delete:
+      description: カテゴリを削除します。
+      operationId: delete-category
+      parameters:
+      - description: カテゴリID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: カテゴリ削除
+      tags:
+      - Category
+    get:
+      description: IDでカテゴリを取得します。
+      operationId: get-category-by-id
+      parameters:
+      - description: カテゴリID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CategoryByIdResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: カテゴリ取得
+      tags:
+      - Category
+    put:
+      consumes:
+      - application/json
+      description: カテゴリを更新します。
+      operationId: update-category
+      parameters:
+      - description: カテゴリID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: カテゴリ情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateCategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: カテゴリ更新
+      tags:
+      - Category
+  /products:
+    get:
+      description: 商品一覧を取得します。keywordパラメータを指定すると検索を行います。
+      operationId: list-products
+      parameters:
+      - description: 検索キーワード
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 商品一覧取得・検索
+      tags:
+      - Product
+    post:
+      consumes:
+      - application/json
+      description: 商品を登録します。
+      operationId: create-product
+      parameters:
+      - description: 商品情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 商品登録
+      tags:
+      - Product
+  /products/{id}:
+    delete:
+      description: 商品を削除します。
+      operationId: delete-product
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 商品削除
+      tags:
+      - Product
+    get:
+      description: IDで商品を取得します。
+      operationId: get-product-by-id
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductByIdResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 商品取得
+      tags:
+      - Product
+    put:
+      consumes:
+      - application/json
+      description: 商品を更新します。
+      operationId: update-product
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 商品情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 商品更新
+      tags:
+      - Product
+swagger: "2.0"
