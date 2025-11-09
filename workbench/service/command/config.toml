@@ -10,8 +10,7 @@ port = 8083
 
 [mysql] # sqlboiler用のDB設定
 dbname = "sample_db" # データベース名
-# host = "command_db" # ホスト名
-host = "localhost" # ホスト名
+host = "localhost" # ホスト名。テスト用にlocalhostを指定。viperにより環境変数DB_HOSTで上書き可能
 port = 3306 # ポート番号
 user = "root" # ユーザー名
 pass = "password" # パスワード

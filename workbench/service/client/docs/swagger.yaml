@@ -7,7 +7,12 @@ definitions:
         type: string
       name:
         description: カテゴリ名
+        maxLength: 20
+        minLength: 1
         type: string
+    required:
+    - id
+    - name
     type: object
   github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CategoryByIdResponse:
     properties:
@@ -43,9 +48,10 @@ definitions:
     type: object
   github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.CreateProductRequest:
     properties:
-      category_id:
-        description: カテゴリID
-        type: string
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        description: カテゴリ情報
       name:
         description: 商品名
         maxLength: 100
@@ -56,7 +62,7 @@ definitions:
         minimum: 1
         type: integer
     required:
-    - category_id
+    - category
     - name
     - price
     type: object
@@ -117,9 +123,10 @@ definitions:
     type: object
   github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateProductRequest:
     properties:
-      category_id:
-        description: カテゴリID
-        type: string
+      category:
+        allOf:
+        - $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Category'
+        description: カテゴリ情報
       name:
         description: 商品名
         maxLength: 100
@@ -130,7 +137,7 @@ definitions:
         minimum: 1
         type: integer
     required:
-    - category_id
+    - category
     - name
     - price
     type: object

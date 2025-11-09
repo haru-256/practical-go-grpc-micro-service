@@ -102,7 +102,14 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 	e.Validator = NewCustomValidator()
 
 	// ルーティングの設定
-	e.GET("/swagger/*", echoSwagger.WrapHandler) // Swaggerエンドポイントの設定
+	// Swaggerエンドポイントの設定
+	// ヘルスチェック用エンドポイント
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{
+			"status": "healthy",
+		})
+	})
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// カテゴリ関連のエンドポイント
 	e.GET("/categories", handler.CategoryList)

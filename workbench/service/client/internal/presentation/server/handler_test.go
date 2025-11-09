@@ -573,7 +573,7 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 		e := echo.New()
 		e.Validator = server.NewCustomValidator()
 
-		requestBody := `{"name":"TestProduct","price":1000,"category_id":"550e8400-e29b-41d4-a716-446655440000"}`
+		requestBody := `{"name":"TestProduct","price":1000,"category": {"id":"550e8400-e29b-41d4-a716-446655440000","name":"TestCategory"}}`
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -642,7 +642,7 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 		e := echo.New()
 		e.Validator = server.NewCustomValidator()
 
-		requestBody := `{"name":"TestProduct","price":1000,"category_id":"invalid-uuid"}`
+		requestBody := `{"name":"TestProduct", "price":1000, "category": {"id":"invalid-uuid", "name":"TestCategory"}}`
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -789,7 +789,7 @@ func TestCQRSServiceHandler_UpdateProduct(t *testing.T) {
 		e := echo.New()
 		e.Validator = server.NewCustomValidator()
 
-		requestBody := `{"name":"UpdatedProduct","price":2000,"category_id":"550e8400-e29b-41d4-a716-446655440000"}`
+		requestBody := `{"name":"UpdatedProduct","price":2000,"category":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"TestCategory"}}`
 		req := httptest.NewRequest(http.MethodPut, "/products/prod-123", strings.NewReader(requestBody))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
