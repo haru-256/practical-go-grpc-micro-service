@@ -146,12 +146,8 @@ cd practical-go-grpc-micro-service/workbench
 # 開発環境のセットアップ
 mise install
 
-# データベースの起動
-cd db
-make up
-
 # APIコードの生成
-cd ../api
+cd api
 make generate
 
 # 依存関係の解決
@@ -161,21 +157,70 @@ go mod tidy
 
 ### サービスの起動
 
+#### Docker Composeで起動（推奨）
+
 ```bash
-# コマンドサービス（ポート50051）
+# すべてのサービス（データベース＋アプリケーション）を起動
+docker compose up -d --build
+
+# サービスの起動確認
+docker compose ps
+
+# Client Service（API Gateway）にアクセス
+# Swagger UIでAPIを確認
+open http://localhost:8090/swagger/index.html
+
+# ログの確認
+docker compose logs -f client_service
+
+# サービスの停止
+docker compose down
+
+# データベースも含めて完全削除
+docker compose down -v
+```
+
+**ポートマッピング:**
+
+- Client Service (REST API): `http://localhost:8090`
+- Command Service (gRPC): `http://localhost:8083`
+- Query Service (gRPC): `http://localhost:8085`
+- Command DB (MySQL): `localhost:3306`
+- Query DB (MySQL): `localhost:3307`
+- phpMyAdmin: `http://localhost:3100`
+
+**初回起動時の注意:**
+
+Docker Composeで起動すると、データベースは自動的に作成されますが、CQRSパターンのレプリケーション設定は手動で行う必要があります。詳細は [Database README](./db/README.md) を参照してください。
+
+```bash
+# データベースのレプリケーション設定
+cd db
+make create-data      # テストデータ作成
+make dump             # Command DBをダンプ
+make restore          # Query DBにリストア
+make start-replication # レプリケーション開始
+```
+
+#### ローカル開発モード
+
+開発時はローカルでサービスを起動することもできます：
+
+```bash
+# データベースのみ起動
+docker compose up -d command_db query_db db_admin
+
+# コマンドサービス（ポート8083）
 cd service/command
 go run cmd/server/main.go
 
-# クエリサービス（ポート50052）
+# クエリサービス（ポート8085）
 cd service/query
 go run cmd/server/main.go
 
-# クライアントサービス（ポート8080）- Command/Queryサービスが必要
+# クライアントサービス（ポート8090）- Command/Queryサービスが必要
 cd service/client
 go run cmd/server/main.go
-
-# Swagger UIでAPIを確認
-open http://localhost:8080/swagger/index.html
 ```
 
 ### テストの実行

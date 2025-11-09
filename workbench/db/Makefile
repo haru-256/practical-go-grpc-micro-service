@@ -2,11 +2,11 @@
 
 .PHONY: up
 up:  ## Start the database
-	docker compose up -d --build
+	docker compose -f ../compose.yaml up -d --build command_db query_db db_admin
 
 .PHONY: down
 down:  ## Stop the database
-	docker compose down
+	docker compose -f ../compose.yaml down
 
 .PHONY: dump
 dump:  ## command_dbからダンプを取得
