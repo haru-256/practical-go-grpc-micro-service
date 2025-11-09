@@ -16,6 +16,7 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/presentation/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/presentation/server"
 	"github.com/labstack/echo/v4"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
@@ -33,9 +34,17 @@ func setupTestApp(t *testing.T, populate ...interface{}) *fx.App {
 		configOption,
 		presentation.Module,
 		// テスト時のみデコレートして差し替える
-		fx.Decorate(func() (*slog.Logger, error) {
-			return slog.New(slog.NewTextHandler(io.Discard, nil)), nil
-		}),
+		fx.Decorate(
+			// ロガーを破棄するダミーロガーに差し替え
+			func() (*slog.Logger, error) {
+				return slog.New(slog.NewTextHandler(io.Discard, nil)), nil
+			},
+			// Viperの設定をデコレートしてポート0(動的に空いているところを使用)を指定する
+			func(v *viper.Viper) *viper.Viper {
+				v.Set("server.port", "0")
+				return v
+			},
+		),
 		fx.Populate(populate...),
 		fx.NopLogger,
 	)

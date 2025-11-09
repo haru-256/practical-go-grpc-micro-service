@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/utils"
@@ -19,6 +20,7 @@ import (
 type CQRSServiceServer struct {
 	logger *slog.Logger // ロガー
 	e      *echo.Echo   // Echoインスタンス
+	Addr   string       // サーバーの実際のアドレス（テスト用）
 }
 
 // CQRSServiceConfig はCQRSサービスの設定
@@ -131,9 +133,20 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 func RegisterLifecycleHooks(lc fx.Lifecycle, server *CQRSServiceServer, cfg *CQRSServiceConfig) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			// port競合によるエラーを回避し、動的ポート割り当てをサポートするため、
+			// 事前にListenしてからStartServerを使用する
+			ln, err := net.Listen("tcp", ":"+cfg.Port)
+			if err != nil {
+				return err
+			}
+			// 実際に割り当てられたアドレスを保存（ポート0の場合、動的に割り当てられる）
+			server.Addr = ln.Addr().String()
+			server.e.Listener = ln
 			go func() {
-				server.logger.InfoContext(ctx, "Starting CQRS Client Service Server on port "+cfg.Port)
-				if err := server.e.Start(":" + cfg.Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				server.logger.InfoContext(ctx, "Starting CQRS Client Service Server", slog.String("addr", server.Addr))
+				// NOTE: EchoのStartは内部でListenを呼び出すため、ここではStart("")を使用する
+				// https://echo.labstack.com/docs/customization?utm_source=chatgpt.com#custom-listener
+				if err = server.e.Start(""); err != nil && !errors.Is(err, http.ErrServerClosed) {
 					server.logger.ErrorContext(ctx, "Failed to start server", "error", err)
 				}
 			}()

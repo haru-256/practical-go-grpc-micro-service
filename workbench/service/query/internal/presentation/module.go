@@ -50,6 +50,8 @@ func registerLifecycleHooks(lc fx.Lifecycle, srv *server.QueryServer, logger *sl
 			if err != nil {
 				return err
 			}
+			// 実際に割り当てられたアドレスを設定（ポート0の場合、動的に割り当てられる）
+			srv.Server.Addr = ln.Addr().String()
 			// サーバーを別のゴルーチンで起動
 			go func() {
 				logger.Info("Starting Query gRPC server", slog.String("addr", srv.Server.Addr))

@@ -3,7 +3,7 @@
 set -e
 
 # master.dbからGTIDを抽出
-GTID_LINE=$(grep "SET @@GLOBAL.GTID_PURGED" /etc/ddl/master.db || echo "")
+GTID_LINE=$(grep "SET @@GLOBAL.GTID_PURGED" /etc/dump/master.db || echo "")
 
 if [ -z "$GTID_LINE" ]; then
     echo "Error: Could not find GTID_PURGED in master.db"

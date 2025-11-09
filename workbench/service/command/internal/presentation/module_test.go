@@ -4,6 +4,8 @@ package presentation_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 	"time"
@@ -18,6 +20,7 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/presentation/server"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 	"go.uber.org/fx"
 )
 
@@ -34,6 +37,19 @@ var _ = Describe("Presentation Module", Label("Module"), func() {
 	configOption := fx.Supply(
 		fx.Annotate("../../", fx.ResultTags(`name:"configPath"`)),
 		fx.Annotate("config", fx.ResultTags(`name:"configName"`)),
+	)
+
+	// テスト時のみデコレートして差し替える
+	testDecorateOption := fx.Decorate(
+		// ロガーを破棄するダミーロガーに差し替え
+		func() (*slog.Logger, error) {
+			return slog.New(slog.NewTextHandler(io.Discard, nil)), nil
+		},
+		// Viperの設定をデコレートしてポート0(動的に空いているところを使用)を指定する
+		func(v *viper.Viper) *viper.Viper {
+			v.Set("server.port", "0")
+			return v
+		},
 	)
 
 	appCleanup := func() {
@@ -59,6 +75,7 @@ var _ = Describe("Presentation Module", Label("Module"), func() {
 				// configPathとconfigNameを提供
 				configOption,
 				presentation.Module,
+				testDecorateOption,
 				fx.Populate(&categoryServiceHandler, &categoryService, &productServiceHandler, &productService, &commandServer),
 				fx.NopLogger, // テスト時はログを抑制
 			)
@@ -84,6 +101,7 @@ var _ = Describe("Presentation Module", Label("Module"), func() {
 				// configPathとconfigNameを提供
 				configOption,
 				presentation.Module,
+				testDecorateOption,
 				fx.Populate(&commandServer),
 				fx.NopLogger, // テスト時はログを抑制
 			)

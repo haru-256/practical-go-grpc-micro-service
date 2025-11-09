@@ -4,6 +4,8 @@ package presentation_test
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 	"time"
@@ -14,6 +16,7 @@ import (
 	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/presentation"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/presentation/server"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
@@ -23,6 +26,19 @@ func TestModule(t *testing.T) {
 	configOption := fx.Supply(
 		fx.Annotate("../../", fx.ResultTags(`name:"configPath"`)),
 		fx.Annotate("config", fx.ResultTags(`name:"configName"`)),
+	)
+
+	// テスト時のみデコレートして差し替える
+	testDecorateOption := fx.Decorate(
+		// ロガーを破棄するダミーロガーに差し替え
+		func() (*slog.Logger, error) {
+			return slog.New(slog.NewTextHandler(io.Discard, nil)), nil
+		},
+		// Viperの設定をデコレートしてポート0(動的に空いているところを使用)を指定する
+		func(v *viper.Viper) *viper.Viper {
+			v.Set("server.port", "0")
+			return v
+		},
 	)
 
 	t.Run("依存関係の注入と初期化", func(t *testing.T) {
@@ -37,6 +53,7 @@ func TestModule(t *testing.T) {
 		app := fx.New(
 			configOption,
 			presentation.Module,
+			testDecorateOption,
 			fx.Populate(&categoryServiceHandler, &productServiceHandler, &queryServer),
 			fx.NopLogger,
 		)
@@ -62,6 +79,7 @@ func TestModule(t *testing.T) {
 		app := fx.New(
 			configOption,
 			presentation.Module,
+			testDecorateOption,
 			fx.Populate(&queryServer),
 			fx.NopLogger,
 		)

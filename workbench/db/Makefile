@@ -14,9 +14,9 @@ dump:  ## command_dbからダンプを取得
 
 .PHONY: restore
 restore:  ##  query_dbにdumpしたcommand_dbのデータをリストア
-	cp ./command/ddl/master.db ./query/ddl/master.db
+	cp ./command/dump/master.db ./query/dump/master.db
 	docker compose exec query_db \
-		bash -c "mysql -uroot -ppassword </etc/ddl/master.db"
+		bash -c "mysql -uroot -ppassword </etc/dump/master.db"
 
 .PHONY: start-replication
 start-replication:  ## query_dbでレプリケーションを開始
