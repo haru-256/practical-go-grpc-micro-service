@@ -31,7 +31,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"TestCategory"}`
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
@@ -69,7 +69,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `invalid json`
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
@@ -97,7 +97,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":""}`
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
@@ -125,7 +125,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"ThisIsAVeryLongCategoryNameThatExceedsTwentyCharacters"}`
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
@@ -153,7 +153,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"TestCategory"}`
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
@@ -186,7 +186,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"A"}`
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
@@ -218,7 +218,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		categoryName := "12345678901234567890" // 20文字
 		requestBody := `{"name":"` + categoryName + `"}`
@@ -321,7 +321,7 @@ func TestCQRSServiceHandler_UpdateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"UpdatedCategory"}`
 		req := httptest.NewRequest(http.MethodPut, "/categories/cat-123", strings.NewReader(requestBody))
@@ -366,7 +366,7 @@ func TestCQRSServiceHandler_UpdateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"UpdatedCategory"}`
 		req := httptest.NewRequest(http.MethodPut, "/categories/", strings.NewReader(requestBody))
@@ -394,7 +394,7 @@ func TestCQRSServiceHandler_UpdateCategory(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":""}`
 		req := httptest.NewRequest(http.MethodPut, "/categories/cat-123", strings.NewReader(requestBody))
@@ -571,7 +571,7 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"TestProduct","price":1000,"category": {"id":"550e8400-e29b-41d4-a716-446655440000","name":"TestCategory"}}`
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
@@ -612,7 +612,7 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"TestProduct","price":0,"category_id":"550e8400-e29b-41d4-a716-446655440000"}`
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
@@ -640,7 +640,7 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"TestProduct", "price":1000, "category": {"id":"invalid-uuid", "name":"TestCategory"}}`
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
@@ -787,7 +787,7 @@ func TestCQRSServiceHandler_UpdateProduct(t *testing.T) {
 		handler := server.NewCQRSServiceHandler(logger, mockRepo)
 
 		e := echo.New()
-		e.Validator = server.NewCustomValidator()
+		e.Validator = server.NewRequestValidator()
 
 		requestBody := `{"name":"UpdatedProduct","price":2000,"category":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"TestCategory"}}`
 		req := httptest.NewRequest(http.MethodPut, "/products/prod-123", strings.NewReader(requestBody))

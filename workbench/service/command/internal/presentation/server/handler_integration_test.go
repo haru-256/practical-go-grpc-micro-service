@@ -7,9 +7,12 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"connectrpc.com/connect"
+	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/impl"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
@@ -29,12 +32,13 @@ const (
 
 var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTests"), Ordered, func() {
 	var (
-		csh    *server.CategoryServiceHandlerImpl
-		cs     service.CategoryService
-		tm     service.TransactionManager
-		repo   categories.CategoryRepository
-		ctx    context.Context
-		cancel context.CancelFunc
+		csh            *server.CategoryServiceHandlerImpl
+		cs             service.CategoryService
+		tm             service.TransactionManager
+		repo           categories.CategoryRepository
+		categoryClient cmdconnect.CategoryServiceClient
+		ctx            context.Context
+		cancel         context.CancelFunc
 	)
 
 	BeforeAll(func() {
@@ -52,6 +56,20 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 
 		csh, err = server.NewCategoryServiceHandlerImpl(logger, cs)
 		Expect(err).NotTo(HaveOccurred())
+
+		validator, err := server.NewValidator(logger)
+		Expect(err).NotTo(HaveOccurred())
+
+		mux := http.NewServeMux()
+		path, handler := cmdconnect.NewCategoryServiceHandler(
+			csh,
+			connect.WithInterceptors(validator.NewUnaryInterceptor()),
+		)
+		mux.Handle(path, handler)
+		testServer := httptest.NewServer(mux)
+		DeferCleanup(testServer.Close)
+
+		categoryClient = cmdconnect.NewCategoryServiceClient(testServer.Client(), testServer.URL)
 	})
 
 	BeforeEach(func() {
@@ -74,7 +92,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateCategoryRequest(testCategoryName.Value())
 
 			// Act
-			resp, err := csh.CreateCategory(ctx, req)
+			resp, err := categoryClient.CreateCategory(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 			testCategoryDTO := &dto.CategoryDTO{
 				Id:   resp.Msg.GetCategory().GetId(),
@@ -104,7 +122,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateCategoryRequest("")
 
 			// Act
-			resp, err := csh.CreateCategory(ctx, req)
+			resp, err := categoryClient.CreateCategory(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -117,7 +135,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 		It("既に存在するカテゴリ名で作成するとエラーを返すこと", func() {
 			// Arrange: 最初のカテゴリを作成
 			req := testhelpers.CreateCategoryRequest(testCategoryName.Value())
-			resp1, err := csh.CreateCategory(ctx, req)
+			resp1, err := categoryClient.CreateCategory(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp1).NotTo(BeNil())
 			testCategoryDTO := &dto.CategoryDTO{
@@ -130,7 +148,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			DeferCleanup(testhelpers.CleanupCategory, tm, repo, testCategoryDTO)
 
 			// Act: 同じ名前で再度作成を試みる
-			resp2, err := csh.CreateCategory(ctx, req)
+			resp2, err := categoryClient.CreateCategory(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -153,7 +171,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 
 			// 更新用のカテゴリを事前に作成
 			req := testhelpers.CreateCategoryRequest(testCategoryName.Value())
-			resp, err := csh.CreateCategory(ctx, req)
+			resp, err := categoryClient.CreateCategory(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 			// テスト終了後のクリーンアップ
 			testCategoryDTO := &dto.CategoryDTO{
@@ -171,7 +189,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateUpdateCategoryRequest(createdCategoryId, newName)
 
 			// Act
-			resp, err := csh.UpdateCategory(ctx, req)
+			resp, err := categoryClient.UpdateCategory(ctx, req)
 
 			// Assert
 			Expect(err).NotTo(HaveOccurred())
@@ -201,7 +219,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateUpdateCategoryRequest("", "新しい名前")
 
 			// Act
-			resp, err := csh.UpdateCategory(ctx, req)
+			resp, err := categoryClient.UpdateCategory(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -216,7 +234,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateUpdateCategoryRequest(createdCategoryId, "")
 
 			// Act
-			resp, err := csh.UpdateCategory(ctx, req)
+			resp, err := categoryClient.UpdateCategory(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -238,7 +256,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 
 			// 削除用のカテゴリを事前に作成
 			req := testhelpers.CreateCategoryRequest(testCategoryName.Value())
-			resp, err := csh.CreateCategory(ctx, req)
+			resp, err := categoryClient.CreateCategory(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 			// テスト終了後のクリーンアップ
 			testCategoryDTO := &dto.CategoryDTO{
@@ -259,7 +277,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateDeleteCategoryRequest(createdCategoryId)
 
 			// Act
-			resp, err := csh.DeleteCategory(ctx, req)
+			resp, err := categoryClient.DeleteCategory(ctx, req)
 
 			// Assert
 			Expect(err).NotTo(HaveOccurred())
@@ -277,7 +295,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 			req := testhelpers.CreateDeleteCategoryRequest("")
 
 			// Act
-			resp, err := csh.DeleteCategory(ctx, req)
+			resp, err := categoryClient.DeleteCategory(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -291,14 +309,15 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 
 var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTests"), Ordered, func() {
 	var (
-		psh          *server.ProductServiceHandlerImpl
-		ps           service.ProductService
-		cs           service.CategoryService
-		tm           service.TransactionManager
-		productRepo  products.ProductRepository
-		categoryRepo categories.CategoryRepository
-		ctx          context.Context
-		cancel       context.CancelFunc
+		psh           *server.ProductServiceHandlerImpl
+		ps            service.ProductService
+		cs            service.CategoryService
+		tm            service.TransactionManager
+		productRepo   products.ProductRepository
+		categoryRepo  categories.CategoryRepository
+		productClient cmdconnect.ProductServiceClient
+		ctx           context.Context
+		cancel        context.CancelFunc
 	)
 
 	BeforeAll(func() {
@@ -318,6 +337,20 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 
 		psh, err = server.NewProductServiceHandlerImpl(logger, ps)
 		Expect(err).NotTo(HaveOccurred())
+
+		validator, err := server.NewValidator(logger)
+		Expect(err).NotTo(HaveOccurred())
+
+		mux := http.NewServeMux()
+		path, handler := cmdconnect.NewProductServiceHandler(
+			psh,
+			connect.WithInterceptors(validator.NewUnaryInterceptor()),
+		)
+		mux.Handle(path, handler)
+		testServer := httptest.NewServer(mux)
+		DeferCleanup(testServer.Close)
+
+		productClient = cmdconnect.NewProductServiceClient(testServer.Client(), testServer.URL)
 	})
 
 	BeforeEach(func() {
@@ -364,7 +397,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			)
 
 			// Act
-			resp, err := psh.CreateProduct(ctx, req)
+			resp, err := productClient.CreateProduct(ctx, req)
 			testProductDTO := &dto.ProductDTO{
 				Id:    resp.Msg.GetProduct().GetId(),
 				Name:  resp.Msg.GetProduct().GetName(),
@@ -410,7 +443,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			)
 
 			// Act
-			resp, err := psh.CreateProduct(ctx, req)
+			resp, err := productClient.CreateProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -430,7 +463,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			)
 
 			// Act
-			resp, err := psh.CreateProduct(ctx, req)
+			resp, err := productClient.CreateProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -449,7 +482,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 				testCategoryDTO.Id,
 				testCategoryDTO.Name,
 			)
-			resp1, err := psh.CreateProduct(ctx, req)
+			resp1, err := productClient.CreateProduct(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp1).NotTo(BeNil())
 
@@ -467,7 +500,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			DeferCleanup(testhelpers.CleanupProduct, tm, productRepo, testProductDTO)
 
 			// Act: 同じ名前で再度作成を試みる
-			resp2, err := psh.CreateProduct(ctx, req)
+			resp2, err := productClient.CreateProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -517,7 +550,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 				testCategoryDTO.Id,
 				testCategoryDTO.Name,
 			)
-			resp, err := psh.CreateProduct(ctx, req)
+			resp, err := productClient.CreateProduct(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 
 			testProductDTO := &dto.ProductDTO{
@@ -548,7 +581,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			)
 
 			// Act
-			resp, err := psh.UpdateProduct(ctx, req)
+			resp, err := productClient.UpdateProduct(ctx, req)
 
 			// Assert
 			Expect(err).NotTo(HaveOccurred())
@@ -583,7 +616,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			req := testhelpers.UpdateProductRequest("", "新しい商品", 1000, testCategoryDTO.Id)
 
 			// Act
-			resp, err := psh.UpdateProduct(ctx, req)
+			resp, err := productClient.UpdateProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -598,7 +631,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			req := testhelpers.UpdateProductRequest(createdProductId, "", 1000, testCategoryDTO.Id)
 
 			// Act
-			resp, err := psh.UpdateProduct(ctx, req)
+			resp, err := productClient.UpdateProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -613,7 +646,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			req := testhelpers.UpdateProductRequest(createdProductId, "商品名", 0, testCategoryDTO.Id)
 
 			// Act
-			resp, err := psh.UpdateProduct(ctx, req)
+			resp, err := productClient.UpdateProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())
@@ -663,7 +696,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 				testCategoryDTO.Id,
 				testCategoryDTO.Name,
 			)
-			resp, err := psh.CreateProduct(ctx, req)
+			resp, err := productClient.CreateProduct(ctx, req)
 			Expect(err).NotTo(HaveOccurred())
 
 			testProductDTO := &dto.ProductDTO{
@@ -687,7 +720,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			req := testhelpers.DeleteProductRequest(createdProductId)
 
 			// Act
-			resp, err := psh.DeleteProduct(ctx, req)
+			resp, err := productClient.DeleteProduct(ctx, req)
 
 			// Assert
 			Expect(err).NotTo(HaveOccurred())
@@ -708,7 +741,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 			req := testhelpers.DeleteProductRequest("")
 
 			// Act
-			resp, err := psh.DeleteProduct(ctx, req)
+			resp, err := productClient.DeleteProduct(ctx, req)
 
 			// Assert
 			Expect(err).To(HaveOccurred())

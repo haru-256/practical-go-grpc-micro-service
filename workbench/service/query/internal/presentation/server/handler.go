@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	common "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/common/v1"
 	query "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1"
@@ -18,9 +17,8 @@ import (
 
 // CategoryServiceHandlerImpl はCategoryServiceのgRPCハンドラ実装です。
 type CategoryServiceHandlerImpl struct {
-	logger    *slog.Logger                  // ロガー
-	validator protovalidate.Validator       // Protobufバリデータ
-	repo      repository.CategoryRepository // カテゴリリポジトリ
+	logger *slog.Logger                  // ロガー
+	repo   repository.CategoryRepository // カテゴリリポジトリ
 	queryconnect.UnimplementedCategoryServiceHandler
 }
 
@@ -34,11 +32,10 @@ type CategoryServiceHandlerImpl struct {
 // Returns:
 //   - *CategoryServiceHandlerImpl: ハンドラインスタンス
 //   - error: エラー
-func NewCategoryServiceHandlerImpl(logger *slog.Logger, validator protovalidate.Validator, repo repository.CategoryRepository) (*CategoryServiceHandlerImpl, error) {
+func NewCategoryServiceHandlerImpl(logger *slog.Logger, repo repository.CategoryRepository) (*CategoryServiceHandlerImpl, error) {
 	return &CategoryServiceHandlerImpl{
-		logger:    logger,
-		validator: validator,
-		repo:      repo,
+		logger: logger,
+		repo:   repo,
 	}, nil
 }
 
@@ -52,13 +49,6 @@ func NewCategoryServiceHandlerImpl(logger *slog.Logger, validator protovalidate.
 //   - *connect.Response[query.ListCategoriesResponse]: レスポンス
 //   - error: エラー
 func (h *CategoryServiceHandlerImpl) ListCategories(ctx context.Context, req *connect.Request[query.ListCategoriesRequest]) (*connect.Response[query.ListCategoriesResponse], error) {
-	// バリデーション
-	// TODO: Interceptorで共通化する
-	if err := h.validator.Validate(req.Msg); err != nil {
-		h.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	// カテゴリ一覧を取得
 	categories, err := h.repo.List(ctx)
 	if err != nil {
@@ -83,13 +73,6 @@ func (h *CategoryServiceHandlerImpl) ListCategories(ctx context.Context, req *co
 //   - *connect.Response[query.GetCategoryByIdResponse]: レスポンス
 //   - error: エラー
 func (h *CategoryServiceHandlerImpl) GetCategoryById(ctx context.Context, req *connect.Request[query.GetCategoryByIdRequest]) (*connect.Response[query.GetCategoryByIdResponse], error) {
-	// バリデーション
-	// TODO: Interceptorで共通化する
-	if err := h.validator.Validate(req.Msg); err != nil {
-		h.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	// カテゴリを取得
 	category, err := h.repo.FindById(ctx, req.Msg.GetId())
 	if err != nil {
@@ -106,9 +89,8 @@ func (h *CategoryServiceHandlerImpl) GetCategoryById(ctx context.Context, req *c
 
 // ProductServiceHandlerImpl はProductServiceのgRPCハンドラ実装です。
 type ProductServiceHandlerImpl struct {
-	logger    *slog.Logger                 // ロガー
-	validator protovalidate.Validator      // Protobufバリデータ
-	repo      repository.ProductRepository // 商品リポジトリ
+	logger *slog.Logger                 // ロガー
+	repo   repository.ProductRepository // 商品リポジトリ
 	queryconnect.UnimplementedProductServiceHandler
 }
 
@@ -122,11 +104,10 @@ type ProductServiceHandlerImpl struct {
 // Returns:
 //   - *ProductServiceHandlerImpl: ハンドラインスタンス
 //   - error: エラー
-func NewProductServiceHandlerImpl(logger *slog.Logger, validator protovalidate.Validator, repo repository.ProductRepository) (*ProductServiceHandlerImpl, error) {
+func NewProductServiceHandlerImpl(logger *slog.Logger, repo repository.ProductRepository) (*ProductServiceHandlerImpl, error) {
 	return &ProductServiceHandlerImpl{
-		logger:    logger,
-		validator: validator,
-		repo:      repo,
+		logger: logger,
+		repo:   repo,
 	}, nil
 }
 
@@ -140,13 +121,6 @@ func NewProductServiceHandlerImpl(logger *slog.Logger, validator protovalidate.V
 //   - *connect.Response[query.ListProductsResponse]: レスポンス
 //   - error: エラー
 func (h *ProductServiceHandlerImpl) ListProducts(ctx context.Context, req *connect.Request[query.ListProductsRequest]) (*connect.Response[query.ListProductsResponse], error) {
-	// バリデーション
-	// TODO: Interceptorで共通化する
-	if err := h.validator.Validate(req.Msg); err != nil {
-		h.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	// 商品取得
 	products, err := h.repo.List(ctx)
 	if err != nil {
@@ -171,13 +145,6 @@ func (h *ProductServiceHandlerImpl) ListProducts(ctx context.Context, req *conne
 //   - *connect.Response[query.GetProductByIdResponse]: レスポンス
 //   - error: エラー
 func (h *ProductServiceHandlerImpl) GetProductById(ctx context.Context, req *connect.Request[query.GetProductByIdRequest]) (*connect.Response[query.GetProductByIdResponse], error) {
-	// バリデーション
-	// TODO: Interceptorで共通化する
-	if err := h.validator.Validate(req.Msg); err != nil {
-		h.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	// 商品を取得
 	product, err := h.repo.FindById(ctx, req.Msg.GetId())
 	if err != nil {
@@ -202,13 +169,6 @@ func (h *ProductServiceHandlerImpl) GetProductById(ctx context.Context, req *con
 //   - *connect.Response[query.SearchProductsByKeywordResponse]: レスポンス
 //   - error: エラー
 func (h *ProductServiceHandlerImpl) SearchProductsByKeyword(ctx context.Context, req *connect.Request[query.SearchProductsByKeywordRequest]) (*connect.Response[query.SearchProductsByKeywordResponse], error) {
-	// バリデーション
-	// TODO: Interceptorで共通化する
-	if err := h.validator.Validate(req.Msg); err != nil {
-		h.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	// 商品取得
 	products, err := h.repo.FindByNameLike(ctx, req.Msg.GetKeyword())
 	if err != nil {

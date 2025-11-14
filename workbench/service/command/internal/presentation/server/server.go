@@ -31,8 +31,14 @@ type CommandServer struct {
 //   - *CommandServer: 初期化されたCommandServerインスタンス
 //   - error: 初期化中にエラーが発生した場合のエラー (現在は常にnil)
 func NewCommandServer(viper *viper.Viper, logger *slog.Logger, csh cmdconnect.CategoryServiceHandler, psh cmdconnect.ProductServiceHandler) (*CommandServer, error) {
-	serverLogger := NewServerLogger(logger)
-	interceptors := connect.WithInterceptors(serverLogger.NewUnaryInterceptor())
+	reqRespLogger := NewReqRespLogger(logger)
+	validator, err := NewValidator(logger)
+	if err != nil {
+		return nil, err
+	}
+	interceptors := connect.WithInterceptors(
+		reqRespLogger.NewUnaryInterceptor(), validator.NewUnaryInterceptor(),
+	)
 
 	mux := http.NewServeMux()
 

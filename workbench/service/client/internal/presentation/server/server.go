@@ -99,7 +99,7 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 	}))
 
 	// validatorの設定
-	e.Validator = NewCustomValidator()
+	e.Validator = NewRequestValidator()
 
 	// ルーティングの設定
 	// Swaggerエンドポイントの設定

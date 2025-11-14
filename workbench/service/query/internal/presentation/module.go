@@ -18,7 +18,6 @@ var Module = fx.Module(
 	"presentation",
 	infrastructure.Module,
 	fx.Provide(
-		server.NewValidator,
 		fx.Annotate(
 			server.NewCategoryServiceHandlerImpl,
 			fx.As(new(queryconnect.CategoryServiceHandler)),

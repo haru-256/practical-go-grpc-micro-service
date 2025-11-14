@@ -5,8 +5,11 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 
 	"connectrpc.com/connect"
+	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	mock_service "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/presentation/server"
@@ -21,6 +24,7 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 		ctrl                *gomock.Controller
 		mockCategoryService *mock_service.MockCategoryService
 		csh                 *server.CategoryServiceHandlerImpl
+		client              cmdconnect.CategoryServiceClient
 		ctx                 context.Context
 	)
 
@@ -32,6 +36,27 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 		var err error
 		csh, err = server.NewCategoryServiceHandlerImpl(logger, mockCategoryService)
 		Expect(err).NotTo(HaveOccurred())
+
+		// validator interceptorを作成
+		validator, err := server.NewValidator(logger)
+		Expect(err).NotTo(HaveOccurred())
+
+		// interceptorを適用したハンドラーとテストサーバーを作成
+		mux := http.NewServeMux()
+		path, handler := cmdconnect.NewCategoryServiceHandler(
+			csh,
+			connect.WithInterceptors(validator.NewUnaryInterceptor()),
+		)
+		mux.Handle(path, handler)
+		testServer := httptest.NewServer(mux)
+		DeferCleanup(testServer.Close)
+
+		// テストクライアントを作成
+		client = cmdconnect.NewCategoryServiceClient(
+			testServer.Client(),
+			testServer.URL,
+		)
+
 		ctx = context.Background()
 	})
 
@@ -52,11 +77,11 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				}
 
 				mockCategoryService.EXPECT().
-					Add(ctx, &dto.CreateCategoryDTO{Name: categoryName}).
+					Add(gomock.Any(), &dto.CreateCategoryDTO{Name: categoryName}).
 					Return(expectedDTO, nil)
 
 				// Act
-				resp, err := csh.CreateCategory(ctx, req)
+				resp, err := client.CreateCategory(ctx, req)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
@@ -73,7 +98,7 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				req := testhelpers.CreateCategoryRequest("")
 
 				// Act
-				resp, err := csh.CreateCategory(ctx, req)
+				resp, err := client.CreateCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -92,11 +117,11 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 
 				expectedErr := errors.New("service error")
 				mockCategoryService.EXPECT().
-					Add(ctx, &dto.CreateCategoryDTO{Name: categoryName}).
+					Add(gomock.Any(), &dto.CreateCategoryDTO{Name: categoryName}).
 					Return(nil, expectedErr)
 
 				// Act
-				resp, err := csh.CreateCategory(ctx, req)
+				resp, err := client.CreateCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -122,11 +147,11 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				}
 
 				mockCategoryService.EXPECT().
-					Update(ctx, &dto.UpdateCategoryDTO{Id: categoryId, Name: newName}).
+					Update(gomock.Any(), &dto.UpdateCategoryDTO{Id: categoryId, Name: newName}).
 					Return(expectedDTO, nil)
 
 				// Act
-				resp, err := csh.UpdateCategory(ctx, req)
+				resp, err := client.UpdateCategory(ctx, req)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
@@ -143,7 +168,7 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				req := testhelpers.CreateUpdateCategoryRequest("", "NewName")
 
 				// Act
-				resp, err := csh.UpdateCategory(ctx, req)
+				resp, err := client.UpdateCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -158,7 +183,7 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				req := testhelpers.CreateUpdateCategoryRequest("test-id", "")
 
 				// Act
-				resp, err := csh.UpdateCategory(ctx, req)
+				resp, err := client.UpdateCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -178,11 +203,11 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 
 				expectedErr := errors.New("service error")
 				mockCategoryService.EXPECT().
-					Update(ctx, &dto.UpdateCategoryDTO{Id: categoryId, Name: newName}).
+					Update(gomock.Any(), &dto.UpdateCategoryDTO{Id: categoryId, Name: newName}).
 					Return(nil, expectedErr)
 
 				// Act
-				resp, err := csh.UpdateCategory(ctx, req)
+				resp, err := client.UpdateCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -207,11 +232,11 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				}
 
 				mockCategoryService.EXPECT().
-					Delete(ctx, &dto.DeleteCategoryDTO{Id: categoryId}).
+					Delete(gomock.Any(), &dto.DeleteCategoryDTO{Id: categoryId}).
 					Return(expectedDTO, nil)
 
 				// Act
-				resp, err := csh.DeleteCategory(ctx, req)
+				resp, err := client.DeleteCategory(ctx, req)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
@@ -228,7 +253,7 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 				req := testhelpers.CreateDeleteCategoryRequest("")
 
 				// Act
-				resp, err := csh.DeleteCategory(ctx, req)
+				resp, err := client.DeleteCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -247,11 +272,11 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 
 				expectedErr := errors.New("service error")
 				mockCategoryService.EXPECT().
-					Delete(ctx, &dto.DeleteCategoryDTO{Id: categoryId}).
+					Delete(gomock.Any(), &dto.DeleteCategoryDTO{Id: categoryId}).
 					Return(nil, expectedErr)
 
 				// Act
-				resp, err := csh.DeleteCategory(ctx, req)
+				resp, err := client.DeleteCategory(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -269,6 +294,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 		ctrl               *gomock.Controller
 		mockProductService *mock_service.MockProductService
 		psh                *server.ProductServiceHandlerImpl
+		client             cmdconnect.ProductServiceClient
 		ctx                context.Context
 	)
 
@@ -280,6 +306,27 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 		var err error
 		psh, err = server.NewProductServiceHandlerImpl(logger, mockProductService)
 		Expect(err).NotTo(HaveOccurred())
+
+		// validator interceptorを作成
+		validator, err := server.NewValidator(logger)
+		Expect(err).NotTo(HaveOccurred())
+
+		// interceptorを適用したハンドラーとテストサーバーを作成
+		mux := http.NewServeMux()
+		path, handler := cmdconnect.NewProductServiceHandler(
+			psh,
+			connect.WithInterceptors(validator.NewUnaryInterceptor()),
+		)
+		mux.Handle(path, handler)
+		testServer := httptest.NewServer(mux)
+		DeferCleanup(testServer.Close)
+
+		// テストクライアントを作成
+		client = cmdconnect.NewProductServiceClient(
+			http.DefaultClient,
+			testServer.URL,
+		)
+
 		ctx = context.Background()
 	})
 
@@ -308,7 +355,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				}
 
 				mockProductService.EXPECT().
-					Add(ctx, &dto.CreateProductDTO{
+					Add(gomock.Any(), &dto.CreateProductDTO{
 						Name:  productName,
 						Price: productPrice,
 						Category: &dto.CategoryDTO{
@@ -319,7 +366,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 					Return(expectedDTO, nil)
 
 				// Act
-				resp, err := psh.CreateProduct(ctx, req)
+				resp, err := client.CreateProduct(ctx, req)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
@@ -339,7 +386,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.CreateProductRequest("", 1000, "cat-id", "Category")
 
 				// Act
-				resp, err := psh.CreateProduct(ctx, req)
+				resp, err := client.CreateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -354,7 +401,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.CreateProductRequest("Product", 0, "cat-id", "Category")
 
 				// Act
-				resp, err := psh.CreateProduct(ctx, req)
+				resp, err := client.CreateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -369,7 +416,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.CreateProductRequest("Product", 1000, "", "Category")
 
 				// Act
-				resp, err := psh.CreateProduct(ctx, req)
+				resp, err := client.CreateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -391,7 +438,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 
 				expectedErr := errors.New("service error")
 				mockProductService.EXPECT().
-					Add(ctx, &dto.CreateProductDTO{
+					Add(gomock.Any(), &dto.CreateProductDTO{
 						Name:  productName,
 						Price: productPrice,
 						Category: &dto.CategoryDTO{
@@ -402,7 +449,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 					Return(nil, expectedErr)
 
 				// Act
-				resp, err := psh.CreateProduct(ctx, req)
+				resp, err := client.CreateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -435,7 +482,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				}
 
 				mockProductService.EXPECT().
-					Update(ctx, &dto.UpdateProductDTO{
+					Update(gomock.Any(), &dto.UpdateProductDTO{
 						Id:         productId,
 						Name:       productName,
 						Price:      productPrice,
@@ -444,7 +491,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 					Return(expectedDTO, nil)
 
 				// Act
-				resp, err := psh.UpdateProduct(ctx, req)
+				resp, err := client.UpdateProduct(ctx, req)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
@@ -463,7 +510,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.UpdateProductRequest("", "Product", 1000, "cat-id")
 
 				// Act
-				resp, err := psh.UpdateProduct(ctx, req)
+				resp, err := client.UpdateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -478,7 +525,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.UpdateProductRequest("prod-id", "", 1000, "cat-id")
 
 				// Act
-				resp, err := psh.UpdateProduct(ctx, req)
+				resp, err := client.UpdateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -493,7 +540,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.UpdateProductRequest("prod-id", "Product", 0, "cat-id")
 
 				// Act
-				resp, err := psh.UpdateProduct(ctx, req)
+				resp, err := client.UpdateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -508,7 +555,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.UpdateProductRequest("prod-id", "Product", 1000, "")
 
 				// Act
-				resp, err := psh.UpdateProduct(ctx, req)
+				resp, err := client.UpdateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -530,7 +577,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 
 				expectedErr := errors.New("service error")
 				mockProductService.EXPECT().
-					Update(ctx, &dto.UpdateProductDTO{
+					Update(gomock.Any(), &dto.UpdateProductDTO{
 						Id:         productId,
 						Name:       productName,
 						Price:      productPrice,
@@ -539,7 +586,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 					Return(nil, expectedErr)
 
 				// Act
-				resp, err := psh.UpdateProduct(ctx, req)
+				resp, err := client.UpdateProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -569,11 +616,11 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				}
 
 				mockProductService.EXPECT().
-					Delete(ctx, &dto.DeleteProductDTO{Id: productId}).
+					Delete(gomock.Any(), &dto.DeleteProductDTO{Id: productId}).
 					Return(expectedDTO, nil)
 
 				// Act
-				resp, err := psh.DeleteProduct(ctx, req)
+				resp, err := client.DeleteProduct(ctx, req)
 
 				// Assert
 				Expect(err).NotTo(HaveOccurred())
@@ -591,7 +638,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 				req := testhelpers.DeleteProductRequest("")
 
 				// Act
-				resp, err := psh.DeleteProduct(ctx, req)
+				resp, err := client.DeleteProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
@@ -610,11 +657,11 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 
 				expectedErr := errors.New("service error")
 				mockProductService.EXPECT().
-					Delete(ctx, &dto.DeleteProductDTO{Id: productId}).
+					Delete(gomock.Any(), &dto.DeleteProductDTO{Id: productId}).
 					Return(nil, expectedErr)
 
 				// Act
-				resp, err := psh.DeleteProduct(ctx, req)
+				resp, err := client.DeleteProduct(ctx, req)
 
 				// Assert
 				Expect(err).To(HaveOccurred())
