@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/utils"
 	_ "github.com/haru-256/practical-go-grpc-micro-service/service/client/docs"
@@ -14,6 +15,11 @@ import (
 	"github.com/spf13/viper"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"go.uber.org/fx"
+)
+
+const (
+	healthPath  = "/health"
+	swaggerPath = "/swagger"
 )
 
 // CQRSServiceServer はCQRSクライアントサービスのHTTPサーバー
@@ -88,14 +94,19 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 			return nil
 		},
 	}))
-	e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-		// ここでslogなどを使ってロギングする
-		slog.Info("Response Dump",
-			slog.String("method", c.Request().Method),
-			slog.String("uri", c.Request().RequestURI),
-			slog.Int("status", c.Response().Status),
-			slog.String("response_body", string(resBody)), // レスポンスボディを記録
-		)
+	e.Use(middleware.BodyDumpWithConfig(middleware.BodyDumpConfig{
+		Skipper: func(c echo.Context) bool {
+			// ヘルスチェックとSwaggerエンドポイントはスキップ
+			return c.Path() == healthPath || strings.HasPrefix(c.Path(), swaggerPath)
+		},
+		Handler: func(c echo.Context, reqBody, resBody []byte) {
+			logger.InfoContext(c.Request().Context(), "Response Dump",
+				slog.String("method", c.Request().Method),
+				slog.String("uri", c.Request().RequestURI),
+				slog.Int("status", c.Response().Status),
+				slog.String("response_body", string(resBody)), // レスポンスボディを記録
+			)
+		},
 	}))
 
 	// validatorの設定
@@ -104,12 +115,12 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 	// ルーティングの設定
 	// Swaggerエンドポイントの設定
 	// ヘルスチェック用エンドポイント
-	e.GET("/health", func(c echo.Context) error {
+	e.GET(healthPath, func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status": "healthy",
 		})
 	})
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET(swaggerPath+"/*", echoSwagger.WrapHandler)
 
 	// カテゴリ関連のエンドポイント
 	e.GET("/categories", handler.CategoryList)
