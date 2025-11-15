@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/utils"
 	_ "github.com/haru-256/practical-go-grpc-micro-service/service/client/docs"
@@ -88,14 +89,19 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 			return nil
 		},
 	}))
-	e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-		// ここでslogなどを使ってロギングする
-		slog.Info("Response Dump",
-			slog.String("method", c.Request().Method),
-			slog.String("uri", c.Request().RequestURI),
-			slog.Int("status", c.Response().Status),
-			slog.String("response_body", string(resBody)), // レスポンスボディを記録
-		)
+	e.Use(middleware.BodyDumpWithConfig(middleware.BodyDumpConfig{
+		Skipper: func(c echo.Context) bool {
+			// ヘルスチェックとSwaggerエンドポイントはスキップ
+			return c.Path() == "/health" || strings.HasPrefix(c.Path(), "/swagger")
+		},
+		Handler: func(c echo.Context, reqBody, resBody []byte) {
+			logger.InfoContext(c.Request().Context(), "Response Dump",
+				slog.String("method", c.Request().Method),
+				slog.String("uri", c.Request().RequestURI),
+				slog.Int("status", c.Response().Status),
+				slog.String("response_body", string(resBody)), // レスポンスボディを記録
+			)
+		},
 	}))
 
 	// validatorの設定
