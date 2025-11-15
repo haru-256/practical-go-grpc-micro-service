@@ -17,6 +17,11 @@ import (
 	"go.uber.org/fx"
 )
 
+const (
+	healthPath  = "/health"
+	swaggerPath = "/swagger"
+)
+
 // CQRSServiceServer はCQRSクライアントサービスのHTTPサーバー
 type CQRSServiceServer struct {
 	logger *slog.Logger // ロガー
@@ -92,7 +97,7 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 	e.Use(middleware.BodyDumpWithConfig(middleware.BodyDumpConfig{
 		Skipper: func(c echo.Context) bool {
 			// ヘルスチェックとSwaggerエンドポイントはスキップ
-			return c.Path() == "/health" || strings.HasPrefix(c.Path(), "/swagger")
+			return c.Path() == healthPath || strings.HasPrefix(c.Path(), swaggerPath)
 		},
 		Handler: func(c echo.Context, reqBody, resBody []byte) {
 			logger.InfoContext(c.Request().Context(), "Response Dump",
@@ -110,12 +115,12 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 	// ルーティングの設定
 	// Swaggerエンドポイントの設定
 	// ヘルスチェック用エンドポイント
-	e.GET("/health", func(c echo.Context) error {
+	e.GET(healthPath, func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
 			"status": "healthy",
 		})
 	})
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET(swaggerPath+"/*", echoSwagger.WrapHandler)
 
 	// カテゴリ関連のエンドポイント
 	e.GET("/categories", handler.CategoryList)
