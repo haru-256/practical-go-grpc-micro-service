@@ -163,7 +163,7 @@ product.ChangeName(newName)
         - `CategoryServiceHandlerImpl`: カテゴリ作成・更新・削除のエンドポイント
         - `ProductServiceHandlerImpl`: 商品作成・更新・削除のエンドポイント
     - **server.go**: HTTPサーバーとルーティングの設定
-    - **req_resp_logger.go**: リクエスト/レスポンスロギングインターセプター
+    - **共通インターセプター**: `pkg/connect/interceptor/logger.go`（リクエスト/レスポンスロギング）、`pkg/connect/interceptor/validate.go`（Protovalidate検証）
     - **handler_test.go**: ハンドラーのユニットテスト（mockを使用）
     - **handler_integration_test.go**: ハンドラーの統合テスト（実際のDBを使用）
 

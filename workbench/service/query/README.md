@@ -125,8 +125,7 @@ func (p *Product) Category() *Category { return p.category }
         - `CategoryServiceHandlerImpl`: カテゴリ一覧・詳細取得のエンドポイント
         - `ProductServiceHandlerImpl`: 商品一覧・詳細取得・検索のエンドポイント
     - **server.go**: HTTPサーバーとルーティングの設定
-    - **req_resp_logger.go**: リクエスト/レスポンスロギングインターセプター
-    - **validator.go**: Protovalidateを利用したリクエスト検証インターセプター
+    - **共通インターセプター**: `pkg/connect/interceptor/logger.go`（リクエスト/レスポンスロギング）、`pkg/connect/interceptor/validate.go`（Protovalidate検証）
     - **handler_test.go**: ハンドラーのユニットテスト（mockを使用）
     - **handler_integration_test.go**: ハンドラーの統合テスト（実際のDBを使用）
 

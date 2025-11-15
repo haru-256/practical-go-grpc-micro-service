@@ -12,7 +12,7 @@ import (
 	"connectrpc.com/connect"
 	query "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1"
 	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
-	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/connect/interceptor"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/presentation/server"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/testhelpers"

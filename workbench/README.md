@@ -38,6 +38,7 @@ workbench/
 │   └── logs/                     # データベースログ
 │
 └── pkg/                          # 共通ライブラリ
+│   └── connect/interceptor/      # Connect RPC向けのロギング/バリデーション共通インターセプター
 ```
 
 ## 🏗️ アーキテクチャ
@@ -100,6 +101,7 @@ graph TB
 - **型安全性**: Protocol Buffersによる厳密な型定義
 - **構造化ログ**: slogによるコンテキスト対応の構造化ログ
 - **依存性注入**: Uber Fxによる型安全な依存関係管理
+- **共通Connectインターセプター**: slogロギングとProtovalidate検証を共通パッケージで提供
 
 ## 🚀 クイックスタート
 

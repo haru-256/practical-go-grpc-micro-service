@@ -13,7 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
-	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/connect/interceptor"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/impl"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"

@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
 	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
-	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/connect/interceptor"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
