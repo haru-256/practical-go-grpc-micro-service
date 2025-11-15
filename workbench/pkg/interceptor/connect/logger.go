@@ -1,8 +1,9 @@
-package server
+package interceptor
 
 import (
 	"context"
 	"log/slog"
+	"reflect"
 	"time"
 
 	"connectrpc.com/connect"
@@ -60,10 +61,9 @@ func (l *ReqRespLogger) logEnd(ctx context.Context, res connect.AnyResponse, sta
 		slog.Duration("duration", duration),
 	}
 
-	if res != nil {
-		// resが非nilでもr.Any()がnilの場合があるためチェック。おそらく「interface が非nilだが、内部の値がnil」という状況
-		if r, ok := res.(*connect.Response[any]); ok && r != nil {
-			logFields = append(logFields, slog.Any("Msg", r.Any()))
+	if !isNilResponse(res) {
+		if msg := res.Any(); msg != nil {
+			logFields = append(logFields, slog.Any("Msg", msg))
 		}
 	}
 
@@ -73,6 +73,16 @@ func (l *ReqRespLogger) logEnd(ctx context.Context, res connect.AnyResponse, sta
 	} else {
 		l.logger.LogAttrs(ctx, slog.LevelInfo, "finished", logFields...)
 	}
+}
+
+// isNilResponse は型付きnilを含むレスポンスかどうかを判定します。
+func isNilResponse(res connect.AnyResponse) bool {
+	if res == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(res)
+	return (v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface) && v.IsNil()
 }
 
 // NewUnaryInterceptor はリクエストのロギングを行うUnaryインターセプターを返します。

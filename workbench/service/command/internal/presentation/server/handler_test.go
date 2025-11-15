@@ -10,6 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	mock_service "github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/mock/service"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/presentation/server"
@@ -38,7 +39,7 @@ var _ = Describe("CategoryServiceHandler Unit Test", Label("UnitTests"), func() 
 		Expect(err).NotTo(HaveOccurred())
 
 		// validator interceptorを作成
-		validator, err := server.NewValidator(logger)
+		validator, err := interceptor.NewValidator(logger)
 		Expect(err).NotTo(HaveOccurred())
 
 		// interceptorを適用したハンドラーとテストサーバーを作成
@@ -308,7 +309,7 @@ var _ = Describe("ProductServiceHandler Unit Test", Label("UnitTests"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// validator interceptorを作成
-		validator, err := server.NewValidator(logger)
+		validator, err := interceptor.NewValidator(logger)
 		Expect(err).NotTo(HaveOccurred())
 
 		// interceptorを適用したハンドラーとテストサーバーを作成

@@ -12,6 +12,7 @@ import (
 	"connectrpc.com/connect"
 	query "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1"
 	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/presentation/server"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/testhelpers"
@@ -51,8 +52,8 @@ func setupProductIntegrationTests(t *testing.T) queryconnect.ProductServiceClien
 	repo := db.NewProductRepositoryImpl(testDBConn, testhelpers.TestLogger)
 	productHandler, err := server.NewProductServiceHandlerImpl(testhelpers.TestLogger, repo)
 	require.NoError(t, err, "Failed to create product handler")
-	reqRespLogger := server.NewReqRespLogger(testhelpers.TestLogger)
-	validator, err := server.NewValidator(testhelpers.TestLogger)
+	reqRespLogger := interceptor.NewReqRespLogger(testhelpers.TestLogger)
+	validator, err := interceptor.NewValidator(testhelpers.TestLogger)
 	require.NoError(t, err)
 	mux := http.NewServeMux()
 	path, handler := queryconnect.NewProductServiceHandler(
@@ -73,8 +74,8 @@ func setupCategoryIntegrationTests(t *testing.T) queryconnect.CategoryServiceCli
 	repo := db.NewCategoryRepositoryImpl(testDBConn, testhelpers.TestLogger)
 	categoryHandler, err := server.NewCategoryServiceHandlerImpl(testhelpers.TestLogger, repo)
 	require.NoError(t, err, "Failed to create category handler")
-	reqRespLogger := server.NewReqRespLogger(testhelpers.TestLogger)
-	validator, err := server.NewValidator(testhelpers.TestLogger)
+	reqRespLogger := interceptor.NewReqRespLogger(testhelpers.TestLogger)
+	validator, err := interceptor.NewValidator(testhelpers.TestLogger)
 	require.NoError(t, err)
 	mux := http.NewServeMux()
 	path, handler := queryconnect.NewCategoryServiceHandler(

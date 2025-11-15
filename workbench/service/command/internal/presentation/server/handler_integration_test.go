@@ -13,6 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/impl"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
@@ -57,7 +58,7 @@ var _ = Describe("CategoryServiceHandler Integration Test", Label("IntegrationTe
 		csh, err = server.NewCategoryServiceHandlerImpl(logger, cs)
 		Expect(err).NotTo(HaveOccurred())
 
-		validator, err := server.NewValidator(logger)
+		validator, err := interceptor.NewValidator(logger)
 		Expect(err).NotTo(HaveOccurred())
 
 		mux := http.NewServeMux()
@@ -338,7 +339,7 @@ var _ = Describe("ProductServiceHandler Integration Test", Label("IntegrationTes
 		psh, err = server.NewProductServiceHandlerImpl(logger, ps)
 		Expect(err).NotTo(HaveOccurred())
 
-		validator, err := server.NewValidator(logger)
+		validator, err := interceptor.NewValidator(logger)
 		Expect(err).NotTo(HaveOccurred())
 
 		mux := http.NewServeMux()

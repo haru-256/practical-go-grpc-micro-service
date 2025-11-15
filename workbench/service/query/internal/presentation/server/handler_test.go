@@ -11,6 +11,7 @@ import (
 	query "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1"
 	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/pkg/errs"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/interceptor/connect"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/domain/models"
 	mock_repository "github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/mock/repository"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/testhelpers"
@@ -433,8 +434,8 @@ func setupProductHandler(t *testing.T) *productHandlerSetup {
 	handler, err := NewProductServiceHandlerImpl(testhelpers.TestLogger, repo)
 	require.NoError(t, err)
 
-	reqRespLogger := NewReqRespLogger(testhelpers.TestLogger)
-	validator, err := NewValidator(testhelpers.TestLogger)
+	reqRespLogger := interceptor.NewReqRespLogger(testhelpers.TestLogger)
+	validator, err := interceptor.NewValidator(testhelpers.TestLogger)
 	require.NoError(t, err)
 
 	mux := http.NewServeMux()
@@ -485,8 +486,8 @@ func setupCategoryHandler(t *testing.T) *categoryHandlerSetup {
 	handler, err := NewCategoryServiceHandlerImpl(testhelpers.TestLogger, repo)
 	require.NoError(t, err)
 
-	reqRespLogger := NewReqRespLogger(testhelpers.TestLogger)
-	validator, err := NewValidator(testhelpers.TestLogger)
+	reqRespLogger := interceptor.NewReqRespLogger(testhelpers.TestLogger)
+	validator, err := interceptor.NewValidator(testhelpers.TestLogger)
 	require.NoError(t, err)
 
 	mux := http.NewServeMux()
