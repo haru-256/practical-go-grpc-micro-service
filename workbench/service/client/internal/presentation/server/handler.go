@@ -11,17 +11,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// CustomValidator はEchoのバリデータインターフェースを実装する構造体
-type CustomValidator struct {
+// RequestValidator はEchoのバリデータインターフェースを実装する構造体
+type RequestValidator struct {
 	validator *validator.Validate // validator/v10のバリデータ
 }
 
-// NewCustomValidator はCustomValidatorを生成します。
+// NewRequestValidator はRequestValidatorを生成します。
 //
 // Returns:
-//   - *CustomValidator: CustomValidatorのインスタンス
-func NewCustomValidator() *CustomValidator {
-	return &CustomValidator{
+//   - *RequestValidator: RequestValidatorのインスタンス
+func NewRequestValidator() *RequestValidator {
+	return &RequestValidator{
 		validator: validator.New(),
 	}
 }
@@ -33,7 +33,7 @@ func NewCustomValidator() *CustomValidator {
 //
 // Returns:
 //   - error: バリデーションエラー（エラーがない場合はnil）
-func (cv *CustomValidator) Validate(i interface{}) error {
+func (cv *RequestValidator) Validate(i interface{}) error {
 	if err := cv.validator.Struct(i); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

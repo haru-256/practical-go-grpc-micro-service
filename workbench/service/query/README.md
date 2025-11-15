@@ -125,6 +125,7 @@ func (p *Product) Category() *Category { return p.category }
         - `CategoryServiceHandlerImpl`: カテゴリ一覧・詳細取得のエンドポイント
         - `ProductServiceHandlerImpl`: 商品一覧・詳細取得・検索のエンドポイント
     - **server.go**: HTTPサーバーとルーティングの設定
+    - **共通インターセプター**: `pkg/connect/interceptor/logger.go`（リクエスト/レスポンスロギング）、`pkg/connect/interceptor/validate.go`（Protovalidate検証）
     - **handler_test.go**: ハンドラーのユニットテスト（mockを使用）
     - **handler_integration_test.go**: ハンドラーの統合テスト（実際のDBを使用）
 
@@ -143,7 +144,6 @@ func (p *Product) Category() *Category { return p.category }
     - `SetupDB`: テスト用データベース接続の初期化
     - `TeardownDB`: データベース接続のクローズ
     - `TestLogger`: テスト用ロガー（出力破棄）
-    - `TestValidator`: テスト用Protobufバリデータ
     - `IntegrationTestSetup`: 統合テスト用セットアップ構造体
 
 ## アーキテクチャパターン
@@ -183,13 +183,11 @@ Query側は比較的シンプルな構造を持ち、以下の3層で構成さ�
 // ✅ 推奨: インターフェースを受け取り、具象型を返す
 func NewCategoryServiceHandlerImpl(
     logger *slog.Logger,
-    validator protovalidate.Validator,
     repo repository.CategoryRepository,  // インターフェースを受け入れる
 ) (*CategoryServiceHandlerImpl, error) {  // 具象型を返す
     return &CategoryServiceHandlerImpl{
-        logger:    logger,
-        validator: validator,
-        repo:      repo,
+        logger: logger,
+        repo:   repo,
     }, nil
 }
 ```
@@ -360,9 +358,6 @@ defer testhelpers.TeardownDB(dbConn)
 
 // テスト用ロガー（出力破棄）
 logger := testhelpers.TestLogger
-
-// テスト用バリデータ
-validator := testhelpers.TestValidator
 
 // 統合テスト用セットアップ
 setup := &testhelpers.IntegrationTestSetup{

@@ -1,29 +1,30 @@
-package server
+package interceptor
 
 import (
 	"context"
 	"log/slog"
+	"reflect"
 	"time"
 
 	"connectrpc.com/connect"
 )
 
-// ServerLogger はConnect RPCリクエストのロギングを管理する構造体です。
+// ReqRespLogger はConnect RPCリクエストのロギングを管理する構造体です。
 //
 // リクエストの開始・終了、エラー、レスポンス情報などを構造化ログとして出力します。
-type ServerLogger struct {
+type ReqRespLogger struct {
 	logger *slog.Logger
 }
 
-// NewServerLogger はServerLoggerの新しいインスタンスを作成します。
+// NewReqRespLogger はReqRespLoggerの新しいインスタンスを作成します。
 //
 // Parameters:
 //   - logger: 構造化ロギング用のslogロガー
 //
 // Returns:
-//   - *ServerLogger: 初期化されたServerLoggerインスタンス
-func NewServerLogger(logger *slog.Logger) *ServerLogger {
-	return &ServerLogger{
+//   - *ReqRespLogger: 初期化されたReqRespLoggerインスタンス
+func NewReqRespLogger(logger *slog.Logger) *ReqRespLogger {
+	return &ReqRespLogger{
 		logger: logger,
 	}
 }
@@ -33,7 +34,7 @@ func NewServerLogger(logger *slog.Logger) *ServerLogger {
 // Parameters:
 //   - ctx: リクエストのコンテキスト
 //   - req: Connect RPCリクエスト
-func (l *ServerLogger) logStart(ctx context.Context, req connect.AnyRequest) {
+func (l *ReqRespLogger) logStart(ctx context.Context, req connect.AnyRequest) {
 	l.logger.LogAttrs(
 		ctx,
 		slog.LevelInfo,
@@ -53,17 +54,16 @@ func (l *ServerLogger) logStart(ctx context.Context, req connect.AnyRequest) {
 //   - res: Connect RPCレスポンス
 //   - startTime: リクエスト開始時刻
 //   - err: 処理中に発生したエラー (正常終了時はnil)
-func (l *ServerLogger) logEnd(ctx context.Context, res connect.AnyResponse, startTime time.Time, err error) {
+func (l *ReqRespLogger) logEnd(ctx context.Context, res connect.AnyResponse, startTime time.Time, err error) {
 	duration := time.Since(startTime)
 	logFields := []slog.Attr{
 		slog.String("code", connect.CodeOf(err).String()),
 		slog.Duration("duration", duration),
 	}
 
-	if res != nil {
-		// resが非nilでもr.Any()がnilの場合があるためチェック。おそらく「interface が非nilだが、内部の値がnil」という状況
-		if r, ok := res.(*connect.Response[any]); ok && r != nil {
-			logFields = append(logFields, slog.Any("Msg", r.Any()))
+	if !isNilResponse(res) {
+		if msg := res.Any(); msg != nil {
+			logFields = append(logFields, slog.Any("Msg", msg))
 		}
 	}
 
@@ -75,11 +75,21 @@ func (l *ServerLogger) logEnd(ctx context.Context, res connect.AnyResponse, star
 	}
 }
 
+// isNilResponse は型付きnilを含むレスポンスかどうかを判定します。
+func isNilResponse(res connect.AnyResponse) bool {
+	if res == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(res)
+	return (v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface) && v.IsNil()
+}
+
 // NewUnaryInterceptor はリクエストのロギングを行うUnaryインターセプターを返します。
 //
 // Returns:
 //   - connect.UnaryInterceptorFunc: ログ出力機能を持つインターセプター関数
-func (l *ServerLogger) NewUnaryInterceptor() connect.UnaryInterceptorFunc {
+func (l *ReqRespLogger) NewUnaryInterceptor() connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			startTime := time.Now()

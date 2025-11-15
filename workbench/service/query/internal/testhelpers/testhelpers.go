@@ -4,7 +4,6 @@ import (
 	"io"
 	"log/slog"
 
-	"buf.build/go/protovalidate"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
 	"gorm.io/gorm"
@@ -12,15 +11,6 @@ import (
 
 // TestLogger はテスト用のロガーです。出力は破棄されます。
 var TestLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
-
-// TestValidator はテスト用のProtobufバリデータです。
-var TestValidator = func() protovalidate.Validator {
-	v, err := protovalidate.New()
-	if err != nil {
-		panic(err)
-	}
-	return v
-}()
 
 // SetupDB はテスト用のデータベース接続を確立します。
 //

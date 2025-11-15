@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
 	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/connect/interceptor"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -31,8 +32,15 @@ type QueryServer struct {
 //   - *QueryServer: 初期化されたQueryServerインスタンス
 //   - error: 初期化中にエラーが発生した場合のエラー (現在は常にnil)
 func NewQueryServer(viper *viper.Viper, logger *slog.Logger, csh queryconnect.CategoryServiceHandler, psh queryconnect.ProductServiceHandler) (*QueryServer, error) {
-	serverLogger := NewServerLogger(logger)
-	interceptors := connect.WithInterceptors(serverLogger.NewUnaryInterceptor())
+	reqRespLogger := interceptor.NewReqRespLogger(logger)
+	validator, err := interceptor.NewValidator(logger)
+	if err != nil {
+		return nil, err
+	}
+	interceptors := connect.WithInterceptors(
+		reqRespLogger.NewUnaryInterceptor(),
+		validator.NewUnaryInterceptor(),
+	)
 
 	mux := http.NewServeMux()
 

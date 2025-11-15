@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 
-	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	cmd "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1"
 	cmdconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/command/v1/commandv1connect"
@@ -15,17 +13,6 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/command/internal/application/service"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
-
-var globalValidator protovalidate.Validator
-
-func init() {
-	v, err := protovalidate.New()
-	if err != nil {
-		slog.Error("Failed to create global validator", slog.Any("error", err))
-		os.Exit(1)
-	}
-	globalValidator = v
-}
 
 // createCategoryFromDTO はDTOからProtobufのCategoryを作成します。
 func createCategoryFromDTO(dto *dto.CategoryDTO) *common.Category {
@@ -49,9 +36,8 @@ func createProductFromDTO(dto *dto.ProductDTO) *common.Product {
 // CategoryServiceHandlerImpl はカテゴリサービスのgRPCハンドラー実装です。
 // Connect RPCを使用してカテゴリの作成、更新、削除のエンドポイントを提供します。
 type CategoryServiceHandlerImpl struct {
-	logger    *slog.Logger
-	validator protovalidate.Validator
-	cs        service.CategoryService
+	logger *slog.Logger
+	cs     service.CategoryService
 	cmdconnect.UnimplementedCategoryServiceHandler
 }
 
@@ -66,9 +52,8 @@ type CategoryServiceHandlerImpl struct {
 //   - error: エラーが発生した場合（現在は常にnil）
 func NewCategoryServiceHandlerImpl(logger *slog.Logger, cs service.CategoryService) (*CategoryServiceHandlerImpl, error) {
 	return &CategoryServiceHandlerImpl{
-		logger:    logger,
-		validator: globalValidator,
-		cs:        cs,
+		logger: logger,
+		cs:     cs,
 	}, nil
 }
 
@@ -82,13 +67,6 @@ func NewCategoryServiceHandlerImpl(logger *slog.Logger, cs service.CategoryServi
 //   - *connect.Response[cmd.CreateCategoryResponse]: 作成されたカテゴリ情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *CategoryServiceHandlerImpl) CreateCategory(ctx context.Context, req *connect.Request[cmd.CreateCategoryRequest]) (*connect.Response[cmd.CreateCategoryResponse], error) {
-	// validationエラーはクライアント側の問題なのでInfoログとする
-	// TODO: Interceptorで共通化する
-	if err := s.validator.Validate(req.Msg); err != nil {
-		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	createCategoryDTO := &dto.CreateCategoryDTO{
 		Name: req.Msg.GetName().GetValue(),
 	}
@@ -115,12 +93,6 @@ func (s *CategoryServiceHandlerImpl) CreateCategory(ctx context.Context, req *co
 //   - *connect.Response[cmd.UpdateCategoryResponse]: 更新されたカテゴリ情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *CategoryServiceHandlerImpl) UpdateCategory(ctx context.Context, req *connect.Request[cmd.UpdateCategoryRequest]) (*connect.Response[cmd.UpdateCategoryResponse], error) {
-	// TODO: Interceptorで共通化する
-	if err := s.validator.Validate(req.Msg); err != nil {
-		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	updateCategoryDTO := &dto.UpdateCategoryDTO{
 		Id:   req.Msg.GetCategory().GetId().GetValue(),
 		Name: req.Msg.GetCategory().GetName().GetValue(),
@@ -148,12 +120,6 @@ func (s *CategoryServiceHandlerImpl) UpdateCategory(ctx context.Context, req *co
 //   - *connect.Response[cmd.DeleteCategoryResponse]: 削除されたカテゴリ情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *CategoryServiceHandlerImpl) DeleteCategory(ctx context.Context, req *connect.Request[cmd.DeleteCategoryRequest]) (*connect.Response[cmd.DeleteCategoryResponse], error) {
-	// TODO: Interceptorで共通化する
-	if err := s.validator.Validate(req.Msg); err != nil {
-		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	deleteCategoryDTO := &dto.DeleteCategoryDTO{
 		Id: req.Msg.GetCategoryId().GetValue(),
 	}
@@ -173,9 +139,8 @@ func (s *CategoryServiceHandlerImpl) DeleteCategory(ctx context.Context, req *co
 // ProductServiceHandlerImpl は商品サービスのgRPCハンドラー実装です。
 // Connect RPCを使用して商品の作成、更新、削除のエンドポイントを提供します。
 type ProductServiceHandlerImpl struct {
-	logger    *slog.Logger
-	validator protovalidate.Validator
-	ps        service.ProductService
+	logger *slog.Logger
+	ps     service.ProductService
 	cmdconnect.UnimplementedProductServiceHandler
 }
 
@@ -190,9 +155,8 @@ type ProductServiceHandlerImpl struct {
 //   - error: エラーが発生した場合（現在は常にnil）
 func NewProductServiceHandlerImpl(logger *slog.Logger, ps service.ProductService) (*ProductServiceHandlerImpl, error) {
 	return &ProductServiceHandlerImpl{
-		logger:    logger,
-		validator: globalValidator,
-		ps:        ps,
+		logger: logger,
+		ps:     ps,
 	}, nil
 }
 
@@ -206,12 +170,6 @@ func NewProductServiceHandlerImpl(logger *slog.Logger, ps service.ProductService
 //   - *connect.Response[cmd.CreateProductResponse]: 作成された商品情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *ProductServiceHandlerImpl) CreateProduct(ctx context.Context, req *connect.Request[cmd.CreateProductRequest]) (*connect.Response[cmd.CreateProductResponse], error) {
-	// TODO: Interceptorで共通化する
-	if err := s.validator.Validate(req.Msg); err != nil {
-		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	createProductDTO := &dto.CreateProductDTO{
 		Name:  req.Msg.GetProduct().GetName().GetValue(),
 		Price: uint32(req.Msg.GetProduct().GetPrice().GetValue()),
@@ -243,12 +201,6 @@ func (s *ProductServiceHandlerImpl) CreateProduct(ctx context.Context, req *conn
 //   - *connect.Response[cmd.UpdateProductResponse]: 更新された商品情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *ProductServiceHandlerImpl) UpdateProduct(ctx context.Context, req *connect.Request[cmd.UpdateProductRequest]) (*connect.Response[cmd.UpdateProductResponse], error) {
-	// TODO: Interceptorで共通化する
-	if err := s.validator.Validate(req.Msg); err != nil {
-		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	updateProductDTO := &dto.UpdateProductDTO{
 		Id:         req.Msg.GetProduct().GetId().GetValue(),
 		Name:       req.Msg.GetProduct().GetName().GetValue(),
@@ -278,12 +230,6 @@ func (s *ProductServiceHandlerImpl) UpdateProduct(ctx context.Context, req *conn
 //   - *connect.Response[cmd.DeleteProductResponse]: 削除された商品情報を含むレスポンス
 //   - error: バリデーションエラーの場合はCodeInvalidArgument、サービス層エラーの場合はCodeInternal
 func (s *ProductServiceHandlerImpl) DeleteProduct(ctx context.Context, req *connect.Request[cmd.DeleteProductRequest]) (*connect.Response[cmd.DeleteProductResponse], error) {
-	// TODO: Interceptorで共通化する
-	if err := s.validator.Validate(req.Msg); err != nil {
-		s.logger.InfoContext(ctx, "Request validation failed", "error", err)
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("validation error: %w", err))
-	}
-
 	deleteProductDTO := &dto.DeleteProductDTO{
 		Id: req.Msg.GetProductId().GetValue(),
 	}

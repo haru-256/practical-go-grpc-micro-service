@@ -4,11 +4,15 @@ package server_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
 	"connectrpc.com/connect"
 	query "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1"
+	queryconnect "github.com/haru-256/practical-go-grpc-micro-service/api/gen/go/query/v1/queryv1connect"
+	interceptor "github.com/haru-256/practical-go-grpc-micro-service/pkg/connect/interceptor"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/infrastructure/db"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/presentation/server"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/query/internal/testhelpers"
@@ -43,34 +47,56 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func setupProductIntegrationTests(t *testing.T) *server.ProductServiceHandlerImpl {
+func setupProductIntegrationTests(t *testing.T) queryconnect.ProductServiceClient {
 	t.Helper()
-	// リポジトリの初期化
 	repo := db.NewProductRepositoryImpl(testDBConn, testhelpers.TestLogger)
-	// ハンドラーの初期化
-	productHandler, err := server.NewProductServiceHandlerImpl(testhelpers.TestLogger, testhelpers.TestValidator, repo)
+	productHandler, err := server.NewProductServiceHandlerImpl(testhelpers.TestLogger, repo)
 	require.NoError(t, err, "Failed to create product handler")
-	return productHandler
+	reqRespLogger := interceptor.NewReqRespLogger(testhelpers.TestLogger)
+	validator, err := interceptor.NewValidator(testhelpers.TestLogger)
+	require.NoError(t, err)
+	mux := http.NewServeMux()
+	path, handler := queryconnect.NewProductServiceHandler(
+		productHandler,
+		connect.WithInterceptors(
+			reqRespLogger.NewUnaryInterceptor(),
+			validator.NewUnaryInterceptor(),
+		),
+	)
+	mux.Handle(path, handler)
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return queryconnect.NewProductServiceClient(server.Client(), server.URL)
 }
 
-func setupCategoryIntegrationTests(t *testing.T) *server.CategoryServiceHandlerImpl {
+func setupCategoryIntegrationTests(t *testing.T) queryconnect.CategoryServiceClient {
 	t.Helper()
-	// リポジトリの初期化
 	repo := db.NewCategoryRepositoryImpl(testDBConn, testhelpers.TestLogger)
-	// ハンドラーの初期化
-	categoryHandler, err := server.NewCategoryServiceHandlerImpl(testhelpers.TestLogger, testhelpers.TestValidator, repo)
+	categoryHandler, err := server.NewCategoryServiceHandlerImpl(testhelpers.TestLogger, repo)
 	require.NoError(t, err, "Failed to create category handler")
-	return categoryHandler
+	reqRespLogger := interceptor.NewReqRespLogger(testhelpers.TestLogger)
+	validator, err := interceptor.NewValidator(testhelpers.TestLogger)
+	require.NoError(t, err)
+	mux := http.NewServeMux()
+	path, handler := queryconnect.NewCategoryServiceHandler(
+		categoryHandler,
+		connect.WithInterceptors(
+			reqRespLogger.NewUnaryInterceptor(),
+			validator.NewUnaryInterceptor(),
+		),
+	)
+	mux.Handle(path, handler)
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return queryconnect.NewCategoryServiceClient(server.Client(), server.URL)
 }
 
 func TestCategoryServiceHandlerImpl_ListCategories_Integration(t *testing.T) {
-	// Arrange
-	h := setupCategoryIntegrationTests(t)
+	client := setupCategoryIntegrationTests(t)
 	ctx := context.Background()
 	req := connect.NewRequest(&query.ListCategoriesRequest{})
 
-	// Act
-	res, err := h.ListCategories(ctx, req)
+	res, err := client.ListCategories(ctx, req)
 
 	// Assert
 	require.NoError(t, err, "ListCategoriesでエラーが発生しました")
@@ -86,12 +112,11 @@ func TestCategoryServiceHandlerImpl_ListCategories_Integration(t *testing.T) {
 }
 
 func TestCategoryServiceHandlerImpl_GetCategoryById_Integration(t *testing.T) {
-	// Arrange
-	h := setupCategoryIntegrationTests(t)
+	client := setupCategoryIntegrationTests(t)
 	ctx := context.Background()
 
 	// まずListで取得してIDを確認
-	listRes, err := h.ListCategories(ctx, connect.NewRequest(&query.ListCategoriesRequest{}))
+	listRes, err := client.ListCategories(ctx, connect.NewRequest(&query.ListCategoriesRequest{}))
 	require.NoError(t, err, "カテゴリ一覧の取得に失敗しました")
 	require.NotEmpty(t, listRes.Msg.GetCategories(), "カテゴリが存在しません")
 
@@ -101,7 +126,7 @@ func TestCategoryServiceHandlerImpl_GetCategoryById_Integration(t *testing.T) {
 	req.Msg.SetId(existingID)
 
 	// Act
-	res, err := h.GetCategoryById(ctx, req)
+	res, err := client.GetCategoryById(ctx, req)
 
 	// Assert
 	require.NoError(t, err, "GetCategoryByIdでエラーが発生しました")
@@ -114,13 +139,11 @@ func TestCategoryServiceHandlerImpl_GetCategoryById_Integration(t *testing.T) {
 }
 
 func TestProductServiceHandlerImpl_ListProducts_Integration(t *testing.T) {
-	// Arrange
-	h := setupProductIntegrationTests(t)
+	client := setupProductIntegrationTests(t)
 	ctx := context.Background()
 	req := connect.NewRequest(&query.ListProductsRequest{})
 
-	// Act
-	res, err := h.ListProducts(ctx, req)
+	res, err := client.ListProducts(ctx, req)
 
 	// Assert
 	require.NoError(t, err, "ListProductsでエラーが発生しました")
@@ -140,12 +163,11 @@ func TestProductServiceHandlerImpl_ListProducts_Integration(t *testing.T) {
 }
 
 func TestProductServiceHandlerImpl_GetProductById_Integration(t *testing.T) {
-	// Arrange
-	h := setupProductIntegrationTests(t)
+	client := setupProductIntegrationTests(t)
 	ctx := context.Background()
 
 	// まずListで取得してIDを確認
-	listRes, err := h.ListProducts(ctx, connect.NewRequest(&query.ListProductsRequest{}))
+	listRes, err := client.ListProducts(ctx, connect.NewRequest(&query.ListProductsRequest{}))
 	require.NoError(t, err, "商品一覧の取得に失敗しました")
 	require.NotEmpty(t, listRes.Msg.GetProducts(), "商品が存在しません")
 
@@ -155,7 +177,7 @@ func TestProductServiceHandlerImpl_GetProductById_Integration(t *testing.T) {
 	req.Msg.SetId(existingID)
 
 	// Act
-	res, err := h.GetProductById(ctx, req)
+	res, err := client.GetProductById(ctx, req)
 
 	// Assert
 	require.NoError(t, err, "GetProductByIdでエラーが発生しました")
@@ -170,12 +192,11 @@ func TestProductServiceHandlerImpl_GetProductById_Integration(t *testing.T) {
 }
 
 func TestProductServiceHandlerImpl_SearchProductsByKeyword_Integration(t *testing.T) {
-	// Arrange
-	h := setupProductIntegrationTests(t)
+	client := setupProductIntegrationTests(t)
 	ctx := context.Background()
 
 	// まず全商品を取得してキーワードを決定
-	listRes, err := h.ListProducts(ctx, connect.NewRequest(&query.ListProductsRequest{}))
+	listRes, err := client.ListProducts(ctx, connect.NewRequest(&query.ListProductsRequest{}))
 	require.NoError(t, err, "商品一覧の取得に失敗しました")
 	require.NotEmpty(t, listRes.Msg.GetProducts(), "商品が存在しません")
 
@@ -184,16 +205,17 @@ func TestProductServiceHandlerImpl_SearchProductsByKeyword_Integration(t *testin
 	require.NotEmpty(t, firstProductName, "商品名が空です")
 
 	// 商品名の一部をキーワードとして使用（最初の5文字、または全体）
+	runes := []rune(firstProductName)
 	keyword := firstProductName
-	if len(firstProductName) > 5 {
-		keyword = firstProductName[:5]
+	if len(runes) > 5 {
+		keyword = string(runes[:5])
 	}
 
 	req := connect.NewRequest(&query.SearchProductsByKeywordRequest{})
 	req.Msg.SetKeyword(keyword)
 
 	// Act
-	res, err := h.SearchProductsByKeyword(ctx, req)
+	res, err := client.SearchProductsByKeyword(ctx, req)
 
 	// Assert
 	require.NoError(t, err, "SearchProductsByKeywordでエラーが発生しました")

@@ -55,19 +55,19 @@ command/
 アプリケーション層（Application Layer）を実装します。
 
 - **責務**:
-  - ユースケースの実装
-  - ドメインオブジェクトの協調
-  - トランザクション管理
-  - 外部サービスとの連携
+    - ユースケースの実装
+    - ドメインオブジェクトの協調
+    - トランザクション管理
+    - 外部サービスとの連携
 
 - **service/**: サービスインターフェース定義
-  - `ProductService`: 商品に関するビジネスロジック（Add/Update/Delete）
-  - `CategoryService`: カテゴリに関するビジネスロジック（Add/Update/Delete）
-  - `TransactionManager`: トランザクション管理
+    - `ProductService`: 商品に関するビジネスロジック（Add/Update/Delete）
+    - `CategoryService`: カテゴリに関するビジネスロジック（Add/Update/Delete）
+    - `TransactionManager`: トランザクション管理
 
 - **impl/**: サービス実装
-  - `ProductServiceImpl`: ProductServiceの具象実装
-  - `CategoryServiceImpl`: CategoryServiceの具象実装
+    - `ProductServiceImpl`: ProductServiceの具象実装
+    - `CategoryServiceImpl`: CategoryServiceの具象実装
 
 - **module.go**: Uber Fxモジュール定義（アプリケーション層の依存関係を構成）
 
@@ -76,14 +76,14 @@ command/
 ドメイン層（Domain Layer）を実装します。CQRSのCoreとなる部分です。
 
 - **責務**:
-  - ビジネスルールとドメインロジック
-  - エンティティとバリューオブジェクト
-  - ドメインサービス
-  - リポジトリインターフェース
+    - ビジネスルールとドメインロジック
+    - エンティティとバリューオブジェクト
+    - ドメインサービス
+    - リポジトリインターフェース
 
 - **models/**: ドメインモデル（エンティティ、バリューオブジェクト）の定義
-  - **products/**: 商品集約（Product エンティティ、ProductId、ProductName、ProductPrice、ProductRepository）
-  - **categories/**: カテゴリ集約（Category エンティティ、CategoryId、CategoryName、CategoryRepository）
+    - **products/**: 商品集約（Product エンティティ、ProductId、ProductName、ProductPrice、ProductRepository）
+    - **categories/**: カテゴリ集約（Category エンティティ、CategoryId、CategoryName、CategoryRepository）
 
 #### ドメイン層の設計原則
 
@@ -135,37 +135,37 @@ product.ChangeName(newName)
 インフラストラクチャ層（Infrastructure Layer）を実装します。
 
 - **責務**:
-  - データベースへのアクセス（リポジトリ実装）
-  - 外部APIとの通信
-  - メッセージング（Event Bus、Message Queue）
-  - ファイルシステムへのアクセス
+    - データベースへのアクセス（リポジトリ実装）
+    - 外部APIとの通信
+    - メッセージング（Event Bus、Message Queue）
+    - ファイルシステムへのアクセス
 
 - **sqlboiler/**: SQLBoilerを使用したデータベース実装
-  - **repository/**: リポジトリ実装
-    - `ProductRepositoryImpl`: 商品リポジトリの具象実装
-    - `CategoryRepositoryImpl`: カテゴリリポジトリの具象実装
-    - `TransactionManagerImpl`: トランザクションマネージャーの具象実装
-  - **handler/**: データベース接続管理
-  - **module.go**: Uber Fxモジュール定義（インフラ層の依存関係を構成）
+    - **repository/**: リポジトリ実装
+        - `ProductRepositoryImpl`: 商品リポジトリの具象実装
+        - `CategoryRepositoryImpl`: カテゴリリポジトリの具象実装
+        - `TransactionManagerImpl`: トランザクションマネージャーの具象実装
+    - **handler/**: データベース接続管理
+    - **module.go**: Uber Fxモジュール定義（インフラ層の依存関係を構成）
 
 ### internal/presentation/
 
 プレゼンテーション層（Presentation Layer）を実装します。
 
 - **責務**:
-  - gRPC/Connect RPCハンドラーの実装
-  - リクエスト/レスポンスの変換
-  - 入力値の検証（Protovalidateを使用）
-  - サーバーのライフサイクル管理
+    - gRPC/Connect RPCハンドラーの実装
+    - リクエスト/レスポンスの変換
+    - 入力値の検証（Protovalidateを使用）
+    - サーバーのライフサイクル管理
 
 - **server/**: gRPC/Connect RPCサーバー実装
-  - **handler.go**: CategoryServiceとProductServiceのハンドラー実装
-    - `CategoryServiceHandlerImpl`: カテゴリ作成・更新・削除のエンドポイント
-    - `ProductServiceHandlerImpl`: 商品作成・更新・削除のエンドポイント
-  - **server.go**: HTTPサーバーとルーティングの設定
-  - **server_logger.go**: ロギングインターセプター
-  - **handler_test.go**: ハンドラーのユニットテスト（mockを使用）
-  - **handler_integration_test.go**: ハンドラーの統合テスト（実際のDBを使用）
+    - **handler.go**: CategoryServiceとProductServiceのハンドラー実装
+        - `CategoryServiceHandlerImpl`: カテゴリ作成・更新・削除のエンドポイント
+        - `ProductServiceHandlerImpl`: 商品作成・更新・削除のエンドポイント
+    - **server.go**: HTTPサーバーとルーティングの設定
+    - **共通インターセプター**: `pkg/connect/interceptor/logger.go`（リクエスト/レスポンスロギング）、`pkg/connect/interceptor/validate.go`（Protovalidate検証）
+    - **handler_test.go**: ハンドラーのユニットテスト（mockを使用）
+    - **handler_integration_test.go**: ハンドラーの統合テスト（実際のDBを使用）
 
 - **module.go**: Uber Fxモジュール定義（プレゼンテーション層の依存関係とライフサイクル管理）
 
@@ -174,9 +174,9 @@ product.ChangeName(newName)
 設定管理を実装します。
 
 - **責務**:
-  - Viperを使用した設定ファイルの読み込み
-  - 環境変数のバインディング
-  - 設定値の提供
+    - Viperを使用した設定ファイルの読み込み
+    - 環境変数のバインディング
+    - 設定値の提供
 
 - **config.go**: Viper設定の初期化とバインディング
 
@@ -185,29 +185,29 @@ product.ChangeName(newName)
 テストで使用するヘルパー関数を提供します。
 
 - **責務**:
-  - テストデータの生成
-  - データベースのセットアップとクリーンアップ
-  - リクエストビルダー
-  - データ検証ヘルパー
+    - テストデータの生成
+    - データベースのセットアップとクリーンアップ
+    - リクエストビルダー
+    - データ検証ヘルパー
 
 - **db.go**: データベース初期化と検証ヘルパー
-  - `SetupDatabase`: テスト用データベース接続の初期化
-  - `VerifyCategoryById/ByName`: カテゴリの存在確認
-  - `VerifyProductById/ByName`: 商品の存在確認
+    - `SetupDatabase`: テスト用データベース接続の初期化
+    - `VerifyCategoryById/ByName`: カテゴリの存在確認
+    - `VerifyProductById/ByName`: 商品の存在確認
 
 - **cleanup.go**: テストデータのクリーンアップ
-  - `CleanupCategory`: カテゴリの削除
-  - `CleanupProduct`: 商品の削除
-  - `GenerateUniqueCategoryName`: ユニークなカテゴリ名生成
-  - `GenerateUniqueProductName`: ユニークな商品名生成
+    - `CleanupCategory`: カテゴリの削除
+    - `CleanupProduct`: 商品の削除
+    - `GenerateUniqueCategoryName`: ユニークなカテゴリ名生成
+    - `GenerateUniqueProductName`: ユニークな商品名生成
 
 - **request_builder.go**: gRPCリクエストビルダー
-  - `CreateCategoryRequest`: カテゴリ作成リクエスト生成
-  - `CreateUpdateCategoryRequest`: カテゴリ更新リクエスト生成
-  - `CreateDeleteCategoryRequest`: カテゴリ削除リクエスト生成
-  - `CreateProductRequest`: 商品作成リクエスト生成
-  - `UpdateProductRequest`: 商品更新リクエスト生成
-  - `DeleteProductRequest`: 商品削除リクエスト生成
+    - `CreateCategoryRequest`: カテゴリ作成リクエスト生成
+    - `CreateUpdateCategoryRequest`: カテゴリ更新リクエスト生成
+    - `CreateDeleteCategoryRequest`: カテゴリ削除リクエスト生成
+    - `CreateProductRequest`: 商品作成リクエスト生成
+    - `UpdateProductRequest`: 商品更新リクエスト生成
+    - `DeleteProductRequest`: 商品削除リクエスト生成
 
 ## アーキテクチャパターン
 
