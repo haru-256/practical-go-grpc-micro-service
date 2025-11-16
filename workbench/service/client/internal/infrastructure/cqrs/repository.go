@@ -327,7 +327,12 @@ func (r *CQRSRepositoryImpl) StreamProducts(ctx context.Context) (<-chan *reposi
 		defer func() {
 			if closeErr := stream.Close(); closeErr != nil {
 				r.logger.ErrorContext(ctx, "Failed to close stream", "error", closeErr)
-				ch <- &repository.StreamProductsResult{Err: closeErr}
+				select {
+				case ch <- &repository.StreamProductsResult{Err: closeErr}:
+				case <-ctx.Done():
+				default:
+					r.logger.WarnContext(ctx, "Failed to send stream close error to channel as it is blocking", "error", closeErr)
+				}
 			}
 			close(ch)
 		}()
