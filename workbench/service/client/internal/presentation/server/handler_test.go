@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/models"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/repository"
 	mock_repository "github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/mock/repository"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/presentation/dto"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/presentation/server"
@@ -23,21 +25,10 @@ import (
 func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 	t.Run("正常系: カテゴリを作成できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"TestCategory"}`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, rec := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// モックの設定
 		expectedCategory := models.NewCategory("cat-123", "TestCategory")
@@ -53,113 +44,59 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rec.Code)
 
 		var response dto.CreateCategoryResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Equal(t, "cat-123", response.Category.Id)
 		assert.Equal(t, "TestCategory", response.Category.Name)
 	})
 
 	t.Run("異常系: リクエストボディが不正", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `invalid json`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// Act
 		err := handler.CreateCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("異常系: バリデーションエラー（nameが空）", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":""}`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// Act
 		err := handler.CreateCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("異常系: バリデーションエラー（nameが長すぎる）", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"ThisIsAVeryLongCategoryNameThatExceedsTwentyCharacters"}`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// Act
 		err := handler.CreateCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("異常系: リポジトリエラー", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"TestCategory"}`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// モックの設定: エラーを返す
 		mockRepo.EXPECT().
@@ -170,29 +107,15 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 		err := handler.CreateCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusInternalServerError, httpError.Code)
+		assertHTTPError(t, err, http.StatusInternalServerError)
 	})
 
 	t.Run("正常系: 境界値テスト（1文字）", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"A"}`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, rec := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// モックの設定
 		expectedCategory := models.NewCategory("cat-123", "A")
@@ -210,22 +133,11 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 
 	t.Run("正常系: 境界値テスト（20文字）", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		categoryName := "12345678901234567890" // 20文字
 		requestBody := `{"name":"` + categoryName + `"}`
-		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, rec := newJSONContext(e, http.MethodPost, "/categories", requestBody)
 
 		// モックの設定
 		expectedCategory := models.NewCategory("cat-123", categoryName)
@@ -245,14 +157,7 @@ func TestCQRSServiceHandler_CreateCategory(t *testing.T) {
 func TestCQRSServiceHandler_CategoryList(t *testing.T) {
 	t.Run("正常系: カテゴリ一覧を取得できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/categories", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -274,8 +179,7 @@ func TestCQRSServiceHandler_CategoryList(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.CategoryListResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Len(t, response.Categories, 2)
 		assert.Equal(t, "cat-1", response.Categories[0].Id)
 		assert.Equal(t, "Category1", response.Categories[0].Name)
@@ -283,14 +187,7 @@ func TestCQRSServiceHandler_CategoryList(t *testing.T) {
 
 	t.Run("異常系: リポジトリエラー", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/categories", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -303,31 +200,17 @@ func TestCQRSServiceHandler_CategoryList(t *testing.T) {
 		err := handler.CategoryList(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusInternalServerError, httpError.Code)
+		assertHTTPError(t, err, http.StatusInternalServerError)
 	})
 }
 
 func TestCQRSServiceHandler_UpdateCategory(t *testing.T) {
 	t.Run("正常系: カテゴリを更新できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"UpdatedCategory"}`
-		req := httptest.NewRequest(http.MethodPut, "/categories/cat-123", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, rec := newJSONContext(e, http.MethodPut, "/categories/cat-123", requestBody)
 		c.SetPath("/categories/:id")
 		c.SetParamNames("id")
 		c.SetParamValues("cat-123")
@@ -350,57 +233,31 @@ func TestCQRSServiceHandler_UpdateCategory(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.UpdateCategoryResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Equal(t, "cat-123", response.Category.Id)
 		assert.Equal(t, "UpdatedCategory", response.Category.Name)
 	})
 
 	t.Run("異常系: IDが空", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"UpdatedCategory"}`
-		req := httptest.NewRequest(http.MethodPut, "/categories/", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPut, "/categories/", requestBody)
 
 		// Act
 		err := handler.UpdateCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("異常系: バリデーションエラー", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":""}`
-		req := httptest.NewRequest(http.MethodPut, "/categories/cat-123", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPut, "/categories/cat-123", requestBody)
 		c.SetParamNames("id")
 		c.SetParamValues("cat-123")
 
@@ -408,24 +265,14 @@ func TestCQRSServiceHandler_UpdateCategory(t *testing.T) {
 		err := handler.UpdateCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 }
 
 func TestCQRSServiceHandler_DeleteCategory(t *testing.T) {
 	t.Run("正常系: カテゴリを削除できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodDelete, "/categories/cat-123", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -446,14 +293,7 @@ func TestCQRSServiceHandler_DeleteCategory(t *testing.T) {
 
 	t.Run("異常系: IDが空", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, _, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodDelete, "/categories/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -462,22 +302,12 @@ func TestCQRSServiceHandler_DeleteCategory(t *testing.T) {
 		err := handler.DeleteCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("異常系: リポジトリエラー", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodDelete, "/categories/cat-123", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -492,24 +322,14 @@ func TestCQRSServiceHandler_DeleteCategory(t *testing.T) {
 		err := handler.DeleteCategory(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusInternalServerError, httpError.Code)
+		assertHTTPError(t, err, http.StatusInternalServerError)
 	})
 }
 
 func TestCQRSServiceHandler_CategoryById(t *testing.T) {
 	t.Run("正常系: カテゴリを取得できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/categories/cat-123", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -529,22 +349,14 @@ func TestCQRSServiceHandler_CategoryById(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.CategoryByIdResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Equal(t, "cat-123", response.Category.Id)
 		assert.Equal(t, "TestCategory", response.Category.Name)
 	})
 
 	t.Run("異常系: IDが空", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, _, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/categories/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -553,31 +365,17 @@ func TestCQRSServiceHandler_CategoryById(t *testing.T) {
 		err := handler.CategoryById(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 }
 
 func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 	t.Run("正常系: 商品を作成できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"TestProduct","price":1000,"category": {"id":"550e8400-e29b-41d4-a716-446655440000","name":"TestCategory"}}`
-		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, rec := newJSONContext(e, http.MethodPost, "/products", requestBody)
 
 		// モックの設定
 		category := models.NewCategory("550e8400-e29b-41d4-a716-446655440000", "TestCategory")
@@ -594,8 +392,7 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rec.Code)
 
 		var response dto.CreateProductResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Equal(t, "prod-123", response.Product.Id)
 		assert.Equal(t, "TestProduct", response.Product.Name)
 		assert.Equal(t, uint32(1000), response.Product.Price)
@@ -604,72 +401,37 @@ func TestCQRSServiceHandler_CreateProduct(t *testing.T) {
 
 	t.Run("異常系: バリデーションエラー（priceが0）", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"TestProduct","price":0,"category_id":"550e8400-e29b-41d4-a716-446655440000"}`
-		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPost, "/products", requestBody)
 
 		// Act
 		err := handler.CreateProduct(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("異常系: バリデーションエラー（category_idがUUID形式でない）", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, _, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"TestProduct", "price":1000, "category": {"id":"invalid-uuid", "name":"TestCategory"}}`
-		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, _ := newJSONContext(e, http.MethodPost, "/products", requestBody)
 
 		// Act
 		err := handler.CreateProduct(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
 }
 
 func TestCQRSServiceHandler_ProductList(t *testing.T) {
 	t.Run("正常系: 商品一覧を取得できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/products", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -692,8 +454,7 @@ func TestCQRSServiceHandler_ProductList(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.ProductListResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Len(t, response.Products, 2)
 		assert.Equal(t, "prod-1", response.Products[0].Id)
 		assert.Equal(t, uint32(1000), response.Products[0].Price)
@@ -701,14 +462,7 @@ func TestCQRSServiceHandler_ProductList(t *testing.T) {
 
 	t.Run("正常系: keywordパラメータで検索できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/products?keyword=test", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -731,24 +485,126 @@ func TestCQRSServiceHandler_ProductList(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.ProductByKeywordResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Len(t, response.Products, 2)
 		assert.Equal(t, "prod-1", response.Products[0].Id)
+	})
+}
+
+func TestCQRSServiceHandler_ProductStream(t *testing.T) {
+	t.Run("正常系: 商品一覧をStream取得できる", func(t *testing.T) {
+		// Arrange
+		handler, mockRepo, e := newHandlerTestEnv(t)
+		req := httptest.NewRequest(http.MethodGet, "/stream/products", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		// モックの設定
+		category := models.NewCategory("cat-1", "Category1")
+		expectedProducts := []*models.Product{
+			models.NewProduct("prod-1", "Product1", 1000, category),
+			models.NewProduct("prod-2", "Product2", 2000, category),
+		}
+		resultCh := make(chan *repository.StreamProductsResult, len(expectedProducts))
+		mockRepo.EXPECT().
+			StreamProducts(gomock.Any()).
+			Return(resultCh, nil)
+		// 結果をチャネルに送信
+		go func() {
+			for _, p := range expectedProducts {
+				resultCh <- &repository.StreamProductsResult{Product: p, Err: nil}
+			}
+			close(resultCh)
+		}()
+
+		// Act
+		err := handler.ProductStream(c)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response dto.ProductListResponse
+		decodeJSONResponse(t, rec, &response)
+		assert.Len(t, response.Products, 2)
+		assert.Equal(t, "prod-1", response.Products[0].Id)
+		assert.Equal(t, uint32(1000), response.Products[0].Price)
+		assert.Equal(t, "prod-2", response.Products[1].Id)
+		assert.Equal(t, uint32(2000), response.Products[1].Price)
+	})
+
+	t.Run("異常系: ストリーム受信中にエラー", func(t *testing.T) {
+		// Arrange
+		handler, mockRepo, e := newHandlerTestEnv(t)
+		req := httptest.NewRequest(http.MethodGet, "/stream/products", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		resultCh := make(chan *repository.StreamProductsResult, 1)
+		resultCh <- &repository.StreamProductsResult{Err: errors.New("stream failure")}
+		close(resultCh)
+
+		mockRepo.EXPECT().
+			StreamProducts(gomock.Any()).
+			Return(resultCh, nil)
+
+		// Act
+		err := handler.ProductStream(c)
+
+		// Assert
+		assertHTTPError(t, err, http.StatusInternalServerError)
+	})
+
+	t.Run("異常系: リポジトリエラー", func(t *testing.T) {
+		// Arrange
+		handler, mockRepo, e := newHandlerTestEnv(t)
+		req := httptest.NewRequest(http.MethodGet, "/stream/products", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		mockRepo.EXPECT().
+			StreamProducts(gomock.Any()).
+			Return(nil, errors.New("database error"))
+
+		// Act
+		err := handler.ProductStream(c)
+
+		// Assert
+		assertHTTPError(t, err, http.StatusInternalServerError)
+	})
+
+	t.Run("異常系: コンテキストキャンセル", func(t *testing.T) {
+		// Arrange
+		handler, mockRepo, e := newHandlerTestEnv(t)
+		req := httptest.NewRequest(http.MethodGet, "/stream/products", nil)
+		ctx, cancel := context.WithCancel(req.Context())
+		req = req.WithContext(ctx)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		resultCh := make(chan *repository.StreamProductsResult)
+		mockRepo.EXPECT().
+			StreamProducts(gomock.Any()).
+			Return(resultCh, nil)
+
+		errCh := make(chan error, 1)
+		// Act
+		go func() {
+			errCh <- handler.ProductStream(c)
+		}() // cancel直後に呼び出されるようにするため
+		cancel()
+		err := <-errCh
+
+		// Assert
+		require.Error(t, err)
+		assert.ErrorIs(t, err, context.Canceled)
 	})
 }
 
 func TestCQRSServiceHandler_ProductById(t *testing.T) {
 	t.Run("正常系: 商品を取得できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/products/prod-123", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -769,8 +625,7 @@ func TestCQRSServiceHandler_ProductById(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.ProductByIdResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Equal(t, "prod-123", response.Product.Id)
 		assert.Equal(t, "TestProduct", response.Product.Name)
 	})
@@ -779,21 +634,10 @@ func TestCQRSServiceHandler_ProductById(t *testing.T) {
 func TestCQRSServiceHandler_UpdateProduct(t *testing.T) {
 	t.Run("正常系: 商品を更新できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
-		e.Validator = server.NewRequestValidator()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 
 		requestBody := `{"name":"UpdatedProduct","price":2000,"category":{"id":"550e8400-e29b-41d4-a716-446655440000","name":"TestCategory"}}`
-		req := httptest.NewRequest(http.MethodPut, "/products/prod-123", strings.NewReader(requestBody))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+		c, rec := newJSONContext(e, http.MethodPut, "/products/prod-123", requestBody)
 		c.SetParamNames("id")
 		c.SetParamValues("prod-123")
 
@@ -812,8 +656,7 @@ func TestCQRSServiceHandler_UpdateProduct(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.UpdateProductResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Equal(t, "prod-123", response.Product.Id)
 		assert.Equal(t, "UpdatedProduct", response.Product.Name)
 		assert.Equal(t, uint32(2000), response.Product.Price)
@@ -823,14 +666,7 @@ func TestCQRSServiceHandler_UpdateProduct(t *testing.T) {
 func TestCQRSServiceHandler_DeleteProduct(t *testing.T) {
 	t.Run("正常系: 商品を削除できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodDelete, "/products/prod-123", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -853,14 +689,7 @@ func TestCQRSServiceHandler_DeleteProduct(t *testing.T) {
 func TestCQRSServiceHandler_ProductByKeyword(t *testing.T) {
 	t.Run("正常系: キーワードで商品を検索できる", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, mockRepo, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/products/search?keyword=test", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -883,21 +712,13 @@ func TestCQRSServiceHandler_ProductByKeyword(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var response dto.ProductByKeywordResponse
-		err = json.Unmarshal(rec.Body.Bytes(), &response)
-		require.NoError(t, err)
+		decodeJSONResponse(t, rec, &response)
 		assert.Len(t, response.Products, 2)
 	})
 
 	t.Run("異常系: keywordが空", func(t *testing.T) {
 		// Arrange
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-
-		mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
-		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		handler := server.NewCQRSServiceHandler(logger, mockRepo)
-
-		e := echo.New()
+		handler, _, e := newHandlerTestEnv(t)
 		req := httptest.NewRequest(http.MethodGet, "/products/search", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -906,9 +727,42 @@ func TestCQRSServiceHandler_ProductByKeyword(t *testing.T) {
 		err := handler.ProductByKeyword(c)
 
 		// Assert
-		require.Error(t, err)
-		httpError, ok := err.(*echo.HTTPError)
-		require.True(t, ok)
-		assert.Equal(t, http.StatusBadRequest, httpError.Code)
+		assertHTTPError(t, err, http.StatusBadRequest)
 	})
+}
+
+func newHandlerTestEnv(t *testing.T) (*server.CQRSServiceHandler, *mock_repository.MockCQRSRepository, *echo.Echo) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	mockRepo := mock_repository.NewMockCQRSRepository(ctrl)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	handler := server.NewCQRSServiceHandler(logger, mockRepo)
+
+	e := echo.New()
+	e.Validator = server.NewRequestValidator()
+
+	return handler, mockRepo, e
+}
+
+func newJSONContext(e *echo.Echo, method, target, body string) (echo.Context, *httptest.ResponseRecorder) {
+	req := httptest.NewRequest(method, target, strings.NewReader(body))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	return e.NewContext(req, rec), rec
+}
+
+func decodeJSONResponse(t *testing.T, rec *httptest.ResponseRecorder, v interface{}) {
+	t.Helper()
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), v))
+}
+
+func assertHTTPError(t *testing.T, err error, status int) {
+	t.Helper()
+	require.Error(t, err)
+	httpError, ok := err.(*echo.HTTPError)
+	require.True(t, ok)
+	assert.Equal(t, status, httpError.Code)
 }

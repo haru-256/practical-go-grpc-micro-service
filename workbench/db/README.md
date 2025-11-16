@@ -234,11 +234,9 @@ make up-db
 
 ### 1. 初期データ作成
 
-Command DBにテーブルとサンプルデータを作成します。
+`make up` のときに`docker-entrypoint-initdb.d`に初期化DDLをおいているため、自動的に初期データが作成されます。手動で作成する場合は以下を実行します。
 
 ```bash
-# db/ディレクトリで実行
-cd db
 make create-data
 ```
 
@@ -445,8 +443,11 @@ flowchart TD
 ```bash
 # workbenchディレクトリから実行
 
-# 1. 環境を停止して削除
+# 1. 環境を停止してvolumeも削除
 docker compose down -v
+
+# 2. logsディレクトリをクリーンアップ
+rm -r db/logs
 
 # 2. 環境を起動
 docker compose up -d command_db query_db
@@ -466,13 +467,18 @@ make dump
 # 6. Query DBにリストアしてGTIDを設定
 make restore
 
-# 7. レプリケーションを開始
+# 7. GTIDを取得
+make fetch-gtid-from-dump
+
+# 8. GTIDをquery/ddl/start_replication.sqlに手動設定
+
+# 9. レプリケーションを開始
 make start-replication
 
-# 8. レプリケーション開始を待つ（2秒程度）
+# 10. レプリケーション開始を待つ（2秒程度）
 sleep 2
 
-# 9. ステータス確認
+# 11. ステータス確認
 make check-replication
 ```
 

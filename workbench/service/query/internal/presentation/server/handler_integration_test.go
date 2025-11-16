@@ -59,7 +59,7 @@ func setupProductIntegrationTests(t *testing.T) queryconnect.ProductServiceClien
 	path, handler := queryconnect.NewProductServiceHandler(
 		productHandler,
 		connect.WithInterceptors(
-			reqRespLogger.NewUnaryInterceptor(),
+			reqRespLogger,
 			validator.NewUnaryInterceptor(),
 		),
 	)
@@ -81,7 +81,7 @@ func setupCategoryIntegrationTests(t *testing.T) queryconnect.CategoryServiceCli
 	path, handler := queryconnect.NewCategoryServiceHandler(
 		categoryHandler,
 		connect.WithInterceptors(
-			reqRespLogger.NewUnaryInterceptor(),
+			reqRespLogger,
 			validator.NewUnaryInterceptor(),
 		),
 	)
@@ -160,6 +160,41 @@ func TestProductServiceHandlerImpl_ListProducts_Integration(t *testing.T) {
 	assert.NotNil(t, firstProduct.GetCategory(), "商品にカテゴリが紐付いていません")
 	assert.NotEmpty(t, firstProduct.GetCategory().GetId(), "カテゴリIDが空です")
 	assert.NotEmpty(t, firstProduct.GetCategory().GetName(), "カテゴリ名が空です")
+}
+
+func TestProductServiceHandlerImpl_StreamProducts_Integration(t *testing.T) {
+	client := setupProductIntegrationTests(t)
+	ctx := context.Background()
+
+	listRes, err := client.ListProducts(ctx, connect.NewRequest(&query.ListProductsRequest{}))
+	require.NoError(t, err, "商品一覧の取得に失敗しました")
+	require.NotEmpty(t, listRes.Msg.GetProducts(), "商品が存在しません")
+
+	expected := make(map[string]struct{}, len(listRes.Msg.GetProducts()))
+	for _, product := range listRes.Msg.GetProducts() {
+		expected[product.GetId()] = struct{}{}
+	}
+
+	stream, err := client.StreamProducts(ctx, connect.NewRequest(&query.StreamProductsRequest{}))
+	require.NoError(t, err, "StreamProductsの開始に失敗しました")
+	t.Cleanup(func() {
+		require.NoError(t, stream.Close())
+	})
+
+	received := make(map[string]struct{})
+	for stream.Receive() {
+		msg := stream.Msg()
+		require.NotNil(t, msg, "ストリームメッセージがnilです")
+		product := msg.GetProduct()
+		require.NotNil(t, product, "ストリームのProductがnilです")
+		received[product.GetId()] = struct{}{}
+		assert.NotEmpty(t, product.GetName(), "商品名が空です")
+		assert.Greater(t, product.GetPrice(), int32(0), "商品価格は0より大きい必要があります")
+		assert.NotNil(t, product.GetCategory(), "商品にカテゴリが紐付いていません")
+	}
+	require.NoError(t, stream.Err(), "ストリーム受信中にエラーが発生しました")
+	require.NotEmpty(t, received, "ストリームから商品が受信できませんでした")
+	assert.Equal(t, expected, received, "StreamProductsが返す商品集合がListProductsと一致しません")
 }
 
 func TestProductServiceHandlerImpl_GetProductById_Integration(t *testing.T) {

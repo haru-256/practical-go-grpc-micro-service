@@ -94,6 +94,115 @@ func TestProductServiceHandlerImpl_ListProducts(t *testing.T) {
 	}
 }
 
+// TestProductServiceHandlerImpl_StreamProducts はStreamProductsメソッドのテストです。
+func TestProductServiceHandlerImpl_StreamProducts(t *testing.T) {
+	readStream := func(t *testing.T, stream *connect.ServerStreamForClient[query.StreamProductsResponse]) []*query.StreamProductsResponse {
+		t.Helper()
+		defer func() {
+			require.NoError(t, stream.Close())
+		}()
+
+		var messages []*query.StreamProductsResponse
+		for stream.Receive() {
+			msg := stream.Msg()
+			require.NotNil(t, msg)
+			messages = append(messages, msg)
+		}
+		require.NoError(t, stream.Err())
+
+		return messages
+	}
+
+	tests := []struct {
+		name            string
+		setupMock       func(*productHandlerSetup)
+		wantOpenErr     bool
+		wantOpenErrCode connect.Code
+		validate        func(t *testing.T, stream *connect.ServerStreamForClient[query.StreamProductsResponse])
+		expectStreamErr bool
+		streamErrCode   connect.Code
+	}{
+		{
+			name: "正常系_複数の商品をストリーム受信できる",
+			setupMock: func(s *productHandlerSetup) {
+				cat1 := models.NewCategory("cat1", "Electronics")
+				cat2 := models.NewCategory("cat2", "Books")
+				products := []*models.Product{
+					models.NewProduct("prod1", "Product 1", 1000, cat1),
+					models.NewProduct("prod2", "Product 2", 2000, cat2),
+				}
+				s.repo.EXPECT().List(gomock.Any()).Return(products, nil)
+			},
+			validate: func(t *testing.T, stream *connect.ServerStreamForClient[query.StreamProductsResponse]) {
+				messages := readStream(t, stream)
+				require.Len(t, messages, 2)
+				first := messages[0].GetProduct()
+				second := messages[1].GetProduct()
+				require.NotNil(t, first)
+				require.NotNil(t, second)
+				assert.Equal(t, "prod1", first.GetId())
+				assert.Equal(t, "Product 1", first.GetName())
+				assert.Equal(t, int32(1000), first.GetPrice())
+				assert.Equal(t, "prod2", second.GetId())
+				assert.Equal(t, "Product 2", second.GetName())
+				assert.Equal(t, int32(2000), second.GetPrice())
+			},
+		},
+		{
+			name: "正常系_商品が存在しない場合は即終了する",
+			setupMock: func(s *productHandlerSetup) {
+				s.repo.EXPECT().List(gomock.Any()).Return([]*models.Product{}, nil)
+			},
+			validate: func(t *testing.T, stream *connect.ServerStreamForClient[query.StreamProductsResponse]) {
+				messages := readStream(t, stream)
+				assert.Len(t, messages, 0)
+			},
+		},
+		{
+			name: "異常系_リポジトリエラー",
+			setupMock: func(s *productHandlerSetup) {
+				s.repo.EXPECT().List(gomock.Any()).Return(nil, errs.NewInternalError("database", "database error"))
+			},
+			expectStreamErr: true,
+			streamErrCode:   connect.CodeInternal,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := setupProductHandler(t)
+			defer s.cleanup()
+
+			if tt.setupMock != nil {
+				tt.setupMock(s)
+			}
+
+			req := connect.NewRequest(&query.StreamProductsRequest{})
+			stream, err := s.client.StreamProducts(s.ctx, req)
+
+			if tt.wantOpenErr {
+				require.Error(t, err)
+				assert.Equal(t, tt.wantOpenErrCode, connect.CodeOf(err))
+				return
+			}
+
+			require.NoError(t, err)
+			if tt.expectStreamErr {
+				received := stream.Receive()
+				assert.False(t, received)
+				require.Error(t, stream.Err())
+				assert.Equal(t, tt.streamErrCode, connect.CodeOf(stream.Err()))
+				require.NoError(t, stream.Close())
+				return
+			}
+
+			if tt.validate != nil {
+				tt.validate(t, stream)
+			}
+		})
+	}
+}
+
 // TestProductServiceHandlerImpl_GetProductById はGetProductByIdメソッドのテストです。
 func TestProductServiceHandlerImpl_GetProductById(t *testing.T) {
 	tests := []struct {
@@ -442,7 +551,7 @@ func setupProductHandler(t *testing.T) *productHandlerSetup {
 	path, handlerWithInterceptors := queryconnect.NewProductServiceHandler(
 		handler,
 		connect.WithInterceptors(
-			reqRespLogger.NewUnaryInterceptor(),
+			reqRespLogger,
 			validator.NewUnaryInterceptor(),
 		),
 	)
@@ -494,7 +603,7 @@ func setupCategoryHandler(t *testing.T) *categoryHandlerSetup {
 	path, handlerWithInterceptors := queryconnect.NewCategoryServiceHandler(
 		handler,
 		connect.WithInterceptors(
-			reqRespLogger.NewUnaryInterceptor(),
+			reqRespLogger,
 			validator.NewUnaryInterceptor(),
 		),
 	)

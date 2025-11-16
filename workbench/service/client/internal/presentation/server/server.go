@@ -135,6 +135,7 @@ func NewCQRSServiceServer(cfg *CQRSServiceConfig, logger *slog.Logger, handler *
 	e.GET("/products/:id", handler.ProductById)
 	e.PUT("/products/:id", handler.UpdateProduct)
 	e.DELETE("/products/:id", handler.DeleteProduct)
+	e.GET("/stream/products", handler.ProductStream)
 
 	return &CQRSServiceServer{
 		logger: logger,

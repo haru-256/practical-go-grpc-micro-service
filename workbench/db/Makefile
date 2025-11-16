@@ -47,9 +47,9 @@ check-replication:  ## Check replication status
 .PHONY: create-data
 create-data:  ## Create data
 	docker compose -f ../compose.yaml exec command_db \
-		bash -c "mysql -uroot -ppassword </etc/ddl/create_object.sql"
+		bash -c "mysql -uroot -ppassword </etc/init/create_object.sql"
 	docker compose -f ../compose.yaml exec command_db \
-		bash -c "mysql -uroot -ppassword </etc/ddl/create_record.sql"
+		bash -c "mysql -uroot -ppassword </etc/init/create_record.sql"
 
 .PHONY: help
 help: ## Show options

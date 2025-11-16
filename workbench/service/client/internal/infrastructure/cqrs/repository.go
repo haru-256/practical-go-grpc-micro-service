@@ -307,6 +307,63 @@ func (r *CQRSRepositoryImpl) ProductList(ctx context.Context) ([]*models.Product
 	return toModelProducts(resp.Msg.GetProducts()), nil
 }
 
+// StreamProducts はQuery ServiceのサーバーストリーミングRPCを呼び出し、
+// 受信結果をchannelで返します。
+//
+// Parameters:
+//   - ctx: コンテキスト
+//
+// Returns:
+//   - <-chan *repository.StreamProductsResult: ストリーム結果
+//   - error: エラー
+func (r *CQRSRepositoryImpl) StreamProducts(ctx context.Context) (<-chan *repository.StreamProductsResult, error) {
+	stream, err := r.queryServiceClient.Product.StreamProducts(ctx, connect.NewRequest(&query.StreamProductsRequest{}))
+	if err != nil {
+		return nil, err
+	}
+
+	// バッファサイズ1のチャネルを使用することで、stream.Close()のエラーを確実に伝播する。
+	// unbufferedの場合、受信側が終了済みだとdefaultケースに入りエラーが失われる。
+	// bufferedにすることで、受信側の状態に関わらず必ずバッファに書き込める。
+	ch := make(chan *repository.StreamProductsResult, 1)
+	go func() {
+		defer func() {
+			if closeErr := stream.Close(); closeErr != nil {
+				r.logger.ErrorContext(ctx, "Failed to close stream", "error", closeErr)
+				select {
+				case ch <- &repository.StreamProductsResult{Err: closeErr}:
+				case <-ctx.Done():
+				default:
+					r.logger.WarnContext(ctx, "Failed to send stream close error to channel as it is blocking", "error", closeErr)
+				}
+			}
+			close(ch)
+		}()
+		for stream.Receive() {
+			msg := stream.Msg()
+			if msg == nil {
+				continue
+			}
+			productProto := msg.GetProduct()
+			if productProto == nil {
+				continue
+			}
+			select {
+			case ch <- &repository.StreamProductsResult{Product: toModelProduct(productProto)}:
+			case <-ctx.Done():
+				return
+			}
+		}
+		if streamErr := stream.Err(); streamErr != nil {
+			select {
+			case ch <- &repository.StreamProductsResult{Err: streamErr}:
+			case <-ctx.Done():
+			}
+		}
+	}()
+	return ch, nil
+}
+
 // ProductById はIDで商品を取得します。
 //
 // Parameters:

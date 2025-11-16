@@ -94,10 +94,7 @@ func (h *CQRSServiceHandler) CreateCategory(c echo.Context) error {
 	}
 
 	resp := dto.CreateCategoryResponse{
-		Category: &dto.Category{
-			Id:   category.Id(),
-			Name: category.Name(),
-		},
+		Category: categoryToDTO(category),
 	}
 	return c.JSON(http.StatusCreated, resp)
 }
@@ -118,12 +115,8 @@ func (h *CQRSServiceHandler) CategoryList(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to list categories").SetInternal(err)
 	}
 
-	var resp dto.CategoryListResponse
-	for _, category := range categories {
-		resp.Categories = append(resp.Categories, &dto.Category{
-			Id:   category.Id(),
-			Name: category.Name(),
-		})
+	resp := dto.CategoryListResponse{
+		Categories: categoriesToDTO(categories),
 	}
 	return c.JSON(http.StatusOK, resp)
 }
@@ -167,10 +160,7 @@ func (h *CQRSServiceHandler) UpdateCategory(c echo.Context) error {
 	}
 
 	resp := dto.UpdateCategoryResponse{
-		Category: &dto.Category{
-			Id:   updated.Id(),
-			Name: updated.Name(),
-		},
+		Category: categoryToDTO(updated),
 	}
 	return c.JSON(http.StatusOK, resp)
 }
@@ -223,10 +213,7 @@ func (h *CQRSServiceHandler) CategoryById(c echo.Context) error {
 	}
 
 	resp := dto.CategoryByIdResponse{
-		Category: &dto.Category{
-			Id:   category.Id(),
-			Name: category.Name(),
-		},
+		Category: categoryToDTO(category),
 	}
 	return c.JSON(http.StatusOK, resp)
 }
@@ -265,15 +252,7 @@ func (h *CQRSServiceHandler) CreateProduct(c echo.Context) error {
 	}
 
 	resp := dto.CreateProductResponse{
-		Product: &dto.Product{
-			Id:    product.Id(),
-			Name:  product.Name(),
-			Price: product.Price(),
-			Category: &dto.Category{
-				Id:   product.Category().Id(),
-				Name: product.Category().Name(),
-			},
-		},
+		Product: productToDTO(product),
 	}
 	return c.JSON(http.StatusCreated, resp)
 }
@@ -319,15 +298,7 @@ func (h *CQRSServiceHandler) UpdateProduct(c echo.Context) error {
 	}
 
 	resp := dto.UpdateProductResponse{
-		Product: &dto.Product{
-			Id:    updated.Id(),
-			Name:  updated.Name(),
-			Price: updated.Price(),
-			Category: &dto.Category{
-				Id:   updated.Category().Id(),
-				Name: updated.Category().Name(),
-			},
-		},
+		Product: productToDTO(updated),
 	}
 	return c.JSON(http.StatusOK, resp)
 }
@@ -382,19 +353,45 @@ func (h *CQRSServiceHandler) ProductList(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to list products").SetInternal(err)
 	}
 
-	var resp dto.ProductListResponse
-	for _, product := range products {
-		resp.Products = append(resp.Products, &dto.Product{
-			Id:    product.Id(),
-			Name:  product.Name(),
-			Price: product.Price(),
-			Category: &dto.Category{
-				Id:   product.Category().Id(),
-				Name: product.Category().Name(),
-			},
-		})
+	resp := dto.ProductListResponse{
+		Products: productsToDTO(products),
 	}
 	return c.JSON(http.StatusOK, resp)
+}
+
+// ProductStream はQueryサービスのストリーミングRPC結果をHTTPレスポンスとして返します。
+// @tags Product
+// @Summary 商品ストリーム取得
+// @Description Queryサービスからのストリーミング結果をまとめて返します。
+// @ID stream-products
+// @Produce application/json
+// @Success 200 {object} dto.ProductStreamResponse
+// @Failure 500 {object} map[string]string
+// @Router /stream/products [get]
+func (h *CQRSServiceHandler) ProductStream(c echo.Context) error {
+	ctx := c.Request().Context()
+	ch, err := h.repo.StreamProducts(ctx)
+	if err != nil {
+		h.logger.Error("Failed to stream products", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to stream products").SetInternal(err)
+	}
+	var resp dto.ProductStreamResponse
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err() // or translate to 499/499 equivalent
+		case result, ok := <-ch:
+			if !ok {
+				return c.JSON(http.StatusOK, resp)
+			}
+			if result.Err != nil {
+				h.logger.Error("Failed to stream products", "error", result.Err)
+				return echo.NewHTTPError(http.StatusInternalServerError, "Failed to stream products").SetInternal(result.Err)
+			}
+			product := result.Product
+			resp.Products = append(resp.Products, productToDTO(product))
+		}
+	}
 }
 
 // ProductById はIDで商品を取得します。
@@ -421,15 +418,7 @@ func (h *CQRSServiceHandler) ProductById(c echo.Context) error {
 	}
 
 	resp := dto.ProductByIdResponse{
-		Product: &dto.Product{
-			Id:    product.Id(),
-			Name:  product.Name(),
-			Price: product.Price(),
-			Category: &dto.Category{
-				Id:   product.Category().Id(),
-				Name: product.Category().Name(),
-			},
-		},
+		Product: productToDTO(product),
 	}
 	return c.JSON(http.StatusOK, resp)
 }
@@ -448,17 +437,52 @@ func (h *CQRSServiceHandler) ProductByKeyword(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to search products").SetInternal(err)
 	}
 
-	var resp dto.ProductByKeywordResponse
-	for _, product := range products {
-		resp.Products = append(resp.Products, &dto.Product{
-			Id:    product.Id(),
-			Name:  product.Name(),
-			Price: product.Price(),
-			Category: &dto.Category{
-				Id:   product.Category().Id(),
-				Name: product.Category().Name(),
-			},
-		})
+	resp := dto.ProductByKeywordResponse{
+		Products: productsToDTO(products),
 	}
 	return c.JSON(http.StatusOK, resp)
+}
+
+func categoryToDTO(category *models.Category) *dto.Category {
+	if category == nil {
+		return nil
+	}
+	return &dto.Category{
+		Id:   category.Id(),
+		Name: category.Name(),
+	}
+}
+
+func categoriesToDTO(categories []*models.Category) []*dto.Category {
+	if len(categories) == 0 {
+		return nil
+	}
+	converted := make([]*dto.Category, 0, len(categories))
+	for _, category := range categories {
+		converted = append(converted, categoryToDTO(category))
+	}
+	return converted
+}
+
+func productToDTO(product *models.Product) *dto.Product {
+	if product == nil {
+		return nil
+	}
+	return &dto.Product{
+		Id:       product.Id(),
+		Name:     product.Name(),
+		Price:    product.Price(),
+		Category: categoryToDTO(product.Category()),
+	}
+}
+
+func productsToDTO(products []*models.Product) []*dto.Product {
+	if len(products) == 0 {
+		return nil
+	}
+	converted := make([]*dto.Product, 0, len(products))
+	for _, product := range products {
+		converted = append(converted, productToDTO(product))
+	}
+	return converted
 }

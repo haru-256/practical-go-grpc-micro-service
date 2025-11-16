@@ -104,6 +104,14 @@ definitions:
           $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product'
         type: array
     type: object
+  github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductStreamResponse:
+    properties:
+      products:
+        description: 商品一覧
+        items:
+          $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product'
+        type: array
+    type: object
   github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.UpdateCategoryRequest:
     properties:
       name:
@@ -467,6 +475,26 @@ paths:
               type: string
             type: object
       summary: 商品更新
+      tags:
+      - Product
+  /stream/products:
+    get:
+      description: Queryサービスからのストリーミング結果をまとめて返します。
+      operationId: stream-products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductStreamResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 商品ストリーム取得
       tags:
       - Product
 swagger: "2.0"

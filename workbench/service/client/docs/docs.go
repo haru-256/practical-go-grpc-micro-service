@@ -485,6 +485,36 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/stream/products": {
+            "get": {
+                "description": "Queryサービスからのストリーミング結果をまとめて返します。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product"
+                ],
+                "summary": "商品ストリーム取得",
+                "operationId": "stream-products",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductStreamResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -640,6 +670,18 @@ const docTemplate = `{
             }
         },
         "github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductListResponse": {
+            "type": "object",
+            "properties": {
+                "products": {
+                    "description": "商品一覧",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.Product"
+                    }
+                }
+            }
+        },
+        "github_com_haru-256_practical-go-grpc-micro-service_service_client_internal_presentation_dto.ProductStreamResponse": {
             "type": "object",
             "properties": {
                 "products": {
