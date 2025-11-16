@@ -325,9 +325,9 @@ func (r *CQRSRepositoryImpl) StreamProducts(ctx context.Context) (<-chan *reposi
 	ch := make(chan *repository.StreamProductsResult)
 	go func() {
 		defer func() {
-			if err := stream.Close(); err != nil {
-				r.logger.ErrorContext(ctx, "Failed to close stream", "error", err)
-				ch <- &repository.StreamProductsResult{Err: err}
+			if closeErr := stream.Close(); closeErr != nil {
+				r.logger.ErrorContext(ctx, "Failed to close stream", "error", closeErr)
+				ch <- &repository.StreamProductsResult{Err: closeErr}
 			}
 			close(ch)
 		}()
@@ -346,9 +346,9 @@ func (r *CQRSRepositoryImpl) StreamProducts(ctx context.Context) (<-chan *reposi
 				return
 			}
 		}
-		if err := stream.Err(); err != nil {
+		if streamErr := stream.Err(); streamErr != nil {
 			select {
-			case ch <- &repository.StreamProductsResult{Err: err}:
+			case ch <- &repository.StreamProductsResult{Err: streamErr}:
 			case <-ctx.Done():
 			}
 		}

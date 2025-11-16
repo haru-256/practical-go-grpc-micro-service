@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/models"
+	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/repository"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/infrastructure/config"
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/infrastructure/cqrs"
 	"github.com/stretchr/testify/assert"
@@ -37,6 +38,103 @@ func TestMain(m *testing.M) {
 	commandServiceClient = cqrs.NewCommandServiceClient(client, cfg)
 	queryServiceClient = cqrs.NewQueryServiceClient(client, cfg)
 	m.Run()
+}
+
+// Helper functions to reduce cognitive complexity
+
+// waitForReplication waits for data to replicate to the query database
+func waitForReplication(t *testing.T, assertFunc func() bool) {
+	t.Helper()
+	require.Eventually(t,
+		assertFunc,
+		replicationTimeout,
+		pollingInterval,
+		"指定時間内にレプリケーションされませんでした",
+	)
+}
+
+// findProductByID checks if a product with the given ID exists in the slice
+func findProductByID(products []*models.Product, targetID string) bool {
+	for _, prod := range products {
+		if prod.Id() == targetID {
+			return true
+		}
+	}
+	return false
+}
+
+// collectStreamProducts collects all products from a stream channel
+func collectStreamProducts(t *testing.T, ctx context.Context, ch <-chan *repository.StreamProductsResult, timeout time.Duration) []*models.Product {
+	t.Helper()
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	var products []*models.Product
+	for {
+		select {
+		case <-ctxWithTimeout.Done():
+			require.Fail(t, "StreamProducts did not complete before timeout")
+			return nil
+		case result, ok := <-ch:
+			if !ok {
+				return products
+			}
+			require.NoError(t, result.Err)
+			products = append(products, result.Product)
+		}
+	}
+}
+
+// waitForProductReplication waits for a product to be available by ID
+func waitForProductReplication(t *testing.T, ctx context.Context, repo *cqrs.CQRSRepositoryImpl, productID string, expectedName string, expectedPrice uint32) {
+	t.Helper()
+	waitForReplication(t, func() bool {
+		product, err := repo.ProductById(ctx, productID)
+		if err != nil {
+			return false
+		}
+		require.NotNil(t, product)
+		return assert.Equal(t, productID, product.Id()) &&
+			assert.Equal(t, expectedName, product.Name()) &&
+			assert.Equal(t, expectedPrice, product.Price())
+	})
+}
+
+// assertProductInList waits for a product to appear in the product list
+func assertProductInList(t *testing.T, ctx context.Context, repo *cqrs.CQRSRepositoryImpl, productID string) {
+	t.Helper()
+	waitForReplication(t, func() bool {
+		products, err := repo.ProductList(ctx)
+		require.NoError(t, err)
+		assert.Greater(t, len(products), 0)
+		return findProductByID(products, productID)
+	})
+}
+
+// assertProductInStream waits for a product to appear in the streaming results
+func assertProductInStream(t *testing.T, ctx context.Context, repo *cqrs.CQRSRepositoryImpl, productID string) {
+	t.Helper()
+	waitForReplication(t, func() bool {
+		ch, err := repo.StreamProducts(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, ch)
+
+		products := collectStreamProducts(t, ctx, ch, streamTimeout)
+		if !assert.Greater(t, len(products), 0) {
+			return false
+		}
+		return findProductByID(products, productID)
+	})
+}
+
+// assertProductInSearch waits for a product to appear in search results
+func assertProductInSearch(t *testing.T, ctx context.Context, repo *cqrs.CQRSRepositoryImpl, keyword string, productID string) {
+	t.Helper()
+	waitForReplication(t, func() bool {
+		products, err := repo.ProductByKeyword(ctx, keyword)
+		require.NoError(t, err)
+		return findProductByID(products, productID)
+	})
 }
 
 func TestCQRSRepository_Category(t *testing.T) {
@@ -175,26 +273,7 @@ func TestCQRSRepository_Product(t *testing.T) {
 
 	t.Run("商品IDで取得", func(t *testing.T) {
 		require.NotNil(t, createdProduct, "商品が作成されていません")
-
-		// replication を待つためにEventuallyでリトライ
-		require.Eventually(t,
-			func() bool {
-				product, err := repo.ProductById(ctx, createdProduct.Id())
-
-				// エラーがあれば、まだレプリケーション中
-				if err != nil {
-					return false
-				}
-
-				require.NotNil(t, product)
-				return assert.Equal(t, createdProduct.Id(), product.Id()) &&
-					assert.Equal(t, createdProduct.Name(), product.Name()) &&
-					assert.Equal(t, createdProduct.Price(), product.Price())
-			},
-			replicationTimeout,
-			pollingInterval,
-			"指定時間内に商品がレプリケーションされませんでした",
-		)
+		waitForProductReplication(t, ctx, repo, createdProduct.Id(), createdProduct.Name(), createdProduct.Price())
 	})
 
 	t.Run("商品の更新", func(t *testing.T) {
@@ -217,102 +296,18 @@ func TestCQRSRepository_Product(t *testing.T) {
 
 	t.Run("商品一覧の取得", func(t *testing.T) {
 		require.NotNil(t, createdProduct, "商品が作成されていません")
-
-		require.Eventually(t,
-			func() bool {
-				products, err := repo.ProductList(ctx)
-				require.NoError(t, err)
-				assert.Greater(t, len(products), 0)
-
-				// 作成した商品が一覧に含まれることを確認
-				found := false
-				for _, prod := range products {
-					if prod.Id() == createdProduct.Id() {
-						found = true
-						break
-					}
-				}
-				return assert.True(t, found, "作成した商品が一覧に含まれていません")
-			},
-			replicationTimeout,
-			pollingInterval,
-			"指定時間内に商品がレプリケーションされませんでした",
-		)
+		assertProductInList(t, ctx, repo, createdProduct.Id())
 	})
 
 	t.Run("商品一覧の取得(Streaming)", func(t *testing.T) {
 		require.NotNil(t, createdProduct, "商品が作成されていません")
-
-		require.Eventually(t,
-			func() bool {
-				ctxWithTimeout, cancel := context.WithTimeout(ctx, streamTimeout)
-				defer cancel()
-
-				ch, err := repo.StreamProducts(ctxWithTimeout)
-				require.NoError(t, err)
-				require.NotNil(t, ch)
-
-				var products []*models.Product
-				for {
-					select {
-					case <-ctxWithTimeout.Done():
-						assert.Fail(t, "StreamProducts did not complete before timeout")
-						return false
-					case result, ok := <-ch:
-						if !ok { // channel closed
-							if !assert.Greater(t, len(products), 0) {
-								return false
-							}
-
-							// 作成した商品が一覧に含まれることを確認
-							found := false
-							for _, prod := range products {
-								if prod.Id() == createdProduct.Id() {
-									found = true
-									break
-								}
-							}
-							return assert.True(t, found, "作成した商品が一覧に含まれていません")
-						}
-						if result.Err != nil {
-							require.NoError(t, result.Err)
-							return false
-						}
-						products = append(products, result.Product)
-					}
-				}
-			},
-			replicationTimeout,
-			pollingInterval,
-			"指定時間内に商品がレプリケーションされませんでした",
-		)
+		assertProductInStream(t, ctx, repo, createdProduct.Id())
 	})
 
 	t.Run("キーワードで商品検索", func(t *testing.T) {
 		require.NotNil(t, createdProduct, "商品が作成されていません")
-
-		// 商品名の一部で検索
 		keyword := "UpdProd"
-
-		require.Eventually(t,
-			func() bool {
-				products, err := repo.ProductByKeyword(ctx, keyword)
-				require.NoError(t, err)
-
-				// 作成した商品が検索結果に含まれることを確認
-				found := false
-				for _, prod := range products {
-					if prod.Id() == createdProduct.Id() {
-						found = true
-						break
-					}
-				}
-				return assert.True(t, found, "検索結果に作成した商品が含まれていません")
-			},
-			replicationTimeout,
-			pollingInterval,
-			"指定時間内に商品がレプリケーションされませんでした",
-		)
+		assertProductInSearch(t, ctx, repo, keyword, createdProduct.Id())
 	})
 
 	t.Run("商品の削除", func(t *testing.T) {

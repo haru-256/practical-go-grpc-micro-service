@@ -37,10 +37,7 @@ func NewQueryServer(viper *viper.Viper, logger *slog.Logger, csh queryconnect.Ca
 	if err != nil {
 		return nil, err
 	}
-	interceptors := connect.WithInterceptors(
-		reqRespLogger.NewUnaryInterceptor(),
-		validator.NewUnaryInterceptor(),
-	)
+	interceptors := connect.WithInterceptors(reqRespLogger, validator.NewUnaryInterceptor())
 
 	mux := http.NewServeMux()
 

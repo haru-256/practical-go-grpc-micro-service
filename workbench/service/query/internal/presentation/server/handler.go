@@ -135,6 +135,32 @@ func (h *ProductServiceHandlerImpl) ListProducts(ctx context.Context, req *conne
 	return connect.NewResponse(res), nil
 }
 
+// StreamProducts は商品一覧をサーバーストリームで返します。
+//
+// Parameters:
+//   - ctx: コンテキスト
+//   - req: リクエスト
+//   - stream: ストリームレスポンス
+//
+// Returns:
+//   - error: エラー
+func (h *ProductServiceHandlerImpl) StreamProducts(ctx context.Context, req *connect.Request[query.StreamProductsRequest], stream *connect.ServerStream[query.StreamProductsResponse]) error {
+	if products, err := h.repo.List(ctx); err != nil {
+		h.logger.ErrorContext(ctx, "Failed to list products", "error", err)
+		return handleError(err, "failed to list products")
+	} else {
+		for _, product := range products {
+			res := &query.StreamProductsResponse{}
+			res.SetProduct(toProductProto(product))
+			if sendErr := stream.Send(res); sendErr != nil {
+				h.logger.ErrorContext(ctx, "Failed to send product in stream", "error", sendErr, "product_id", product.Id())
+				return handleError(sendErr, "failed to send product in stream")
+			}
+		}
+	}
+	return nil
+}
+
 // GetProductById は商品IDで商品を取得します。
 //
 // Parameters:
