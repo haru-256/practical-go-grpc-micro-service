@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	models "github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/models"
+	repository "github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/repository"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -172,6 +173,21 @@ func (m *MockCQRSRepository) ProductList(ctx context.Context) ([]*models.Product
 func (mr *MockCQRSRepositoryMockRecorder) ProductList(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProductList", reflect.TypeOf((*MockCQRSRepository)(nil).ProductList), ctx)
+}
+
+// StreamProducts mocks base method.
+func (m *MockCQRSRepository) StreamProducts(ctx context.Context) (<-chan *repository.StreamProductsResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StreamProducts", ctx)
+	ret0, _ := ret[0].(<-chan *repository.StreamProductsResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StreamProducts indicates an expected call of StreamProducts.
+func (mr *MockCQRSRepositoryMockRecorder) StreamProducts(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamProducts", reflect.TypeOf((*MockCQRSRepository)(nil).StreamProducts), ctx)
 }
 
 // UpdateCategory mocks base method.

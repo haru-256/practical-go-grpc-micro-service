@@ -6,6 +6,11 @@ import (
 	"github.com/haru-256/practical-go-grpc-micro-service/service/client/internal/domain/models"
 )
 
+type StreamProductsResult struct {
+	Product *models.Product
+	Err     error
+}
+
 // CQRSRepository はCQRSパターンに基づくリポジトリインターフェース
 // Command ServiceとQuery Serviceへの書き込み・読み取り操作を提供します。
 //
@@ -30,6 +35,8 @@ type CQRSRepository interface {
 	DeleteProduct(ctx context.Context, id string) error
 	// ProductList は商品一覧を取得します。
 	ProductList(ctx context.Context) ([]*models.Product, error)
+	// StreamProducts は商品一覧をストリーミングで取得します。
+	StreamProducts(ctx context.Context) (<-chan *StreamProductsResult, error)
 	// ProductById はIDで商品を取得します。
 	ProductById(ctx context.Context, id string) (*models.Product, error)
 	// ProductByKeyword はキーワードで商品を検索します。

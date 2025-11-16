@@ -3,6 +3,7 @@
 package cqrs_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"testing"
@@ -22,6 +23,7 @@ var (
 	queryServiceClient   *cqrs.QueryServiceClient
 	pollingInterval      = 100 * time.Millisecond // polling interval for replication check
 	replicationTimeout   = 5 * time.Second        // replication wait timeout
+	streamTimeout        = 2 * time.Second        // timeout per StreamProducts attempt
 )
 
 func TestMain(m *testing.M) {
@@ -231,6 +233,54 @@ func TestCQRSRepository_Product(t *testing.T) {
 					}
 				}
 				return assert.True(t, found, "作成した商品が一覧に含まれていません")
+			},
+			replicationTimeout,
+			pollingInterval,
+			"指定時間内に商品がレプリケーションされませんでした",
+		)
+	})
+
+	t.Run("商品一覧の取得(Streaming)", func(t *testing.T) {
+		require.NotNil(t, createdProduct, "商品が作成されていません")
+
+		require.Eventually(t,
+			func() bool {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, streamTimeout)
+				defer cancel()
+
+				ch, err := repo.StreamProducts(ctxWithTimeout)
+				require.NoError(t, err)
+				require.NotNil(t, ch)
+
+				var products []*models.Product
+				for {
+					select {
+					case <-ctxWithTimeout.Done():
+						assert.Fail(t, "StreamProducts did not complete before timeout")
+						return false
+					case result, ok := <-ch:
+						if !ok { // channel closed
+							if !assert.Greater(t, len(products), 0) {
+								return false
+							}
+
+							// 作成した商品が一覧に含まれることを確認
+							found := false
+							for _, prod := range products {
+								if prod.Id() == createdProduct.Id() {
+									found = true
+									break
+								}
+							}
+							return assert.True(t, found, "作成した商品が一覧に含まれていません")
+						}
+						if result.Err != nil {
+							require.NoError(t, result.Err)
+							return false
+						}
+						products = append(products, result.Product)
+					}
+				}
 			},
 			replicationTimeout,
 			pollingInterval,

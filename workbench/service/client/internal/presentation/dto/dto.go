@@ -73,6 +73,11 @@ type ProductListResponse struct {
 	Products []*Product `json:"products"` // 商品一覧
 }
 
+// ProductStreamResponse は商品一覧レスポンス
+type ProductStreamResponse struct {
+	Products []*Product `json:"products"` // 商品一覧
+}
+
 // ProductByIdResponse は商品取得レスポンス
 type ProductByIdResponse struct {
 	Product *Product `json:"product"` // 商品情報
