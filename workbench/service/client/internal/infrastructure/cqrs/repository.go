@@ -322,7 +322,10 @@ func (r *CQRSRepositoryImpl) StreamProducts(ctx context.Context) (<-chan *reposi
 		return nil, err
 	}
 
-	ch := make(chan *repository.StreamProductsResult)
+	// バッファサイズ1のチャネルを使用することで、stream.Close()のエラーを確実に伝播する。
+	// unbufferedの場合、受信側が終了済みだとdefaultケースに入りエラーが失われる。
+	// bufferedにすることで、受信側の状態に関わらず必ずバッファに書き込める。
+	ch := make(chan *repository.StreamProductsResult, 1)
 	go func() {
 		defer func() {
 			if closeErr := stream.Close(); closeErr != nil {
