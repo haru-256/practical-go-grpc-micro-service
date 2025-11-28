@@ -17,7 +17,6 @@ done
 export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"
 
 echo "Start replication setup..."
-
 # Query DBをリセット (既存データがある場合に備えて)
 echo "Resetting Query DB..."
 mysql -h "$QUERY_DB_HOST" -uroot -e "STOP REPLICA; RESET REPLICA ALL; RESET MASTER;"
