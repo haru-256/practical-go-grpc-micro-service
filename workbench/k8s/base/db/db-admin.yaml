@@ -1,0 +1,98 @@
+# Database Admin
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-admin
+  template:
+    metadata:
+      labels:
+        app: db-admin
+    spec:
+      initContainers:
+        - name: wait-command-db
+          image: busybox
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              until nc -z -v -w10 command-db 3306; do
+                echo "Waiting for Command DB port..."
+                sleep 3
+              done
+        - name: wait-query-db
+          image: busybox
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              until nc -z -v -w10 query-db 3306; do
+                echo "Waiting for Query DB port..."
+                sleep 3
+              done
+
+      containers:
+        - name: db-admin
+          image: phpmyadmin/phpmyadmin
+          ports:
+            - containerPort: 80
+          env:
+            - name: PMA_ARBITRARY
+              value: "1"
+            - name: PMA_HOSTS
+              value: "command-db,query-db"
+            - name: PMA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: COMMAND_DB_USER
+            - name: PMA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: COMMAND_DB_PASSWORD
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 60 # 遅い場合があるため長めに設定
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 60
+            failureThreshold: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-admin
+  labels:
+    app: db-admin
+spec:
+  type: ClusterIP
+  selector:
+    app: db-admin
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cqrs
+resources:
+  - ../../../base/services
+
+secretGenerator:
+  - name: secret
+    envs:
+      - ../.env.secret
+
+configMapGenerator:
+  # 共通の環境変数用ConfigMap
+  - name: config-env
+    envs:
+      - ../.env.local
+
+images:
+  - name: command-service
+    newName: cqrs-command_service
+    newTag: "latest"
+  - name: query-service
+    newName: cqrs-query_service
+    newTag: "latest"
+  - name: client-service
+    newName: cqrs-client_service
+    newTag: "latest"

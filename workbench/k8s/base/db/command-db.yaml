@@ -1,0 +1,85 @@
+# command用DBのStatefulSetとService
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: command-db
+  labels:
+    app: command-db
+spec:
+  selector:
+    matchLabels:
+      app: command-db
+  serviceName: command-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: command-db
+    spec:
+      # TODO: command-dbをdumpするmigratorコンテナの追加(Job?)
+      containers:
+        - name: command-db
+          image: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: COMMAND_DB_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: config-env
+                  key: COMMAND_DB_DBNAME
+            - name: TZ
+              value: Asia/Tokyo
+          ports:
+            - containerPort: 3306
+              name: command-db
+          volumeMounts:
+            - name: command-db-config-file
+              mountPath: /etc/mysql/conf.d/my.cnf
+              subPath: my.cnf
+            - name: command-db-init-sql
+              mountPath: /docker-entrypoint-initdb.d
+            - name: command-db-data
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: command-db-config-file
+          configMap:
+            name: command-db-config-file
+        - name: command-db-init-sql
+          configMap:
+            name: command-db-init-sql
+  volumeClaimTemplates:
+    - metadata:
+        name: command-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: command-db
+  labels:
+    app: command-db
+spec:
+  type: ClusterIP
+  selector:
+    app: command-db
+  clusterIP: None
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP

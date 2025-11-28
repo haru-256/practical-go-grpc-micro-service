@@ -1,0 +1,77 @@
+# query-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: query-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: query-service
+  template:
+    metadata:
+      labels:
+        app: query-service
+    spec:
+      containers:
+        - name: query-service
+          image: query-service
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_HOST
+              value: query-db
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: QUERY_DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: QUERY_DB_PASSWORD
+            - name: DB_DBNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: config-env
+                  key: QUERY_DB_DBNAME
+            - name: SERVER_HOST
+              value: 0.0.0.0
+            - name: SERVER_PORT
+              value: "80"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            grpc:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            grpc:
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: query-service
+  labels:
+    app: query-service
+spec:
+  type: ClusterIP
+  selector:
+    app: query-service
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

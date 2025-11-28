@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrator-job
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 3
+  template:
+    spec:
+      initContainers:
+        # 1. Command DB (Master) の待機
+        - name: wait-command-db
+          image: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: COMMAND_DB_PASSWORD
+          command:
+            - "/bin/bash"
+            - "-c"
+            - |
+              echo "Waiting for command-db..."
+              until mysqladmin ping -h command-db -u root -p"$MYSQL_ROOT_PASSWORD" --silent; do
+                sleep 2
+              done
+              echo "command-db is ready!"
+
+        # 2. Query DB (Slave) の待機
+        - name: wait-query-db
+          image: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: QUERY_DB_PASSWORD
+          command:
+            - "/bin/bash"
+            - "-c"
+            - |
+              echo "Waiting for query-db..."
+              until mysqladmin ping -h query-db -u root -p"$MYSQL_ROOT_PASSWORD" --silent; do
+                sleep 2
+              done
+              echo "query-db is ready!"
+
+      containers:
+        - name: migrator
+          image: mysql
+          command:
+            - "/bin/bash"
+            - "/etc/scripts/start-replication.sh"
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: COMMAND_DB_PASSWORD
+            - name: COMMAND_DB_HOST
+              value: command-db
+            - name: COMMAND_DB_PORT
+              value: "3306"
+            - name: QUERY_DB_HOST
+              value: query-db
+            - name: QUERY_DB_PORT
+              value: "3306"
+          volumeMounts:
+            - mountPath: /etc/scripts
+              name: migrator-scripts
+      volumes:
+        - name: migrator-scripts
+          configMap:
+            name: migrator-scripts
+            defaultMode: 0755
+
+      restartPolicy: Never # Jobの場合はNeverかOnFailureが一般的

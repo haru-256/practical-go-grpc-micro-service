@@ -3,7 +3,7 @@ go = "1.25.4"
 # sourceからbuildするのが非推奨なのでmiseで管理する
 # https://golangci-lint.run/docs/welcome/install/#install-from-sources
 golangci-lint = "2.6.2"
-buf = "1.59.0"
+buf = "1.61.0"
 act = "latest"
 "ubi:k1LoW/octocov" = "latest"
-tilt = "0.35.2"
+tilt = "0.36.0"
