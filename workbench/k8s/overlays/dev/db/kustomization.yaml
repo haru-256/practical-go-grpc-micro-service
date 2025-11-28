@@ -31,3 +31,6 @@ images:
   - name: mysql
     newName: mysql
     newTag: "8.0"
+  - name: phpmyadmin
+    newName: phpmyadmin/phpmyadmin
+    newTag: "5.2.1"
