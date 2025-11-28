@@ -27,6 +27,10 @@ workbench/
 │   ├── proto/                    # Protocol Buffers定義
 │   └── gen/                      # 自動生成コード
 │
+├── k8s/                          # Kubernetesマニフェスト
+│   ├── base/                     # 共通マニフェスト
+│   └── overlays/                 # 環境別オーバーレイ
+│
 ├── service/                      # マイクロサービス実装
 │   ├── client/                   # REST APIクライアント（Swagger UI付き）
 │   ├── command/                  # コマンドサービス（書き込み専用）
@@ -250,6 +254,29 @@ go test -tags=integration ./...
 cd service/query
 go test -tags=integration ./...
 ```
+
+## ☸️ Kubernetes (k8s)
+
+このプロジェクトでは、[Kustomize](https://kustomize.io/) を使用してKubernetesマニフェストを管理しています。
+
+### ディレクトリ構成
+
+- `k8s/base/`: 全ての環境で共通のベースとなるマニフェスト
+  - `namespace.yaml`: プロジェクト用の名前空間
+  - `db/`: データベース関連のマニフェスト
+  - `services/`: 各マイクロサービスのマニフェスト
+- `k8s/overlays/dev/`: `dev`環境用の差分マニフェスト（例: リソース割り当て、レプリカ数など）
+
+### デプロイ方法
+
+Kustomizeを使用して、特定の環境（例: `dev`）にデプロイするには、以下のコマンドを実行します。
+
+```bash
+# dev環境のマニフェストを適用
+kubectl apply -k k8s/overlays/dev
+```
+
+これにより、`base`のマニフェストと`dev`オーバーレイが結合されたマニフェストがクラスターに適用されます。
 
 ## 🛠️ 開発ワークフロー
 
