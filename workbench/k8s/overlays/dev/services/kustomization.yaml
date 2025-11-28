@@ -6,24 +6,9 @@ resources:
 
 patches:
   - target:
-      kind: Deployment
-      name: client-service
+      kind: Deployment # NOTE: nameを指定せず全てのDeploymentに適用する
     patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/imagePullPolicy
-        value: IfNotPresent
-  - target:
-      kind: Deployment
-      name: query-service
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/imagePullPolicy
-        value: IfNotPresent
-  - target:
-      kind: Deployment
-      name: command-service
-    patch: |-
-      - op: replace
+      - op: add
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: IfNotPresent
   - target:
