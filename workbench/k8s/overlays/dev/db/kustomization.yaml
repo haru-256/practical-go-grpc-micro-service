@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cqrs
+resources:
+  - ../../../base/db
+
+secretGenerator:
+  - name: secret
+    envs:
+      - ../.env.secret
+
+configMapGenerator:
+  # 共通の環境変数用ConfigMap
+  - name: config-env
+    envs:
+      - ../.env.local
+  # command-db用のConfigMap
+  - name: command-db-config-file
+    files:
+      - ../../../../db/command/my.cnf
+  - name: command-db-init-sql
+    files:
+      - ../../../../db/command/init/create_object.sql
+      - ../../../../db/command/init/create_record.sql
+  # query-db用のConfigMap
+  - name: query-db-config-file
+    files:
+      - ../../../../db/query/my.cnf
+
+images:
+  - name: mysql
+    newName: mysql
+    newTag: "8.0"
+  - name: phpmyadmin
+    newName: phpmyadmin/phpmyadmin
+    newTag: "5.2.1"

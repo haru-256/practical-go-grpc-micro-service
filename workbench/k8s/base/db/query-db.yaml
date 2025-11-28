@@ -1,0 +1,80 @@
+# query用DBのStatefulSetとService
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: query-db
+  labels:
+    app: query-db
+spec:
+  selector:
+    matchLabels:
+      app: query-db
+  serviceName: query-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: query-db
+    spec:
+      # TODO: dumpをloadするmigratorコンテナの追加(Job?)
+      containers:
+        - name: query-db
+          image: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: QUERY_DB_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: config-env
+                  key: QUERY_DB_DBNAME
+            - name: TZ
+              value: Asia/Tokyo
+          ports:
+            - containerPort: 3306
+              name: query-db
+          volumeMounts:
+            - name: query-db-config-file
+              mountPath: /etc/mysql/conf.d/my.cnf
+              subPath: my.cnf
+            - name: query-db-data
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: query-db-config-file
+          configMap:
+            name: query-db-config-file
+  volumeClaimTemplates:
+    - metadata:
+        name: query-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: query-db
+  labels:
+    app: query-db
+spec:
+  type: ClusterIP
+  selector:
+    app: query-db
+  clusterIP: None
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP

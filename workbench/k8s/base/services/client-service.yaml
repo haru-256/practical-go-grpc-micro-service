@@ -1,0 +1,64 @@
+# client-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-service
+  template:
+    metadata:
+      labels:
+        app: client-service
+    spec:
+      containers:
+        - name: client-service
+          image: client-service
+          ports:
+            - containerPort: 80
+          env:
+            - name: SERVER_PORT
+              value: "80"
+            - name: CQRS_COMMAND_SERVICE_URL
+              value: "http://command-service"
+            - name: CQRS_QUERY_SERVICE_URL
+              value: "http://query-service"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-service
+  labels:
+    app: client-service
+spec:
+  type: ClusterIP
+  selector:
+    app: client-service
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
