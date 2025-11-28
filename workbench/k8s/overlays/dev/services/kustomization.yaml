@@ -4,6 +4,36 @@ namespace: cqrs
 resources:
   - ../../../base/services
 
+patches:
+  - target:
+      kind: Deployment
+      name: client-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Deployment
+      name: query-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Deployment
+      name: command-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Gateway
+      name: cqrs
+    patch: |-
+      - op: replace
+        path: /spec/gatewayClassName
+        value: eg
+
 secretGenerator:
   - name: secret
     envs:

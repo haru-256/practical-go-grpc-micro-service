@@ -10,9 +10,13 @@ db-apply: ## Apply DB k8s resources
 	kustomize build db/ --load-restrictor LoadRestrictionsNone \
 		| kubectl apply -f -
 
-.PHONY: services
-services: ## Apply services k8s resources
+.PHONY: services-dry-run
+services-dry-run: ## Dry-run services k8s resources
 	kustomize build services/ --load-restrictor LoadRestrictionsNone | kubectl apply -f - --dry-run=server
+
+.PHONY: services-apply
+services-apply: ## Apply services k8s resources
+	kustomize build services/ --load-restrictor LoadRestrictionsNone | kubectl apply -f -
 
 .PHONY: help
 help: ## Show options
