@@ -305,7 +305,7 @@ kubectl apply -k k8s/overlays/dev
 
 - **[API仕様書](./api/README.md)** - 詳細なAPI仕様とサンプル
 - **[データベース設計](./db/README.md)** - DB設計とCQRS実装
-- **[プロジェクトスタイルガイド](../.gemini/styleguide.md)** - コーディング規約と設計原則
+- **[プロジェクトスタイルガイド](./.github/styleguide.md)** - コーディング規約と設計原則
 
 ### 公式ドキュメント
 
