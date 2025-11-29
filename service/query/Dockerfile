@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build stage
-# NOTE: コンテキストのルートがworkbench/になるようにdocker buildコマンドを実行することを想定している
+# NOTE: コンテキストのルートがrepository rootになるようにdocker buildコマンドを実行することを想定している
 # go.modやgo.sum、pkgなど共通ファイルを正しくマウントするため
 
 FROM golang:1.25-alpine AS builder
