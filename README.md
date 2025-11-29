@@ -1,5 +1,9 @@
 # Practical Go gRPC Micro Service - Workbench
 
+[![Go](https://github.com/haru-256/practical-go-grpc-micro-service/actions/workflows/go.yml/badge.svg)](https://github.com/haru-256/practical-go-grpc-micro-service/actions/workflows/go.yml)
+[![Buf](https://github.com/haru-256/practical-go-grpc-micro-service/actions/workflows/buf.yml/badge.svg)](https://github.com/haru-256/practical-go-grpc-micro-service/actions/workflows/buf.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 このリポジトリは、Go言語でgRPCマイクロサービスを実装する実践的なプロジェクトです。CQRS（Command Query Responsibility Segregation）パターンを採用し、商品管理システムを題材としたマイクロサービスアーキテクチャを学習できます。
 
 ## 🎯 プロジェクト概要
