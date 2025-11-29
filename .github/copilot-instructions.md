@@ -10,7 +10,7 @@
 ## Build & Run Workflow
 
 - Run `mise install` once to provision tool versions (Go 1.25.1, buf, sqlboiler, ginkgo, swag, etc.).
-- From ``: `make init`(tidy + octocov),`make lint`, `make fmt`, `make test`, `make test-all` (`-tags=integration`), and `make up`/`make down`for the full docker-compose stack in`compose.yaml`.
+- From the root directory: `make init` (tidy + octocov), `make lint`, `make fmt`, `make test`, `make test-all` (`-tags=integration`), and `make up`/`make down` for the full docker-compose stack in `compose.yaml`.
 - Service Makefiles provide focused commands: `service/command` exposes `make ginkgo`, `make generate-db-models`, `make run-server`; `service/query` and `service/client` offer `make test[-all]`, `make run-server`, and buf-curl helpers; Client also has `make swag-init` for Swagger regeneration.
 - Protobuf edits require `cd api && make generate` (buf lint/format/generate). Update Go modules afterwards with `go mod tidy` at the repo root or per service.
 
