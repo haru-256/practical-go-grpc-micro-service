@@ -5,7 +5,7 @@
 - CQRS split into `service/command`(write),`service/query`(read), and`service/client`(REST facade) fed by protobufs in`api/`and backed by dual MySQL instances under`db/`.
 - Command uses SQLBoiler repositories (`internal/infrastructure/sqlboiler`), Query uses GORM (`internal/infrastructure/db`), Client calls both via Connect RPC plus Echo HTTP handlers (`internal/presentation/server`).
 - Shared building blocks live in `pkg`: `connect/interceptor` (logging + protovalidate) and `log` (slog + Otel handler); reuse these instead of inventing ad-hoc middleware.
-- `official/` mirrors the book reference implementation; treat it as read-only context, new work belongs under ``.
+- `official/` mirrors the book reference implementation; treat it as read-only context, new work belongs in the root directory.
 
 ## Build & Run Workflow
 
