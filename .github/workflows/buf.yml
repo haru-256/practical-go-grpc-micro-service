@@ -6,13 +6,13 @@ on:
       - main
   pull_request:
     paths:
-      - workbench/api/**
+      - api/**
 jobs:
   breaking-change-and-lint:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: workbench/api
+        working-directory: api
     permissions:
       contents: read
       pull-requests: write
@@ -24,7 +24,7 @@ jobs:
         with:
           version: 1.57.2
           # 後方互換性の検証を行う
-          breaking_against: "https://github.com/${{ github.repository }}.git#branch=main,subdir=workbench/api"
+          breaking_against: "https://github.com/${{ github.repository }}.git#branch=main,subdir=api"
           lint: true
           breaking: true
-          input: workbench/api # working-directoryは動作しないため、inputを指定する
+          input: api # working-directoryは動作しないため、inputを指定する
